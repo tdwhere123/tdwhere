@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" fill="none" role="img" aria-label="tea stain">
+  <defs>
+    <filter id="stain-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+    <filter id="stain-rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="3" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="11"/>
+    </filter>
+  </defs>
+  <g filter="url(#stain-rough)">
+    <g filter="url(#stain-soft)" stroke="#7A5A3B" fill="none" stroke-linecap="round">
+      <!-- outer ring, mostly complete, varied weight -->
+      <path d="M 300 74 A 226 226 0 1 1 226 110" stroke-width="13" opacity="0.5"/>
+      <path d="M 300 78 A 222 222 0 0 1 512 262" stroke-width="7" opacity="0.34"/>
+      <!-- inner lighter ring, broken -->
+      <path d="M 300 128 A 172 172 0 1 1 172 236" stroke-width="6" opacity="0.26"/>
+      <path d="M 320 130 A 170 170 0 0 1 452 220" stroke-width="4" opacity="0.2"/>
+    </g>
+    <!-- pooled darker patch where the cup sat longest -->
+    <ellipse cx="238" cy="392" rx="52" ry="30" fill="#7A5A3B" opacity="0.14" filter="url(#stain-soft)"/>
+    <!-- drips running away from the ring -->
+    <g fill="#7A5A3B" filter="url(#stain-soft)">
+      <path d="M 512 300 q 26 10 30 34 q 3 18 -10 24 q -14 5 -20 -10 q -8 -26 0 -48 Z" opacity="0.3"/>
+      <circle cx="548" cy="392" r="7" opacity="0.24"/>
+      <circle cx="120" cy="330" r="9" opacity="0.2"/>
+      <path d="M 132 340 q -14 22 -8 40 q 4 12 14 8 q 10 -5 6 -20 q -3 -16 -12 -28 Z" opacity="0.18"/>
+      <circle cx="186" cy="500" r="5" opacity="0.16"/>
+    </g>
+  </g>
+</svg>
