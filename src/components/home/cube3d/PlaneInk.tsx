@@ -20,12 +20,12 @@ const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
 /** Keep ink panels away from the viewport edge (was 3.5% — too tight). */
-const EDGE_PAD_PCT = 7.5
+const EDGE_PAD_PCT = 8
 /**
  * Offset from the cube's projected center toward the free side.
- * Cube face ~covers ±12–16vw from center, so gap must clear that.
+ * Clears most of the cube face while keeping the title visually paired.
  */
-const CUBE_GAP_PCT = 15
+const CUBE_GAP_PCT = 12
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -106,11 +106,13 @@ export default function PlaneInk({
 
   /** Sit beside the cube (anchor), not pinned to the far corner of the viewport. */
   const panelStyle = useMemo(() => {
-    const top = clamp(anchor.y * 100 - 8, 22, 56)
-    const maxWidth = `min(400px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
+    const top = clamp(anchor.y * 100 - 6, 24, 58)
+    const maxWidth = `min(360px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
+    // Leave room for the panel itself so it never hugs the far edge.
+    const maxStart = 100 - EDGE_PAD_PCT - 26
 
     if (panelSide === 'right') {
-      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 62)
+      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
       return {
         top: `${top}%`,
         left: `${left}%`,
@@ -119,7 +121,7 @@ export default function PlaneInk({
       } as const
     }
 
-    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 62)
+    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
     return {
       top: `${top}%`,
       right: `${right}%`,
@@ -130,7 +132,7 @@ export default function PlaneInk({
 
   return (
     <div
-      className="pointer-events-none absolute z-10 w-[min(420px,42vw)] overflow-visible transition-[top,left,right] duration-500 ease-zen"
+      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible transition-[top,left,right] duration-500 ease-zen"
       style={panelStyle}
     >
       <button

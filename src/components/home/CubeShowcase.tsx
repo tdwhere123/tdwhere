@@ -49,10 +49,10 @@ function MobileCubeShowcase() {
             ref={(el) => {
               sectionRefs.current[index] = el
             }}
-            className="flex min-h-[100svh] flex-col justify-center px-8 py-14 sm:px-10"
+            className="flex min-h-[100svh] flex-col justify-center px-10 py-14"
           >
             {/* Title sits directly above the cube — short stack, clear side padding */}
-            <div className="mx-auto w-full max-w-[min(320px,82vw)]">
+            <div className="mx-auto w-full max-w-[min(300px,78vw)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-museum-muted">
                 {project.shortName} · {category}
               </p>
@@ -60,7 +60,7 @@ function MobileCubeShowcase() {
                 {project.title}
               </h2>
 
-              <div className="relative mx-auto mt-4 w-full">
+              <div className="relative mx-auto mt-3 w-full">
                 <div
                   className="relative transition-transform duration-500 ease-zen"
                   style={{
