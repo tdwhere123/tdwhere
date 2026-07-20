@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Link } from 'react-router-dom'
 import { useLang } from '@/context/LangContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
@@ -6,9 +7,9 @@ import {
   cubeRotations,
   type CubeStageId,
 } from './cube-data'
-import ProjectInfo from './ProjectInfo'
 import MuseumCubeCanvas, { type CubeScreenAnchor } from './cube3d/MuseumCubeCanvas'
 import PlaneInk from './cube3d/PlaneInk'
+import ScrollHintMark from './svg/ScrollHintMark'
 import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
 
@@ -25,7 +26,7 @@ function MobileCubeShowcase() {
         ([entry]) => {
           if (entry.isIntersecting) setActiveIndex(index)
         },
-        { threshold: 0.45, rootMargin: '-10% 0px -10% 0px' },
+        { threshold: 0.4, rootMargin: '-8% 0px -8% 0px' },
       )
       io.observe(el)
       observers.push(io)
@@ -34,54 +35,109 @@ function MobileCubeShowcase() {
   }, [])
 
   return (
-    <div className="relative touch-pan-y pb-16">
+    <div className="relative touch-pan-y overscroll-y-contain pb-20">
       {cubeProjects.map((project, index) => {
         const rot = cubeRotations[project.id]
+        const category = lang === 'zh' ? project.categoryZh : project.categoryEn
+        const statement = lang === 'zh' ? project.statementZh : project.statementEn
+        const description = lang === 'zh' ? project.descriptionZh : project.descriptionEn
+        const cta = lang === 'zh' ? project.ctaZh : project.ctaEn
+
         return (
           <section
             key={project.id}
             ref={(el) => {
               sectionRefs.current[index] = el
             }}
-            className="flex min-h-[100svh] flex-col justify-center px-7 py-16 sm:px-8"
+            className="flex min-h-[100svh] flex-col justify-center px-8 py-14 sm:px-10"
           >
-            <ProjectInfo
-              project={project}
-              lang={lang}
-              showScrollHint={project.id === 'home'}
-              compact
-            />
-            <div className="relative mx-auto mt-5 w-full max-w-[min(300px,78vw)]">
-              <div
-                className="relative transition-transform duration-500 ease-zen"
-                style={{
-                  transform: `perspective(900px) rotateY(${index === activeIndex ? rot.rotateY * 0.05 : 8}deg)`,
-                }}
-              >
-                <div className="relative aspect-square overflow-hidden bg-[#d6cdc0]">
-                  <div
-                    className={cn(
-                      'cube-face__content',
-                      (project.fill ?? 'rect') === 'circle' && 'cube-face__content--circle',
-                    )}
-                    style={
-                      {
-                        '--face-fill-scale':
-                          project.fillScale ??
-                          ((project.fill ?? 'rect') === 'circle' ? 1.42 : 1.14),
-                      } as CSSProperties
-                    }
-                  >
-                    <img src={project.image} alt={project.alt} />
+            {/* Title sits directly above the cube — short stack, clear side padding */}
+            <div className="mx-auto w-full max-w-[min(320px,82vw)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-museum-muted">
+                {project.shortName} · {category}
+              </p>
+              <h2 className="mt-2 font-serif text-[26px] font-semibold leading-[1.15] text-museum-ink">
+                {project.title}
+              </h2>
+
+              <div className="relative mx-auto mt-4 w-full">
+                <div
+                  className="relative transition-transform duration-500 ease-zen"
+                  style={{
+                    transform: `perspective(900px) rotateY(${index === activeIndex ? rot.rotateY * 0.05 : 8}deg)`,
+                  }}
+                >
+                  <div className="relative aspect-square overflow-hidden bg-[#d6cdc0]">
+                    <div
+                      className={cn(
+                        'cube-face__content',
+                        (project.fill ?? 'rect') === 'circle' && 'cube-face__content--circle',
+                      )}
+                      style={
+                        {
+                          '--face-fill-scale':
+                            project.fillScale ??
+                            ((project.fill ?? 'rect') === 'circle' ? 1.42 : 1.14),
+                        } as CSSProperties
+                      }
+                    >
+                      <img src={project.image} alt={project.alt} />
+                    </div>
+                    <img
+                      src={asset('cube/shell.png')}
+                      alt=""
+                      aria-hidden="true"
+                      className="cube-face__shell"
+                      style={{ mixBlendMode: 'multiply' }}
+                    />
                   </div>
-                  <img
-                    src={asset('cube/shell.png')}
-                    alt=""
-                    aria-hidden="true"
-                    className="cube-face__shell"
-                    style={{ mixBlendMode: 'multiply' }}
-                  />
                 </div>
+              </div>
+
+              <p className="mt-5 font-serif text-[17px] leading-snug text-ink-2">{statement}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-museum-muted">{description}</p>
+
+              {project.tags.length > 0 && (
+                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.12em] text-museum-brass">
+                  {project.tags.join(' · ')}
+                </p>
+              )}
+
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                {project.id === 'home' ? (
+                  <div className="flex items-center gap-3 text-museum-muted">
+                    <ScrollHintMark />
+                    <div className="font-mono text-[11px] uppercase tracking-[0.14em]">{cta}</div>
+                  </div>
+                ) : project.route ? (
+                  <>
+                    <Link
+                      to={project.route}
+                      className="font-mono text-xs uppercase tracking-[0.14em] text-museum-ink"
+                    >
+                      {cta} ↗
+                    </Link>
+                    {project.github && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-mono text-xs uppercase tracking-[0.14em] text-museum-muted"
+                      >
+                        GITHUB ↗
+                      </a>
+                    )}
+                  </>
+                ) : project.github ? (
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-xs uppercase tracking-[0.14em] text-museum-ink"
+                  >
+                    {cta} ↗
+                  </a>
+                ) : null}
               </div>
             </div>
           </section>

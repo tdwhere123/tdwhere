@@ -21,8 +21,11 @@ const ERASE_MS = 560
 
 /** Keep ink panels away from the viewport edge (was 3.5% — too tight). */
 const EDGE_PAD_PCT = 7.5
-/** Horizontal gap from the cube center toward the free side. */
-const CUBE_GAP_PCT = 5.5
+/**
+ * Offset from the cube's projected center toward the free side.
+ * Cube face ~covers ±12–16vw from center, so gap must clear that.
+ */
+const CUBE_GAP_PCT = 15
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -103,11 +106,11 @@ export default function PlaneInk({
 
   /** Sit beside the cube (anchor), not pinned to the far corner of the viewport. */
   const panelStyle = useMemo(() => {
-    const top = clamp(anchor.y * 100 - 14, 20, 54)
-    const maxWidth = `min(420px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
+    const top = clamp(anchor.y * 100 - 8, 22, 56)
+    const maxWidth = `min(400px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
 
     if (panelSide === 'right') {
-      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 58)
+      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 62)
       return {
         top: `${top}%`,
         left: `${left}%`,
@@ -116,7 +119,7 @@ export default function PlaneInk({
       } as const
     }
 
-    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 58)
+    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, 62)
     return {
       top: `${top}%`,
       right: `${right}%`,
