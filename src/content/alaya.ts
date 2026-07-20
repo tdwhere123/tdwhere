@@ -24,6 +24,11 @@ const zh = {
     big: '向量数据库回答的是「什么字符串相似」，不是「什么是真的」。',
     core: 'Similarity is not truth.',
   },
+  plate: {
+    kicker: '— 展品 / THE GARDEN',
+    alt: '记忆之园：石径分岔，牌匾写着候选与有效，闸门守着真相',
+    caption: '记忆要过六关才入园。相似不是真相——闸门之后，才有资格留下。',
+  },
   grammar: {
     kicker: '— 设计语法 THE GRAMMAR · 三层 × 四轴',
     title: '三层 × 四轴，每张牌只有一个家',
@@ -246,6 +251,12 @@ const en: AlayaContent = {
     termC2: '# session over. it forgot everything.',
     big: "A vector DB answers 'what strings are similar' — not 'what is true'.",
     core: 'Similarity is not truth.',
+  },
+  plate: {
+    kicker: '— THE GARDEN / 展品',
+    alt: 'A memory garden: forked stone paths, plaques for candidate and live, a gate keeping truth',
+    caption:
+      'A memory passes six stages before it enters the garden. Similarity is not truth — only what survives the gate may stay.',
   },
   grammar: {
     kicker: '— THE GRAMMAR · 3 LAYERS × 4 AXES',

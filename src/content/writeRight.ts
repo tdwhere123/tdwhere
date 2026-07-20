@@ -32,6 +32,11 @@ const zh = {
     doesnt: ['红头排版主路径', '绑死单一模型', '云端记忆'],
     note: '边界写清楚，比功能写得多更重要。',
   },
+  plate: {
+    kicker: '— 展品 / THE DESK',
+    alt: '写作案头：毛笔与印章旁摊开文种路由笺，墨迹未干',
+    caption: '路由先于动笔。案头只留骨架与场所——空白页不是起点，选格才是。',
+  },
   router: {
     kicker: '— 试试 / TRY IT · ROUTE BEFORE YOU WRITE',
     title: '选三个格子，看它给你一副骨架。',
@@ -225,6 +230,12 @@ const en: WriteRightContent = {
     ],
     doesnt: ['red-header typesetting as the main path', 'hard-bound to a single model', 'cloud memory'],
     note: 'Honest edges beat long feature lists.',
+  },
+  plate: {
+    kicker: '— THE DESK / 展品',
+    alt: 'A writing desk: genre-routing slips beside brush and seal, ink still wet',
+    caption:
+      'Route before you write. The desk holds a skeleton and a setting — the blank page is not the start; the three grids are.',
   },
   router: {
     kicker: '— TRY IT · ROUTE BEFORE YOU WRITE',

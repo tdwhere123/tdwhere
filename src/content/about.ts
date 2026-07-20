@@ -68,6 +68,11 @@ const zh = {
     ] as TrailNode[],
     more: '…… 未完待续',
   },
+  plate: {
+    kicker: '— 展品 / THE WORKBENCH',
+    alt: '园丁工作台：陶杯、溪石、摊开的手写本与黄铜工具散落在石板上',
+    caption: '业余时间的工作台。不正经，但认真——工具与笔记并排，等下一件要修的小事。',
+  },
   contact: {
     kicker: '— 联系 SAY HELLO',
     big: '写信来。',
@@ -147,6 +152,12 @@ const en: AboutContent = {
       },
     ],
     more: '…… to be continued',
+  },
+  plate: {
+    kicker: '— THE WORKBENCH / 展品',
+    alt: 'A gardener’s workbench: pottery cup, creek stones, an open notebook and brass tools on limestone',
+    caption:
+      'A workbench for stolen hours. Unserious, but careful — tools beside notes, waiting for the next small thing to fix.',
   },
   contact: {
     kicker: '— SAY HELLO',

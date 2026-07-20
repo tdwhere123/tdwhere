@@ -25,6 +25,11 @@ const zh = {
     move: '把路由、委派、验证、复盘写成可安装的技能包。装进五个宿主，像装一个认真对待流程的同事。',
     note: '建议性路由，不是固定流水线 —— advisory, not a pipeline.',
   },
+  plate: {
+    kicker: '— 展品 / THE GATE',
+    alt: '石灰岩门廊与黄铜闸门：任务从左侧进入，经路由器分流至不同技能桶',
+    caption: '闸门之后是路由——风险定级，再决定装哪些技能桶。流程不是口令，是装进去的门禁。',
+  },
   sim: {
     kicker: '— 试试 / TRY IT · THE ROUTER',
     title: '随便描述一个任务，看它怎么被路由。',
@@ -138,6 +143,12 @@ const en: DoItContent = {
     moveTitle: 'The move / 做法',
     move: 'Route, delegate, verify, retrospect — written as installable skills. Five hosts, one disciplined colleague.',
     note: 'Advisory routing, not a fixed pipeline — 建议性路由，不是固定流水线。',
+  },
+  plate: {
+    kicker: '— THE GATE / 展品',
+    alt: 'A limestone gate with a brass shutter: tasks enter from the left and route into skill buckets',
+    caption:
+      'Past the gate, routing — risk first, then which skill buckets to load. Process is not folklore; it is an installed threshold.',
   },
   sim: {
     kicker: '— TRY IT · THE ROUTER',

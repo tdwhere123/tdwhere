@@ -7,6 +7,8 @@ import GateDivider from '@/components/GateDivider'
 import NextProject from '@/components/NextProject'
 import SentinelTerminal from '@/components/playground/SentinelTerminal'
 import VegetarianCards from '@/components/playground/VegetarianCards'
+import SiteClue from '@/components/eggs/SiteClue'
+import IllustrationPlate from '@/components/IllustrationPlate'
 import { asset } from '@/lib/asset'
 
 /** 「」 corner brackets scale in at character level, then the quote settles. */
@@ -110,10 +112,27 @@ export default function Playground() {
           <SentinelTerminal />
         </motion.div>
 
-        <GateDivider className="pg-gate mx-auto mt-[clamp(96px,15vh,168px)] max-w-shell px-5 md:px-10" />
+        <IllustrationPlate
+          src="illustrations/playground-ruins.png"
+          alt={t.plateRuins.alt}
+          kicker={t.plateRuins.kicker}
+          caption={t.plateRuins.caption}
+          variant="wide"
+          className="mt-[clamp(48px,8vh,96px)]"
+        />
+
+        <GateDivider className="pg-gate mx-auto mt-[clamp(64px,10vh,120px)] max-w-shell px-5 md:px-10" />
 
         {/* S3 · vegetarian drawer */}
         <VegetarianCards />
+
+        <IllustrationPlate
+          src="illustrations/playground-veggie-still.png"
+          alt={t.plateVeggie.alt}
+          kicker={t.plateVeggie.kicker}
+          caption={t.plateVeggie.caption}
+          variant="wide"
+        />
 
         {/* S4 · a note on ruins */}
         <section className="mx-auto max-w-reading px-5 pb-[clamp(96px,15vh,168px)] md:px-10">
@@ -134,6 +153,17 @@ export default function Playground() {
               {t.ruins.quotes.map((q, i) => (
                 <QuoteLine key={q} text={q} delay={0.15 + i * 0.15} />
               ))}
+              <div className="flex justify-end pt-2">
+                <SiteClue
+                  variant="stamp"
+                  label={{ zh: '五卡', en: 'FIVE' }}
+                  hint={{
+                    zh: '院子里散落五张暗号。集齐后蒙版会问你一个问题。输入 cards 看进度。',
+                    en: 'Five ciphers hide in the garden. Collect them — a mask asks one question. Type cards for progress.',
+                  }}
+                  command="cards"
+                />
+              </div>
             </div>
           </InkReveal>
         </section>
