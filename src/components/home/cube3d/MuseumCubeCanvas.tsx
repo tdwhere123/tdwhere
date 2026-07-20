@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { CubeFacePosition, CubeStageId } from '../cube-data'
 import { CUBE_SIZE, useRollingCube } from './useRollingCube'
+import { asset } from '@/lib/asset'
 
 const MATERIAL_FACES: CubeFacePosition[] = [
   'right',
@@ -15,7 +16,7 @@ const MATERIAL_FACES: CubeFacePosition[] = [
   'back',
 ]
 
-const FACE_URLS = MATERIAL_FACES.map((face) => `/cube/faces/${face}.png`)
+const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.png`))
 
 /** Near-top view (~80°): cube reads upright on the plane. */
 const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)

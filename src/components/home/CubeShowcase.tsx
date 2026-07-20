@@ -9,6 +9,7 @@ import {
 import ProjectInfo from './ProjectInfo'
 import MuseumCubeCanvas, { type CubeScreenAnchor } from './cube3d/MuseumCubeCanvas'
 import PlaneInk from './cube3d/PlaneInk'
+import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
 
 function MobileCubeShowcase() {
@@ -73,7 +74,7 @@ function MobileCubeShowcase() {
                     <img src={project.image} alt={project.alt} />
                   </div>
                   <img
-                    src="/cube/shell.png"
+                    src={asset('cube/shell.png')}
                     alt=""
                     aria-hidden="true"
                     className="cube-face__shell"

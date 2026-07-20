@@ -127,7 +127,7 @@
     inset: 0;
     z-index: 90;
     pointer-events: none;
-    background-image: url("/paper-grain.png");
+    background-image: url("./assets/paper-grain.png");
     background-size: 512px;
     opacity: 0.05;
     mix-blend-mode: soft-light;
@@ -212,7 +212,7 @@
       color-mix(in srgb, var(--museum-line) 22%, transparent) 47px,
       color-mix(in srgb, var(--museum-line) 22%, transparent) 48px
     ),
-    url("/paper-grain.png");
+    url("./assets/paper-grain.png");
   background-size: auto, auto, auto, auto, 280px 280px;
   background-blend-mode: normal, normal, normal, normal, soft-light;
   min-height: 100vh;

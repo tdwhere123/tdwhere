@@ -3,6 +3,7 @@ import { useLang } from '@/context/LangContext'
 import GateDivider from '@/components/GateDivider'
 import CopyEmail from '@/components/CopyEmail'
 import InkReveal from '@/components/InkReveal'
+import { asset } from '@/lib/asset'
 import { scrollToTop } from '@/lib/smooth-scroll'
 
 export default function Footer() {
@@ -11,7 +12,7 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-museum-stone">
       {/* faint distant mountains, bottom aligned */}
       <img
-        src="/ink-strip.png"
+        src={asset('ink-strip.png')}
         alt=""
         aria-hidden="true"
         loading="lazy"

@@ -7,6 +7,7 @@ import GateDivider from '@/components/GateDivider'
 import NextProject from '@/components/NextProject'
 import SentinelTerminal from '@/components/playground/SentinelTerminal'
 import VegetarianCards from '@/components/playground/VegetarianCards'
+import { asset } from '@/lib/asset'
 
 /** 「」 corner brackets scale in at character level, then the quote settles. */
 function QuoteLine({ text, delay }: { text: string; delay: number }) {
@@ -65,7 +66,7 @@ export default function Playground() {
                 color-mix(in srgb, var(--museum-line) 22%, transparent) 55px,
                 color-mix(in srgb, var(--museum-line) 22%, transparent) 56px
               ),
-              url("/paper-grain.png");
+              url("${asset('paper-grain.png')}");
             background-size: auto, auto, auto, 280px 280px;
             background-blend-mode: normal, normal, normal, soft-light;
           }

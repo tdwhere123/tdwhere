@@ -38,7 +38,7 @@ export default function App() {
 
   return (
     <LangProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
         <ScrollManager />
         <Cursor />
         <Suspense fallback={<PageFallback />}>

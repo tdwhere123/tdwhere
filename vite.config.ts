@@ -4,8 +4,10 @@ import { defineConfig } from "vite"
 import { inspectAttr } from 'plugin-inspect-react-code'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: './',
+// Production base matches the GitHub Pages project URL:
+// https://tdwhere123.github.io/tdwhere/
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/tdwhere/" : "/",
   plugins: [inspectAttr(), react()],
   server: {
     port: 3000,
@@ -15,4 +17,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));

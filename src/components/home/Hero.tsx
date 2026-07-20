@@ -10,6 +10,7 @@ import SealMark from '@/components/SealMark'
 import Stamp from '@/components/Stamp'
 import useTypewriter from '@/hooks/useTypewriter'
 import useCopyText from '@/hooks/useCopyText'
+import { asset } from '@/lib/asset'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -144,7 +145,7 @@ export default function Hero() {
       {/* ink-wash mountains */}
       <div ref={inkRef} className="pointer-events-none absolute -right-[8%] top-0 h-full w-[72%]">
         <img
-          src="/ink-wash-hero.png"
+          src={asset('ink-wash-hero.png')}
           alt=""
           aria-hidden="true"
           className="h-full w-full object-cover object-right opacity-[0.35] select-none"
@@ -194,7 +195,7 @@ export default function Hero() {
 
       {/* tea stain, lower-left edge */}
       <img
-        src="/stain-ring.svg"
+        src={asset('stain-ring.svg')}
         alt=""
         aria-hidden="true"
         loading="lazy"

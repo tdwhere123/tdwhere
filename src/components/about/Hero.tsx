@@ -6,6 +6,7 @@ import { aboutContent } from '@/content/about'
 import Kicker from '@/components/Kicker'
 import SealMark from '@/components/SealMark'
 import useTypeOnce from '@/components/about/useTypeOnce'
+import { asset } from '@/lib/asset'
 
 gsap.registerPlugin(useGSAP)
 
@@ -106,7 +107,7 @@ export default function Hero() {
         <div className="relative">
           <img
             ref={ensoRef}
-            src="/enso.svg"
+            src={asset('enso.svg')}
             alt=""
             aria-hidden="true"
             className="pointer-events-none absolute -left-20 -top-24 w-[min(380px,70vw)] select-none opacity-0"
@@ -156,14 +157,14 @@ export default function Hero() {
             className="overflow-hidden border border-museum-brass/25 bg-museum-stone p-3 md:p-4"
           >
             <img
-              src="/about-still.png"
+              src={asset('about-still.png')}
               alt={c.stillAlt}
               className="block aspect-[4/3] w-full select-none object-cover"
             />
           </div>
           <img
             ref={stainRef}
-            src="/stain-ring.svg"
+            src={asset('stain-ring.svg')}
             alt=""
             aria-hidden="true"
             loading="lazy"
