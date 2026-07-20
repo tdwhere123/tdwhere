@@ -22,9 +22,18 @@ const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.png`))
 const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
 
 export type CubeScreenAnchor = {
+  /** Park point beside the cube for PlaneInk (normalized 0–1). */
   x: number
   y: number
   preferRight: boolean
+  /** Tip of the S-roll hint in screen space (normalized 0–1). */
+  rollHintX: number
+  rollHintY: number
+  /**
+   * CSS degrees to rotate a down-pointing arrow so it aligns with the
+   * camera-relative S roll direction (toward the viewer on the floor).
+   */
+  rollAngleDeg: number
 }
 
 function CubeMesh({ textures }: { textures: THREE.Texture[] }) {
@@ -108,23 +117,72 @@ function ScreenAnchorReporter({
   onAnchor?: (a: CubeScreenAnchor) => void
 }) {
   const { camera } = useThree()
-  const v = useRef(new THREE.Vector3())
-  const last = useRef({ x: 0, y: 0 })
+  const center = useRef(new THREE.Vector3())
+  const tip = useRef(new THREE.Vector3())
+  const forward = useRef(new THREE.Vector3())
+  const ndcCenter = useRef(new THREE.Vector3())
+  const ndcTip = useRef(new THREE.Vector3())
+  const last = useRef({ x: -1, y: -1, hx: -1, hy: -1, ang: 0 })
 
   useFrame(() => {
     if (!onAnchor || !targetRef.current) return
-    targetRef.current.getWorldPosition(v.current)
-    v.current.y = 0.04
-    v.current.z += CUBE_SIZE * 0.55
-    v.current.project(camera)
-    const x = (v.current.x + 1) / 2
-    const y = (1 - v.current.y) / 2
-    if (Math.abs(x - last.current.x) < 0.012 && Math.abs(y - last.current.y) < 0.012) return
-    last.current = { x, y }
+
+    targetRef.current.getWorldPosition(center.current)
+
+    // Same camera-relative "S" direction as useRollingCube KeyS → nz:
+    // opposite of camera look on the museum floor (toward the viewer).
+    camera.getWorldDirection(forward.current)
+    forward.current.y = 0
+    if (forward.current.lengthSq() < 1e-6) forward.current.set(0, 0, -1)
+    forward.current.normalize()
+    // Snap to cardinal so the hint stays stable while orbiting slightly.
+    if (Math.abs(forward.current.x) >= Math.abs(forward.current.z)) {
+      forward.current.set(Math.sign(forward.current.x) || 1, 0, 0)
+    } else {
+      forward.current.set(0, 0, Math.sign(forward.current.z) || 1)
+    }
+    // S rolls opposite camera-forward → toward viewer
+    tip.current
+      .copy(center.current)
+      .addScaledVector(forward.current, -CUBE_SIZE * 0.72)
+    tip.current.y = 0.06
+
+    ndcCenter.current.copy(center.current).project(camera)
+    ndcTip.current.copy(tip.current).project(camera)
+
+    const cx = (ndcCenter.current.x + 1) / 2
+    const cy = (1 - ndcCenter.current.y) / 2
+    const hx = (ndcTip.current.x + 1) / 2
+    const hy = (1 - ndcTip.current.y) / 2
+
+    // Screen delta; SVG arrow defaults to pointing down (+Y).
+    const dx = hx - cx
+    const dy = hy - cy
+    const rollAngleDeg = (Math.atan2(dx, dy) * 180) / Math.PI
+
+    // Ink park point: slightly toward free side of the tip
+    const parkX = THREE.MathUtils.clamp(hx, 0.1, 0.9)
+    const parkY = THREE.MathUtils.clamp(hy, 0.2, 0.86)
+
+    const L = last.current
+    if (
+      Math.abs(parkX - L.x) < 0.01 &&
+      Math.abs(parkY - L.y) < 0.01 &&
+      Math.abs(hx - L.hx) < 0.01 &&
+      Math.abs(hy - L.hy) < 0.01 &&
+      Math.abs(rollAngleDeg - L.ang) < 2.5
+    ) {
+      return
+    }
+    last.current = { x: parkX, y: parkY, hx, hy, ang: rollAngleDeg }
+
     onAnchor({
-      x: THREE.MathUtils.clamp(x, 0.1, 0.9),
-      y: THREE.MathUtils.clamp(y, 0.2, 0.86),
-      preferRight: x < 0.55,
+      x: parkX,
+      y: parkY,
+      preferRight: parkX < 0.55,
+      rollHintX: THREE.MathUtils.clamp(hx, 0.06, 0.94),
+      rollHintY: THREE.MathUtils.clamp(hy, 0.12, 0.92),
+      rollAngleDeg,
     })
   })
 
