@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CUBE_SHELL, type CubeProject } from './cube-data'
 import { cn } from '@/lib/utils'
+import type { CSSProperties } from 'react'
 
 type Props = {
   project: CubeProject
@@ -10,9 +11,18 @@ type Props = {
 
 export default function CubeFace({ project, active, interactive }: Props) {
   const faceClass = `cube-face cube-face--${project.face}`
+  const fill = project.fill ?? 'rect'
+  const fillScale = project.fillScale ?? (fill === 'circle' ? 1.42 : 1.14)
+
   const content = (
     <>
-      <div className="cube-face__content">
+      <div
+        className={cn(
+          'cube-face__content',
+          fill === 'circle' && 'cube-face__content--circle',
+        )}
+        style={{ '--face-fill-scale': fillScale } as CSSProperties}
+      >
         <img
           src={project.image}
           alt={project.alt}

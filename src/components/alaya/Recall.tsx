@@ -31,11 +31,11 @@ export default function Recall() {
       const boxes = gsap.utils.toArray<HTMLElement>('[data-stage]', track)
       if (boxes.length === 0) return
 
-      /* cool sage lit — moss×dai so stages read museum, not muddy */
-      const sage = 'color-mix(in srgb, var(--moss) 70%, var(--dai))'
+      /* brass-moss lit — gallery warmth, not neon sage */
+      const litAccent = 'color-mix(in srgb, var(--moss) 62%, var(--museum-brass))'
       const lit = {
-        borderColor: sage,
-        backgroundColor: `color-mix(in srgb, ${sage} 7%, var(--paper))`,
+        borderColor: litAccent,
+        backgroundColor: `color-mix(in srgb, ${litAccent} 6%, var(--museum-bg))`,
       }
 
       /* reduced motion → static final state */
@@ -147,7 +147,7 @@ export default function Recall() {
                   key={s}
                   data-stage
                   className={cn(
-                    'rounded-[10px] border bg-paper p-5 text-center transition-none',
+                    'rounded-[10px] border bg-museum-bg p-5 text-center transition-none',
                     last ? 'border-dashed border-faint' : 'border-hairline',
                   )}
                 >

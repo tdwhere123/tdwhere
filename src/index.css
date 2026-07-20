@@ -4,32 +4,32 @@
 
 @layer base {
   :root {
-    /* —— Museum stone / brass / sage (legacy token names kept for class compatibility) —— */
-    --museum-bg: #dde9e5;
-    --museum-bg-deep: #ccdcd8;
-    --museum-ink: #202827;
-    --museum-muted: #687673;
-    --museum-line: rgba(32, 40, 39, 0.16);
-    --museum-stone: #e9e4d9;
-    --museum-brass: #887451;
-    --museum-dark: #252a29;
+    /* —— Limestone gallery wall (warm, matches cube stone/brass) —— */
+    --museum-bg: #ebe6de;
+    --museum-bg-deep: #ddd6cc;
+    --museum-ink: #1f2624;
+    --museum-muted: #6a726e;
+    --museum-line: rgba(31, 38, 36, 0.14);
+    --museum-stone: #f0ebe1;
+    --museum-brass: #8a734e;
+    --museum-dark: #232826;
 
-    --paper: #dde9e5;
-    --paper-warm: #e9e4d9;
-    --paper-deep: #ccdcd8;
-    --ink: #202827;
-    --ink-2: #3a4543;
-    --ink-3: #54605e;
-    --faint: #687673;
-    --tea: #887451;
-    --tea-deep: #6e5e42;
+    --paper: #ebe6de;
+    --paper-warm: #f0ebe1;
+    --paper-deep: #ddd6cc;
+    --ink: #1f2624;
+    --ink-2: #38413e;
+    --ink-3: #55605c;
+    --faint: #6a726e;
+    --tea: #8a734e;
+    --tea-deep: #6f5c3e;
     --clay: #9a7348;
-    --moss: #6f7f6e;
-    --dai: #5c6a68;
+    --moss: #6a7a68;
+    --dai: #5a6864;
     --seal: #8f4a32;
-    --hairline: rgba(32, 40, 39, 0.16);
-    --night: #252a29;
-    --night-2: #1a1f1e;
+    --hairline: rgba(31, 38, 36, 0.14);
+    --night: #232826;
+    --night-2: #171c1a;
     --amber: #c4a46a;
     --amber-dim: #8a7452;
 
@@ -38,36 +38,37 @@
     --ease-stamp: cubic-bezier(0.34, 1.56, 0.64, 1);
 
     /* cube */
-    --cube-size: clamp(280px, 38vw, 560px);
+    --cube-size: clamp(200px, 26vw, 380px);
+    --cube-content-inset: 9%;
 
     /* shadcn tokens remapped to museum palette (HSL triplets) */
-    --background: 160 22% 89%;
-    --foreground: 165 12% 14%;
-    --card: 160 22% 89%;
-    --card-foreground: 165 12% 14%;
-    --popover: 40 28% 88%;
-    --popover-foreground: 165 12% 14%;
-    --primary: 38 24% 42%;
-    --primary-foreground: 160 22% 89%;
-    --secondary: 160 16% 82%;
-    --secondary-foreground: 165 12% 14%;
-    --muted: 40 28% 88%;
-    --muted-foreground: 165 8% 44%;
-    --accent: 160 16% 82%;
-    --accent-foreground: 165 12% 14%;
+    --background: 40 18% 90%;
+    --foreground: 150 10% 13%;
+    --card: 40 18% 90%;
+    --card-foreground: 150 10% 13%;
+    --popover: 42 28% 91%;
+    --popover-foreground: 150 10% 13%;
+    --primary: 36 28% 42%;
+    --primary-foreground: 40 18% 90%;
+    --secondary: 40 12% 86%;
+    --secondary-foreground: 150 10% 13%;
+    --muted: 42 28% 91%;
+    --muted-foreground: 150 6% 42%;
+    --accent: 40 12% 86%;
+    --accent-foreground: 150 10% 13%;
     --destructive: 14 48% 38%;
-    --destructive-foreground: 160 22% 89%;
-    --border: 165 12% 14% / 0.16;
-    --input: 165 12% 14% / 0.16;
+    --destructive-foreground: 40 18% 90%;
+    --border: 150 10% 13% / 0.14;
+    --input: 150 10% 13% / 0.14;
     --ring: 14 48% 38%;
     --radius: 0.625rem;
-    --sidebar-background: 40 28% 88%;
-    --sidebar-foreground: 165 12% 14%;
-    --sidebar-primary: 38 24% 42%;
-    --sidebar-primary-foreground: 160 22% 89%;
-    --sidebar-accent: 160 16% 82%;
-    --sidebar-accent-foreground: 165 12% 14%;
-    --sidebar-border: 165 12% 14% / 0.16;
+    --sidebar-background: 42 28% 91%;
+    --sidebar-foreground: 150 10% 13%;
+    --sidebar-primary: 36 28% 42%;
+    --sidebar-primary-foreground: 40 18% 90%;
+    --sidebar-accent: 40 12% 86%;
+    --sidebar-accent-foreground: 150 10% 13%;
+    --sidebar-border: 150 10% 13% / 0.14;
     --sidebar-ring: 14 48% 38%;
   }
 
@@ -119,7 +120,7 @@
     overflow-x: hidden;
   }
 
-  /* Soft museum grain — much quieter than paper wash */
+  /* Soft gallery grain — keep quiet so stone/brass read cleanly */
   body::after {
     content: "";
     position: fixed;
@@ -128,12 +129,12 @@
     pointer-events: none;
     background-image: url("/paper-grain.png");
     background-size: 512px;
-    opacity: 0.12;
+    opacity: 0.05;
     mix-blend-mode: soft-light;
   }
 
   body[data-home-cube]::after {
-    opacity: 0.06;
+    opacity: 0.035;
   }
 
   ::selection {
@@ -179,111 +180,229 @@
 
 /* —— Cube home theme —— */
 .cube-home-theme {
-  --cube-size: clamp(280px, 38vw, 560px);
+  --cube-size: clamp(200px, 26vw, 380px);
+  --cube-half: calc(var(--cube-size) / 2);
+  /* faces slightly overlap so rotation never shows a hairline gap */
+  --cube-face-z: calc(var(--cube-half) - 1.5px);
+  --cube-content-inset: 9%;
   color: var(--museum-ink);
-  background:
+  background-color: var(--museum-bg);
+  background-image:
     radial-gradient(
-      circle at 38% 46%,
-      rgba(255, 255, 255, 0.48),
-      rgba(255, 255, 255, 0) 42%
+      ellipse 78% 58% at 42% 48%,
+      color-mix(in srgb, var(--museum-stone) 42%, transparent),
+      transparent 68%
     ),
-    var(--museum-bg);
+    radial-gradient(
+      ellipse 40% 32% at 78% 22%,
+      color-mix(in srgb, var(--museum-brass) 9%, transparent),
+      transparent 70%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 47px,
+      color-mix(in srgb, var(--museum-line) 28%, transparent) 47px,
+      color-mix(in srgb, var(--museum-line) 28%, transparent) 48px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 47px,
+      color-mix(in srgb, var(--museum-line) 22%, transparent) 47px,
+      color-mix(in srgb, var(--museum-line) 22%, transparent) 48px
+    ),
+    url("/paper-grain.png");
+  background-size: auto, auto, auto, auto, 280px 280px;
+  background-blend-mode: normal, normal, normal, normal, soft-light;
   min-height: 100vh;
 }
 
+.plane-ink-title {
+  overflow: visible;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.plane-ink-title .plane-ink-write {
+  display: inline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  animation: plane-ink-reveal 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.plane-ink-title.plane-ink-erase .plane-ink-write {
+  animation: plane-ink-erase 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.plane-ink-body {
+  animation: plane-ink-reveal 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.plane-ink-body:nth-of-type(2) {
+  animation-delay: 0.12s;
+}
+
+@keyframes plane-ink-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.35;
+  }
+  to {
+    clip-path: none;
+    opacity: 1;
+  }
+}
+
+@keyframes plane-ink-erase {
+  from {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+    opacity: 0;
+    filter: blur(1.5px);
+  }
+}
+
 .cube-scene {
+  position: relative;
   width: var(--cube-size);
   height: var(--cube-size);
-  perspective: 1400px;
-  perspective-origin: 50% 46%;
+  perspective: 1600px;
+  perspective-origin: 50% 48%;
+  background: transparent;
+}
+
+/* Grounded contact shadow — mass on a plinth, not a floating card */
+.cube-scene__shadow {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: -10%;
+  height: 34%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(31, 38, 36, 0.34) 0%,
+    rgba(31, 38, 36, 0.14) 38%,
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(1px);
 }
 
 .project-cube {
   position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
+  transform-origin: 50% 50%;
   will-change: transform;
-  filter:
-    drop-shadow(0 40px 55px rgba(42, 58, 55, 0.18))
-    drop-shadow(0 10px 18px rgba(42, 58, 55, 0.1));
-  transition: filter 0.45s var(--ease-zen);
 }
 
-.project-cube--hover {
-  filter:
-    drop-shadow(0 48px 60px rgba(42, 58, 55, 0.24))
-    drop-shadow(0 12px 22px rgba(42, 58, 55, 0.14));
+/* Solid core so edges never read as paper-thin planes */
+.project-cube__core {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.project-cube__core-face {
+  position: absolute;
+  inset: 3%;
+  background: var(--museum-dark);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.project-cube__core-face--front {
+  transform: translateZ(calc(var(--cube-half) - 6px));
+}
+.project-cube__core-face--back {
+  transform: rotateY(180deg) translateZ(calc(var(--cube-half) - 6px));
+}
+.project-cube__core-face--right {
+  transform: rotateY(90deg) translateZ(calc(var(--cube-half) - 6px));
+}
+.project-cube__core-face--left {
+  transform: rotateY(-90deg) translateZ(calc(var(--cube-half) - 6px));
+}
+.project-cube__core-face--top {
+  transform: rotateX(90deg) translateZ(calc(var(--cube-half) - 6px));
+}
+.project-cube__core-face--bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--cube-half) - 6px));
+  background: color-mix(in srgb, var(--museum-dark) 88%, var(--museum-brass));
 }
 
 .cube-face {
   position: absolute;
-  inset: 0;
+  /* oversize to seal subpixel seams between neighboring faces */
+  width: calc(100% + 3px);
+  height: calc(100% + 3px);
+  left: -1.5px;
+  top: -1.5px;
+  /* opaque slab behind shell — kills see-through corners at cube edges */
+  background: var(--museum-stone);
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
 }
 
 .cube-face--front {
-  transform: translateZ(calc(var(--cube-size) / 2));
+  transform: translateZ(var(--cube-face-z));
 }
 .cube-face--right {
-  transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2));
+  transform: rotateY(90deg) translateZ(var(--cube-face-z));
 }
 .cube-face--back {
-  transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2));
+  transform: rotateY(180deg) translateZ(var(--cube-face-z));
 }
 .cube-face--left {
-  transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2));
+  transform: rotateY(-90deg) translateZ(var(--cube-face-z));
 }
 .cube-face--top {
-  transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2));
+  transform: rotateX(90deg) translateZ(var(--cube-face-z));
 }
 .cube-face--bottom {
-  transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2));
+  transform: rotateX(-90deg) translateZ(var(--cube-face-z));
 }
 
 .cube-face__content {
+  --face-fill-scale: 1.08;
   position: absolute;
-  inset: 15%;
+  inset: 9%;
   overflow: hidden;
-  clip-path: polygon(
-    5% 0,
-    95% 0,
-    100% 5%,
-    100% 95%,
-    95% 100%,
-    5% 100%,
-    0 95%,
-    0 5%
-  );
   background: var(--museum-dark);
   z-index: 1;
 }
 
 .cube-face__content img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transform: scale(1.02);
+  transform: scale(var(--face-fill-scale));
+  transform-origin: center;
+}
+
+.cube-face__content--circle {
+  --face-fill-scale: 1.48;
 }
 
 .cube-face__inner-shadow {
   position: absolute;
-  inset: 15%;
+  inset: 9%;
   z-index: 2;
   pointer-events: none;
-  clip-path: polygon(
-    5% 0,
-    95% 0,
-    100% 5%,
-    100% 95%,
-    95% 100%,
-    5% 100%,
-    0 95%,
-    0 5%
-  );
-  box-shadow: inset 0 0 28px rgba(20, 28, 26, 0.45);
+  box-shadow: inset 0 0 10px rgba(20, 28, 26, 0.16);
 }
 
 .cube-face__shell {
@@ -292,18 +411,18 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: fill;
   z-index: 3;
 }
 
 .cube-face__glass {
   position: absolute;
-  inset: 0;
+  inset: 9%;
   z-index: 4;
   pointer-events: none;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.1) 0%,
     transparent 42%,
     transparent 100%
   );
@@ -315,16 +434,6 @@
   inset: 15%;
   z-index: 5;
   pointer-events: none;
-  clip-path: polygon(
-    5% 0,
-    95% 0,
-    100% 5%,
-    100% 95%,
-    95% 100%,
-    5% 100%,
-    0 95%,
-    0 5%
-  );
 }
 
 .cube-showcase-stage {

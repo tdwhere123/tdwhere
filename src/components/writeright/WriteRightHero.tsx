@@ -11,11 +11,11 @@ import { getLenis } from '@/lib/smooth-scroll'
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const BACK = [0.34, 1.56, 0.64, 1] as [number, number, number, number]
 
-/* cool slate metal grid — dai identity on museum paper */
+/* cool slate metal grid — dai identity on museum wall */
 const GRID_BG = `linear-gradient(color-mix(in srgb, var(--dai) 9%, transparent) 1px, transparent 1px),
 linear-gradient(90deg, color-mix(in srgb, var(--dai) 9%, transparent) 1px, transparent 1px)`
 
-/** S1 · Write-Right project hero — gate open, faint manuscript grid, WIP stamp. */
+/** S1 · Write-Right project hero — gate open, faint metal grid, WIP stamp. */
 export default function WriteRightHero() {
   const { lang } = useLang()
   const c = writeRightContent[lang].hero
@@ -31,7 +31,7 @@ export default function WriteRightHero() {
 
   return (
     <section className="relative overflow-hidden">
-      {/* faint manuscript grid (田字格), fading in from center */}
+      {/* faint metal grid (田字格), fading in from center */}
       <motion.div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -103,7 +103,7 @@ export default function WriteRightHero() {
                 {c.hosts.map((host, i) => (
                   <motion.span
                     key={host}
-                    className="inline-flex items-center rounded-[4px] border border-museum-line bg-paper px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-3"
+                    className="inline-flex items-center rounded-[4px] border border-museum-brass/30 bg-museum-stone/60 px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-3"
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.45, ease: BACK, delay: 1.15 + i * 0.06 }}

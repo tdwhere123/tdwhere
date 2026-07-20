@@ -43,7 +43,7 @@ const TypeLine = memo(function TypeLine({ text, active }: { text: string; active
 
 /**
  * S5 · 日常路径 — five verbs in a loop. Scroll scrubs an ink dot along the
- * path lighting each step; hovering a card types its example command.
+ * path lighting each step; hovering a step types its example command.
  */
 export default function DailyPath() {
   const { lang } = useLang()
@@ -99,8 +99,8 @@ export default function DailyPath() {
                     className={cn(
                       'min-w-0 flex-1 border p-4 text-left transition-colors duration-500',
                       isLit
-                        ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_8%,var(--paper))]'
-                        : 'border-museum-line bg-paper',
+                        ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_9%,var(--museum-bg))]'
+                        : 'border-museum-line bg-museum-stone/40',
                     )}
                   >
                     <span
@@ -126,7 +126,7 @@ export default function DailyPath() {
             <span className="absolute left-0 top-0 h-4 border-l border-dashed border-museum-line" />
             <span className="absolute right-0 top-0 h-4 border-l border-dashed border-museum-line" />
             <span className="absolute inset-x-0 top-4 border-t border-dashed border-museum-line" />
-            <span className="absolute left-1/2 top-4 -translate-x-1/2 bg-paper px-3 font-mono text-[10px] text-faint">
+            <span className="absolute left-1/2 top-4 -translate-x-1/2 bg-museum-bg px-3 font-mono text-[10px] text-faint">
               {c.loopLabel}
             </span>
           </div>
@@ -147,8 +147,8 @@ export default function DailyPath() {
                   className={cn(
                     'w-full border p-4 text-left transition-colors duration-500',
                     isLit
-                      ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_8%,var(--paper))]'
-                      : 'border-museum-line bg-paper',
+                      ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_9%,var(--museum-bg))]'
+                      : 'border-museum-line bg-museum-stone/40',
                   )}
                 >
                   <span

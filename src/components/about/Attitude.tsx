@@ -18,7 +18,7 @@ export default function Attitude() {
 
   return (
     <section aria-label={c.line} className="mx-auto max-w-shell px-5 md:px-10">
-      <BrassRule className="mx-auto h-2 w-40" />
+      <BrassRule className="mx-auto h-2 w-40 text-museum-brass" />
       <div className="py-[clamp(72px,12vh,128px)] text-center">
         <p className="mx-auto max-w-3xl font-serif text-[clamp(30px,4.5vw,48px)] font-bold leading-snug text-museum-ink">
           {units.map((u, i) => (
@@ -45,7 +45,7 @@ export default function Attitude() {
           {c.sub}
         </motion.p>
       </div>
-      <BrassRule className="mx-auto mb-8 h-2 w-40" />
+      <BrassRule className="mx-auto mb-8 h-2 w-40 text-museum-brass" />
     </section>
   )
 }

@@ -11,12 +11,12 @@ import Attitude from '@/components/about/Attitude'
  */
 export default function About() {
   return (
-    <>
+    <div className="bg-museum-bg text-museum-ink">
       <Hero />
       <QaSection />
       <Trail />
       <Contact />
       <Attitude />
-    </>
+    </div>
   )
 }

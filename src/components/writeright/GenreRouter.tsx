@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
-/* cool slate manuscript grid */
-const SHEET_GRID = `linear-gradient(color-mix(in srgb, var(--dai) 10%, transparent) 1px, transparent 1px),
-linear-gradient(90deg, color-mix(in srgb, var(--dai) 10%, transparent) 1px, transparent 1px)`
+/* cool slate metal grid — aligned with hero (9% dai) */
+const SHEET_GRID = `linear-gradient(color-mix(in srgb, var(--dai) 9%, transparent) 1px, transparent 1px),
+linear-gradient(90deg, color-mix(in srgb, var(--dai) 9%, transparent) 1px, transparent 1px)`
 
 const PRESS_SHADOW =
   'shadow-[inset_0_1px_3px_color-mix(in_srgb,var(--ink)_16%,transparent)]'
@@ -55,10 +55,10 @@ function SelectorGroup({
                 'rounded-[4px] border px-3.5 py-2 font-serif text-sm transition-all duration-200 ease-zen',
                 active
                   ? cn(
-                      'translate-y-px border-dai bg-[color-mix(in_srgb,var(--dai)_10%,var(--paper))] text-ink',
+                      'translate-y-px border-dai bg-[color-mix(in_srgb,var(--dai)_9%,var(--museum-bg))] text-ink',
                       PRESS_SHADOW,
                     )
-                  : 'border-museum-line bg-paper text-ink-3 hover:border-dai hover:text-ink',
+                  : 'border-museum-line bg-museum-stone/50 text-ink-3 hover:border-dai hover:text-ink',
               )}
             >
               {opt.label}
@@ -72,7 +72,7 @@ function SelectorGroup({
 
 /**
  * S3 · 【核心交互】文种路由器 — genre × setting × goal → a choose-your-own
- * skeleton on manuscript paper. Default: 请示 × 上行 × 争取支持.
+ * skeleton on a metal grid sheet. Default: 请示 × 上行 × 争取支持.
  */
 export default function GenreRouter() {
   const { lang } = useLang()
@@ -99,7 +99,7 @@ export default function GenreRouter() {
         whileInView={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.9, ease: ZEN }}
-        className="mx-auto max-w-demo border border-museum-line bg-museum-stone/70 p-[clamp(24px,4vw,56px)]"
+        className="mx-auto max-w-demo"
       >
         <Kicker>{c.kicker}</Kicker>
         <h2 className="mt-4 font-serif text-h2 font-semibold text-ink">{c.title}</h2>
@@ -119,9 +119,9 @@ export default function GenreRouter() {
             <p className="font-mono text-xs leading-relaxed text-faint">{tone}</p>
           </div>
 
-          {/* ——— the skeleton sheet (稿纸) ——— */}
+          {/* ——— the skeleton sheet (稿纸 → metal grid) ——— */}
           <div
-            className="relative border border-museum-line bg-paper p-6 md:p-8"
+            className="relative border border-museum-line bg-museum-stone/55 p-6 md:p-8"
             style={{ backgroundImage: SHEET_GRID, backgroundSize: '36px 36px' }}
           >
             {/* current route */}
@@ -152,8 +152,8 @@ export default function GenreRouter() {
                         show: { y: 0, opacity: 1, transition: { duration: 0.45, ease: ZEN } },
                       }}
                       className={cn(
-                        'flex items-baseline gap-3 rounded-md px-2 py-1.5 -mx-2 transition-colors duration-300',
-                        focus && 'bg-[color-mix(in_srgb,var(--dai)_12%,transparent)]',
+                        'flex items-baseline gap-3 px-2 py-1.5 -mx-2 transition-colors duration-300',
+                        focus && 'bg-[color-mix(in_srgb,var(--dai)_9%,transparent)]',
                       )}
                     >
                       {/* serial — pressed type tile */}
@@ -166,8 +166,8 @@ export default function GenreRouter() {
                           'inline-grid h-7 w-7 shrink-0 translate-y-1 place-items-center rounded-[4px] border font-mono text-xs',
                           TILE_SHADOW,
                           focus
-                            ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_12%,var(--paper))] text-dai'
-                            : 'border-museum-line bg-paper text-ink-3',
+                            ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_9%,var(--museum-bg))] text-dai'
+                            : 'border-museum-line bg-museum-bg text-ink-3',
                         )}
                       >
                         {i + 1}

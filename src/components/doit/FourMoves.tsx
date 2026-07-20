@@ -2,8 +2,9 @@ import { useLang } from '@/context/LangContext'
 import { doItContent } from '@/content/doIt'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
+import BrassAccent from '@/components/doit/BrassAccent'
 
-/** S4 · 四步功法 — four panels; hover lifts, the big numeral fills with clay. */
+/** S4 · 四步功法 — four columns; brass hairline, clay numeral fill on hover. */
 export default function FourMoves() {
   const { lang } = useLang()
   const c = doItContent[lang].moves
@@ -14,12 +15,12 @@ export default function FourMoves() {
         <Kicker>{c.kicker}</Kicker>
       </InkReveal>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {c.items.map((item, i) => (
           <InkReveal key={item.en} delay={i * 0.12} className="h-full">
-            <div className="group relative h-full border border-hairline bg-museum-stone/50 p-6 transition-transform duration-300 ease-zen hover:-translate-y-1">
+            <div className="group relative h-full border-t border-museum-brass/35 pt-6 transition-transform duration-300 ease-zen hover:-translate-y-0.5">
               {i === 3 && (
-                <span className="absolute right-4 top-4 border border-museum-brass/35 bg-paper px-2.5 py-0.5 font-mono text-[10px] text-museum-brass">
+                <span className="absolute right-0 top-6 border border-museum-brass/40 bg-museum-stone px-2.5 py-0.5 font-mono text-[10px] text-museum-brass">
                   {c.learnBadge}
                 </span>
               )}
@@ -40,12 +41,16 @@ export default function FourMoves() {
               <p className="mt-4 font-mono text-[13px] uppercase tracking-[0.1em] text-clay">
                 {item.en}
               </p>
-              <h3 className="mt-1.5 font-serif text-xl font-semibold text-ink">{item.zh}</h3>
+              <h3 className="mt-1.5 font-serif text-xl font-semibold text-museum-ink">{item.zh}</h3>
               <p className="mt-3 text-sm leading-[1.85] text-ink-3">{item.desc}</p>
             </div>
           </InkReveal>
         ))}
       </div>
+
+      <InkReveal delay={0.4}>
+        <BrassAccent className="mx-auto mt-14 h-2 w-36" />
+      </InkReveal>
     </section>
   )
 }

@@ -13,7 +13,7 @@ const ZEN = 'power3.out' // ≈ cubic-bezier(0.22, 1, 0.36, 1)
 
 /**
  * S1 · 页头 The Gardener — gate-open entrance, char-level ink reveal of 阿黄,
- * curtain-reveal still life, type-once signature, seal stamp landing.
+ * curtain-reveal still life on stone matte, type-once signature, seal stamp landing.
  */
 export default function Hero() {
   const { lang } = useLang()
@@ -48,7 +48,7 @@ export default function Hero() {
         /* static end state: no gate, decorations shown as designed */
         gsap.set([gateLRef.current, gateRRef.current], { display: 'none' })
         gsap.set(ensoRef.current, { opacity: 0.16 })
-        gsap.set(stainRef.current, { opacity: 0.45 })
+        gsap.set(stainRef.current, { opacity: 0.28 })
         return
       }
 
@@ -74,7 +74,7 @@ export default function Hero() {
       tl.to(ensoRef.current, { opacity: 0.16, duration: 1.4 }, 0.7)
       /* still-life curtain, drawn open from the left */
       tl.to(stillRef.current, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.0 }, 0.55)
-      tl.to(stainRef.current, { opacity: 0.45, scale: 1, duration: 1.2 }, 1.2)
+      tl.to(stainRef.current, { opacity: 0.28, scale: 1, duration: 1.2 }, 1.2)
       tl.to(rows, { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.1 }, 0.95)
       /* seal lands on the signature line + 4px tremor */
       tl.to(sealRef.current, { scale: 1, rotate: -4, opacity: 1, duration: 0.38, ease: 'back.out(1.7)' }, 1.9)
@@ -139,16 +139,22 @@ export default function Hero() {
                   ▌
                 </span>
               </span>
-              <span ref={sealRef} className="inline-block opacity-90 will-change-transform">
+              <span
+                ref={sealRef}
+                className="inline-block opacity-90 will-change-transform [filter:saturate(0.68)_brightness(0.96)]"
+              >
                 <SealMark size={48} />
               </span>
             </p>
           </div>
         </div>
 
-        {/* right column — still life with a half-pressed tea stain */}
+        {/* right column — still life on museum-stone matte (no mint/cream frame clash) */}
         <div className="relative">
-          <div ref={stillRef} className="overflow-hidden rounded-2xl border border-museum-line">
+          <div
+            ref={stillRef}
+            className="overflow-hidden border border-museum-brass/25 bg-museum-stone p-3 md:p-4"
+          >
             <img
               src="/about-still.png"
               alt={c.stillAlt}
@@ -161,7 +167,7 @@ export default function Hero() {
             alt=""
             aria-hidden="true"
             loading="lazy"
-            className="pointer-events-none absolute -bottom-10 -left-10 w-[160px] rotate-[18deg] select-none opacity-0 md:w-[190px]"
+            className="pointer-events-none absolute -bottom-10 -left-10 w-[160px] rotate-[18deg] select-none opacity-0 md:w-[190px] [filter:saturate(0.45)_hue-rotate(12deg)_brightness(0.9)]"
           />
         </div>
       </div>

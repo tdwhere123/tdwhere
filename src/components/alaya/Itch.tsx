@@ -79,7 +79,7 @@ export default function Itch() {
       <InkReveal amount={0.4} delay={0.1} className="mt-10">
         <div
           ref={termRef}
-          className="rounded-[10px] border border-hairline bg-paper-deep px-5 py-4 text-left font-mono text-sm leading-7 text-ink-2"
+          className="rounded-[10px] border border-hairline bg-museum-bg-deep px-5 py-4 text-left font-mono text-sm leading-7 text-ink-2"
           role="log"
           aria-live="polite"
           aria-label="terminal"

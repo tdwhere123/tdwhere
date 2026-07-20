@@ -9,7 +9,7 @@ import { getLenis } from '@/lib/smooth-scroll'
 
 gsap.registerPlugin(useGSAP)
 
-/** Cool museum sage wash (~5% effective), GSAP slow drift (isolated + memoized). */
+/** Soft brass-warm museum wash (~4% effective), GSAP slow drift (isolated + memoized). */
 const MossGlow = memo(function MossGlow() {
   const ref = useRef<HTMLDivElement>(null)
   useGSAP(
@@ -33,8 +33,8 @@ const MossGlow = memo(function MossGlow() {
       className="pointer-events-none absolute -right-24 top-1/4 h-[600px] w-[600px]"
       style={{
         background:
-          'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 58%, var(--dai)) 9%, transparent) 0%, transparent 70%)',
-        opacity: 0.55,
+          'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 52%, var(--museum-brass)) 7%, transparent) 0%, transparent 72%)',
+        opacity: 0.42,
       }}
     />
   )

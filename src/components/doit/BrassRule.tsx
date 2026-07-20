@@ -15,9 +15,9 @@ export default function BrassRule({ className }: { className?: string }) {
         y2="4"
         stroke="var(--museum-brass)"
         strokeWidth="0.75"
-        opacity="0.45"
+        opacity="0.55"
       />
-      <circle cx="120" cy="4" r="2" fill="var(--museum-brass)" opacity="0.55" />
+      <circle cx="120" cy="4" r="2" fill="var(--clay)" opacity="0.65" />
     </svg>
   )
 }

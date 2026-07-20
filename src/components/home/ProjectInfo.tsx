@@ -30,7 +30,7 @@ export default function ProjectInfo({ project, lang, showScrollHint }: Props) {
           className="flex flex-col"
         >
           <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-museum-muted md:text-[13px]">
-            {project.index} / {category}
+            {project.shortName} · {category}
           </p>
 
           <h2 className="mt-4 font-serif text-[32px] font-semibold leading-[1.1] text-museum-ink md:text-[clamp(48px,5vw,64px)]">
@@ -58,7 +58,7 @@ export default function ProjectInfo({ project, lang, showScrollHint }: Props) {
                   <ScrollHintMark />
                   <div className="font-mono text-[11px] uppercase tracking-[0.14em]">
                     <div>{cta}</div>
-                    <div className="mt-1 hidden opacity-70 md:block">WASD / ARROW KEYS</div>
+                    <div className="mt-1 hidden opacity-70 md:block">WASD / ARROWS</div>
                   </div>
                 </div>
               )

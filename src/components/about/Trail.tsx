@@ -96,12 +96,12 @@ export default function Trail() {
         <span
           ref={lineHRef}
           aria-hidden="true"
-          className="absolute left-0 right-0 top-[3.5px] hidden h-px origin-left bg-museum-line md:block"
+          className="absolute left-0 right-0 top-[3.5px] hidden h-px origin-left bg-museum-brass/40 md:block"
         />
         <span
           ref={lineVRef}
           aria-hidden="true"
-          className="absolute bottom-2 left-[3.5px] top-2 w-px origin-top bg-museum-line md:hidden"
+          className="absolute bottom-2 left-[3.5px] top-2 w-px origin-top bg-museum-brass/40 md:hidden"
         />
 
         <ol className="flex flex-col gap-10 md:grid md:grid-cols-[repeat(4,minmax(0,1fr))_80px] md:gap-6">

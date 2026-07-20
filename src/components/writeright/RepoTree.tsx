@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
- * S4 · 仓库形状 — interactive file tree. Desktop: tree left / note card right.
+ * S4 · 仓库形状 — interactive file tree. Desktop: tree left / note panel right.
  * Mobile: accordion. core/ is the single source of truth.
  */
 export default function RepoTree() {
@@ -72,9 +72,9 @@ export default function RepoTree() {
             ))}
           </div>
 
-          {/* note panel — interactive surface */}
+          {/* note panel — interactive surface, hairline only */}
           <div className="relative">
-            <div className="sticky top-24 min-h-[180px] border border-museum-line bg-paper p-7">
+            <div className="sticky top-24 min-h-[180px] border border-museum-line bg-museum-bg/70 p-7">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${activeNode.id}-${lang}`}
@@ -107,7 +107,7 @@ export default function RepoTree() {
                 className={cn(
                   'border transition-colors duration-300',
                   open
-                    ? 'border-dai bg-paper'
+                    ? 'border-dai bg-museum-bg/70'
                     : 'border-museum-line',
                 )}
               >

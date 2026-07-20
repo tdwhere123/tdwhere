@@ -77,7 +77,7 @@ export default function Grammar() {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.5, ease: ZEN, delay: (r * 4 + c) * 0.03 }}
                 className={cn(
-                  'group flex min-h-[108px] flex-col items-start justify-between gap-2 rounded-[10px] border bg-paper p-3 text-left transition-colors duration-300',
+                  'group flex min-h-[108px] flex-col items-start justify-between gap-2 rounded-[10px] border bg-museum-bg p-3 text-left transition-colors duration-300',
                   sel?.c === c ? 'border-hairline bg-moss/[0.05]' : 'border-hairline',
                   sel?.r === r && sel?.c === c ? 'border-moss/80' : 'hover:border-moss/50',
                 )}
@@ -109,7 +109,7 @@ export default function Grammar() {
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.5, ease: ZEN, delay: c * 0.05 }}
                   className={cn(
-                    'group flex min-h-[96px] flex-col items-start justify-between gap-1.5 rounded-[10px] border bg-paper p-3 text-left transition-colors duration-300',
+                    'group flex min-h-[96px] flex-col items-start justify-between gap-1.5 rounded-[10px] border bg-museum-bg p-3 text-left transition-colors duration-300',
                     sel?.r === r && sel?.c === c
                       ? 'border-moss/80 bg-moss/[0.05]'
                       : 'border-hairline',
@@ -131,7 +131,7 @@ export default function Grammar() {
 
       {/* invariant strip — ink reveal + 4px moss edge growing */}
       <InkReveal amount={0.5} className="mt-8">
-        <div className="relative overflow-hidden rounded-[6px] border border-hairline bg-paper-deep/60 px-5 py-4">
+        <div className="relative overflow-hidden rounded-[6px] border border-hairline bg-museum-bg-deep/60 px-5 py-4">
           <motion.span
             aria-hidden="true"
             initial={{ scaleY: 0 }}

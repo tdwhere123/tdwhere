@@ -20,7 +20,7 @@ export default function ScopeSection() {
       <div className="mt-10 grid gap-6 md:grid-cols-2 md:gap-10">
         {/* DOES */}
         <InkReveal delay={0.05}>
-          <div className="h-full border border-museum-line border-l-[3px] border-l-dai bg-paper p-7 md:p-9">
+          <div className="h-full border-l-[3px] border-l-dai bg-museum-stone/45 py-1 pl-7 md:pl-9">
             <h3 className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-dai">
               {c.doesTitle}
             </h3>
@@ -46,7 +46,7 @@ export default function ScopeSection() {
 
         {/* DOESN'T — each item grows a 1px strikethrough */}
         <InkReveal delay={0.2}>
-          <div className="h-full border border-museum-line border-l-[3px] border-l-faint bg-paper p-7 md:p-9">
+          <div className="h-full border-l-[3px] border-l-faint bg-museum-stone/25 py-1 pl-7 md:pl-9">
             <h3 className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-faint">
               {c.doesntTitle}
             </h3>

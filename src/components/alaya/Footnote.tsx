@@ -17,7 +17,7 @@ export default function Footnote() {
         <Kicker>{a.kicker}</Kicker>
       </InkReveal>
       <InkReveal amount={0.4} className="mt-8">
-        <div className="relative overflow-hidden rounded-[10px] border border-hairline bg-paper-deep px-6 py-6">
+        <div className="relative overflow-hidden rounded-[10px] border border-hairline bg-museum-bg-deep px-6 py-6">
           <motion.span
             aria-hidden="true"
             initial={{ scaleY: 0 }}

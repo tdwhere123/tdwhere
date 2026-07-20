@@ -63,7 +63,7 @@ export default function LifecycleRing() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -12, opacity: 0 }}
         transition={{ duration: 0.35, ease: ZEN }}
-        className="rounded-[16px] border border-hairline bg-paper-deep/50 p-6"
+        className="rounded-[16px] border border-hairline bg-museum-bg-deep/50 p-6"
         role="status"
       >
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
@@ -90,7 +90,7 @@ export default function LifecycleRing() {
       aria-pressed={auto}
       className={cn(
         'inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs uppercase tracking-[0.12em] transition-colors duration-300',
-        auto ? 'border-moss/80 bg-moss/[0.08] text-ink' : 'border-hairline text-ink-3 hover:border-moss',
+              auto ? 'border-moss/70 bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))] text-ink' : 'border-hairline text-ink-3 hover:border-moss',
       )}
     >
       {auto ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
@@ -174,19 +174,19 @@ export default function LifecycleRing() {
             whileInView={{ scaleY: 1 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.5, ease: ZEN }}
-            className="absolute overflow-hidden rounded-[4px] border-2 border-ink-3/50 bg-paper"
+            className="absolute overflow-hidden rounded-[4px] border-2 border-ink-3/50 bg-museum-bg"
             style={{ left: CENTER - 36, top: CENTER - 48, width: 72, height: 96 }}
           >
             <motion.span
               key={`gl-${gateTick}`}
-              className="absolute inset-y-0 left-0 w-1/2 border-r border-hairline bg-paper-deep"
+              className="absolute inset-y-0 left-0 w-1/2 border-r border-hairline bg-museum-bg-deep"
               initial={{ x: 0 }}
               animate={{ x: [0, -15, 0] }}
               transition={{ duration: 0.6, times: [0, 0.45, 1], ease: 'easeInOut' }}
             />
             <motion.span
               key={`gr-${gateTick}`}
-              className="absolute inset-y-0 right-0 w-1/2 border-l border-hairline bg-paper-deep"
+              className="absolute inset-y-0 right-0 w-1/2 border-l border-hairline bg-museum-bg-deep"
               initial={{ x: 0 }}
               animate={{ x: [0, 15, 0] }}
               transition={{ duration: 0.6, times: [0, 0.45, 1], ease: 'easeInOut' }}
@@ -213,7 +213,7 @@ export default function LifecycleRing() {
                   aria-pressed={isActive}
                   aria-label={`${a.stageLabel} ${i + 1}: ${s.name} ${s.en}`}
                   className={cn(
-                    'relative flex h-full w-full flex-col items-center justify-center rounded-full border bg-paper transition-colors duration-300',
+                    'relative flex h-full w-full flex-col items-center justify-center rounded-full border bg-museum-bg transition-colors duration-300',
                     isActive ? 'border-transparent' : 'border-hairline hover:border-moss/60',
                   )}
                 >
@@ -221,7 +221,7 @@ export default function LifecycleRing() {
                     <motion.span
                       layoutId="lc-active"
                       transition={{ duration: 0.5, ease: ZEN }}
-                      className="absolute inset-0 rounded-full border-2 border-moss/80 bg-moss/[0.08]"
+                      className="absolute inset-0 rounded-full border-2 border-moss/70 bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))]"
                     />
                   )}
                   <span className="relative font-mono text-[10px] text-faint">0{i + 1}</span>
@@ -259,7 +259,7 @@ export default function LifecycleRing() {
                 >
                   <span
                     className={cn(
-                      'relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-paper font-mono text-[10px] transition-colors duration-300',
+                      'relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-museum-bg font-mono text-[10px] transition-colors duration-300',
                       isActive ? 'border-transparent text-ink' : 'border-hairline text-faint',
                     )}
                   >
@@ -267,7 +267,7 @@ export default function LifecycleRing() {
                       <motion.span
                         layoutId="lc-active-mobile"
                         transition={{ duration: 0.5, ease: ZEN }}
-                        className="absolute inset-0 rounded-full border-2 border-moss/80 bg-moss/[0.08]"
+                        className="absolute inset-0 rounded-full border-2 border-moss/70 bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))]"
                       />
                     )}
                     <span className="relative">0{i + 1}</span>

@@ -18,7 +18,7 @@ function VeggiePattern() {
     <svg aria-hidden="true" className="absolute inset-0 h-full w-full opacity-25">
       <defs>
         <pattern id="pg-veggie" width="56" height="56" patternUnits="userSpaceOnUse">
-          <g fill="none" stroke="var(--paper)" strokeWidth="1">
+          <g fill="none" stroke="var(--museum-stone)" strokeWidth="1">
             <path d="M14 30c-5-8 1-16 8-14 7 2 8 12 1 15-3 1.2-7 1-9-1Z" />
             <path d="M20 16c1-4 4-6 7-7" />
             <circle cx="42" cy="40" r="6" />
@@ -34,11 +34,27 @@ function VeggiePattern() {
 
 function CardBack() {
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-[16px] border border-tea-deep bg-museum-brass shadow-card [backface-visibility:hidden]">
+    <div
+      className="absolute inset-0 overflow-hidden rounded-[16px] border shadow-card [backface-visibility:hidden]"
+      style={{
+        borderColor: 'color-mix(in srgb, var(--museum-brass) 70%, var(--museum-dark))',
+        background:
+          'linear-gradient(155deg, color-mix(in srgb, var(--museum-brass) 88%, var(--museum-stone)) 0%, var(--museum-brass) 55%, color-mix(in srgb, var(--museum-brass) 75%, var(--museum-dark)) 100%)',
+      }}
+    >
       <VeggiePattern />
-      <div className="absolute inset-2 rounded-[12px] border border-paper/30" />
+      <div
+        className="absolute inset-2 rounded-[12px] border"
+        style={{ borderColor: 'color-mix(in srgb, var(--museum-stone) 35%, transparent)' }}
+      />
       <div className="absolute inset-0 grid place-items-center">
-        <span className="grid h-16 w-16 place-items-center rounded-full border border-paper/50 font-serif text-3xl font-semibold text-paper">
+        <span
+          className="grid h-16 w-16 place-items-center rounded-full border font-serif text-3xl font-semibold"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--museum-stone) 50%, transparent)',
+            color: 'var(--museum-stone)',
+          }}
+        >
           素
         </span>
       </div>
@@ -48,7 +64,7 @@ function CardBack() {
 
 function CardFront({ card, index, label }: { card: VeggieCard; index: number; label: string }) {
   return (
-    <div className="absolute inset-0 rounded-[16px] border border-hairline bg-paper p-2 shadow-card [backface-visibility:hidden] [transform:rotateY(180deg)]">
+    <div className="absolute inset-0 rounded-[16px] border border-hairline bg-museum-stone p-2 shadow-card [backface-visibility:hidden] [transform:rotateY(180deg)]">
       <div className="flex h-full flex-col rounded-[10px] border border-hairline px-5 py-5">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-faint">
           No.{String(index + 1).padStart(2, '0')} · Vegetarian-card
@@ -160,29 +176,62 @@ export default function VegetarianCards() {
 
   return (
     <section aria-label={t.title} className="mx-auto max-w-shell px-5 py-[clamp(96px,15vh,168px)] md:px-10">
-      <div className="grid gap-14 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-20">
+      <style>{`
+        .pg-veggie {
+          --pg-veggie-muted: var(--museum-muted);
+          --pg-veggie-chip-bg: color-mix(in srgb, var(--museum-stone) 70%, white);
+          --pg-veggie-chip-line: color-mix(in srgb, var(--museum-brass) 36%, transparent);
+          --pg-veggie-spot: color-mix(in srgb, var(--museum-brass) 12%, transparent);
+        }
+        .pg-veggie-link { color: var(--museum-muted); }
+        .pg-veggie-link:hover { color: var(--museum-brass); }
+        .pg-veggie-draw {
+          background: var(--museum-brass);
+          color: var(--museum-stone);
+        }
+        .pg-veggie-draw:hover:not(:disabled) {
+          background: color-mix(in srgb, var(--museum-brass) 78%, var(--museum-dark));
+        }
+      `}</style>
+      <div className="pg-veggie grid gap-14 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-20">
         {/* left: intro */}
         <InkReveal>
           <Kicker>{t.kicker}</Kicker>
-          <h2 className="mt-6 font-serif text-h2 font-semibold text-ink">{t.title}</h2>
-          <p className="mt-5 max-w-reading text-[15px] leading-[1.85] text-ink-3">{t.blurb}</p>
+          <h2 className="mt-6 font-serif text-h2 font-semibold text-museum-ink">{t.title}</h2>
+          <p
+            className="mt-5 max-w-reading text-[15px] leading-[1.85]"
+            style={{ color: 'var(--pg-veggie-muted)' }}
+          >
+            {t.blurb}
+          </p>
           <div className="mt-6 flex flex-wrap items-center gap-2">
             {t.chips.map((c) => (
-              <MetaChip key={c}>{c}</MetaChip>
+              <MetaChip
+                key={c}
+                className="!border-[color:var(--pg-veggie-chip-line)] !bg-[color:var(--pg-veggie-chip-bg)] !text-museum-ink"
+              >
+                {c}
+              </MetaChip>
             ))}
             <a
               href="https://github.com/tdwhere123"
               target="_blank"
               rel="noreferrer"
-              className="group inline-flex items-center gap-1.5 font-mono text-xs text-ink-3 transition-colors duration-300 hover:text-[color-mix(in_srgb,var(--seal)_62%,var(--ink))]"
+              className="pg-veggie-link group inline-flex items-center gap-1.5 font-mono text-xs transition-colors duration-300"
             >
               <Github className="h-3.5 w-3.5" />
               {t.github}
             </a>
           </div>
           {/* album counter */}
-          <div className="mt-10 border-t border-hairline pt-6">
-            <p className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
+          <div
+            className="mt-10 border-t pt-6"
+            style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 28%, transparent)' }}
+          >
+            <p
+              className="font-mono text-xs uppercase tracking-[0.14em]"
+              style={{ color: 'var(--pg-veggie-muted)' }}
+            >
               {t.albumLabel} · {t.count(unlocked.length, total)}
             </p>
             {/* album: mini cards */}
@@ -193,7 +242,9 @@ export default function VegetarianCards() {
               onAnimationComplete={() => setCelebrate(false)}
             >
               {unlocked.length === 0 && (
-                <span className="text-[13px] italic text-faint">— —</span>
+                <span className="text-[13px] italic" style={{ color: 'var(--pg-veggie-muted)' }}>
+                  — —
+                </span>
               )}
               <AnimatePresence>
                 {unlocked.map((id) => {
@@ -206,7 +257,12 @@ export default function VegetarianCards() {
                       initial={{ y: -26, opacity: 0, rotate: -6, scale: 0.8 }}
                       animate={{ y: 0, opacity: 1, rotate: 0, scale: 1 }}
                       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      className="inline-flex items-center rounded-md border border-hairline bg-paper-deep px-2.5 py-1.5 font-mono text-[11px] text-ink-2"
+                      className="inline-flex items-center rounded-md border px-2.5 py-1.5 font-mono text-[11px]"
+                      style={{
+                        borderColor: 'var(--pg-veggie-chip-line)',
+                        background: 'var(--museum-stone)',
+                        color: 'var(--museum-ink)',
+                      }}
                     >
                       {card.name}
                     </motion.span>
@@ -222,16 +278,27 @@ export default function VegetarianCards() {
           </div>
         </InkReveal>
 
-        {/* right: draw table */}
+        {/* right: draw table under brass spot */}
         <InkReveal delay={0.15} className="flex flex-col items-center md:items-start">
-          <div className="relative h-[340px] w-[240px] md:h-[360px] md:w-[252px]" style={{ perspective: '1200px' }}>
+          <div
+            className="relative h-[340px] w-[240px] md:h-[360px] md:w-[252px]"
+            style={{
+              perspective: '1200px',
+              filter: 'drop-shadow(0 0 28px var(--pg-veggie-spot))',
+            }}
+          >
             {/* stacked backs (2px offsets) */}
             {[2, 1].map((i) => (
               <div
                 key={i}
                 aria-hidden="true"
-                className="absolute inset-0 rounded-[16px] border border-tea-deep bg-museum-brass"
-                style={{ transform: `translate(${i * 2}px, ${i * 2}px)`, opacity: 0.9 - i * 0.25 }}
+                className="absolute inset-0 rounded-[16px] border"
+                style={{
+                  transform: `translate(${i * 2}px, ${i * 2}px)`,
+                  opacity: 0.9 - i * 0.25,
+                  borderColor: 'color-mix(in srgb, var(--museum-brass) 70%, var(--museum-dark))',
+                  background: 'var(--museum-brass)',
+                }}
               />
             ))}
             {/* the flipping card */}
@@ -262,12 +329,16 @@ export default function VegetarianCards() {
           </div>
 
           {/* hint line */}
-          <p aria-live="polite" className="mt-5 flex h-6 items-center gap-1.5 text-[13px] text-ink-3">
+          <p
+            aria-live="polite"
+            className="mt-5 flex h-6 items-center gap-1.5 text-[13px]"
+            style={{ color: 'var(--pg-veggie-muted)' }}
+          >
             {hint && (
               <>
                 <Sparkles
                   className="h-3.5 w-3.5"
-                  style={{ color: 'color-mix(in srgb, var(--seal) 62%, var(--ink))' }}
+                  style={{ color: 'color-mix(in srgb, var(--seal) 55%, var(--museum-brass))' }}
                   aria-hidden="true"
                 />
                 {hint}
@@ -282,7 +353,7 @@ export default function VegetarianCards() {
             disabled={busy}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="mt-4 rounded-full bg-museum-brass px-7 py-3 font-mono text-sm text-paper transition-colors duration-300 hover:bg-tea-deep disabled:opacity-60"
+            className="pg-veggie-draw mt-4 rounded-full px-7 py-3 font-mono text-sm transition-colors duration-300 disabled:opacity-60"
           >
             {busy ? t.drawing : current ? t.drawAgain : t.draw}
           </motion.button>

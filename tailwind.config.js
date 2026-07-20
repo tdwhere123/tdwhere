@@ -80,6 +80,7 @@ module.exports = {
         serif: ["Fraunces", '"Noto Serif SC"', "serif"],
         sans: ["Inter", '"Noto Sans SC"', "sans-serif"],
         mono: ['"IBM Plex Mono"', "monospace"],
+        hand: ['"Ma Shan Zheng"', '"ZCOOL XiaoWei"', "cursive"],
       },
       fontSize: {
         hero: ["clamp(88px, 18vw, 208px)", { lineHeight: "1.05", letterSpacing: "0.02em" }],

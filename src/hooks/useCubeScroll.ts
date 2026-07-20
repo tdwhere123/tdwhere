@@ -81,6 +81,20 @@ export function useCubeScroll({ enabled, rootRef, cubeRef }: Options): CubeScrol
       const scrollable = Math.max(root.offsetHeight - window.innerHeight, 1)
       const targetY = top + (clamped / (SECTIONS - 1)) * scrollable
 
+      const id = cubeProjects[clamped]?.id ?? 'home'
+      const target = cubeRotations[id]
+      setActiveIndex(clamped)
+      setRotation(target)
+      if (cubeRef.current) {
+        gsap.to(cubeRef.current, {
+          rotateX: target.rotateX,
+          rotateY: target.rotateY,
+          duration: prefersReducedMotion() ? 0.25 : 0.85,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        })
+      }
+
       if (lenis) {
         lenis.scrollTo(targetY, { duration: 1.05 })
       } else {

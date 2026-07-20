@@ -8,7 +8,7 @@ import { scrollToTop } from '@/lib/smooth-scroll'
 export default function Footer() {
   const { t } = useLang()
   return (
-    <footer className="relative overflow-hidden bg-paper-warm">
+    <footer className="relative overflow-hidden bg-museum-stone">
       {/* faint distant mountains, bottom aligned */}
       <img
         src="/ink-strip.png"

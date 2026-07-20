@@ -28,11 +28,11 @@ export default function DecisionLadder() {
   const dotY = useTransform(scrollYProgress, [0, 1], ['6%', '88%'])
 
   return (
-    <section className="bg-museum-stone/50">
+    <section className="border-y border-museum-brass/20 bg-museum-stone/55">
       <div className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,128px)] md:px-10">
         <InkReveal>
           <Kicker>{c.kicker}</Kicker>
-          <h2 className="mt-4 font-serif text-h2 font-semibold text-ink">{c.title}</h2>
+          <h2 className="mt-4 font-serif text-h2 font-semibold text-museum-ink">{c.title}</h2>
         </InkReveal>
 
         <div ref={ref} className="relative mt-14">
@@ -44,15 +44,15 @@ export default function DecisionLadder() {
           />
 
           {/* desktop: descending stairs */}
-          <ol className="hidden gap-3 md:grid md:grid-cols-6">
+          <ol className="hidden gap-4 md:grid md:grid-cols-6">
             {c.steps.map((step, i) => {
               const lit = i <= active
               return (
                 <li
                   key={step}
                   className={cn(
-                    'rounded-lg border p-4 transition-colors duration-500',
-                    lit ? 'border-clay bg-clay/5' : 'border-hairline bg-paper/80',
+                    'border-t pt-4 transition-colors duration-500',
+                    lit ? 'border-clay' : 'border-museum-brass/30',
                   )}
                   style={{ marginTop: `${i * 12}px` }}
                 >
@@ -62,7 +62,7 @@ export default function DecisionLadder() {
                     transition={{ duration: 0.3 }}
                     className={cn(
                       'font-mono text-[11px] tracking-[0.1em]',
-                      lit ? 'text-clay' : 'text-faint',
+                      lit ? 'text-clay' : 'text-ink-3',
                     )}
                   >
                     {String(i + 1).padStart(2, '0')}
@@ -72,7 +72,7 @@ export default function DecisionLadder() {
                     transition={{ duration: 0.3 }}
                     className={cn(
                       'mt-2 text-sm leading-relaxed',
-                      lit ? 'text-ink' : 'text-ink-3',
+                      lit ? 'text-museum-ink' : 'text-ink-3',
                     )}
                   >
                     {step}
@@ -83,26 +83,28 @@ export default function DecisionLadder() {
           </ol>
 
           {/* mobile: vertical list */}
-          <ol className="space-y-2 md:hidden">
+          <ol className="space-y-0 md:hidden">
             {c.steps.map((step, i) => {
               const lit = i <= active
               return (
                 <li
                   key={step}
                   className={cn(
-                    'flex items-baseline gap-4 rounded-lg border px-4 py-3 transition-colors duration-500',
-                    lit ? 'border-clay bg-clay/5' : 'border-hairline bg-paper/80',
+                    'flex items-baseline gap-4 border-t px-1 py-3.5 transition-colors duration-500',
+                    lit ? 'border-clay' : 'border-museum-brass/30',
                   )}
                 >
                   <span
                     className={cn(
                       'font-mono text-[11px]',
-                      lit ? 'text-clay' : 'text-faint',
+                      lit ? 'text-clay' : 'text-ink-3',
                     )}
                   >
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className={cn('text-sm', lit ? 'text-ink' : 'text-ink-3')}>{step}</span>
+                  <span className={cn('text-sm', lit ? 'text-museum-ink' : 'text-ink-3')}>
+                    {step}
+                  </span>
                 </li>
               )
             })}

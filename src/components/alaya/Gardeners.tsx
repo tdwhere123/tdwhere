@@ -38,7 +38,7 @@ export default function Gardeners() {
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.9, ease: ZEN, delay: i * 0.1 }}
               whileHover={{ y: -4 }}
-              className="group relative flex min-h-[220px] flex-col rounded-[10px] border border-hairline bg-paper p-5 transition-colors duration-300 hover:border-moss/60"
+              className="group relative flex min-h-[220px] flex-col rounded-[10px] border border-hairline bg-museum-bg p-5 transition-colors duration-300 hover:border-moss/60"
             >
               {/* the branch — grows on hover, 0.4s, origin bottom */}
               <span

@@ -39,7 +39,7 @@ export default function DoItHero() {
 
             {/* title — char-level ink reveal (5 chars, stagger 0.03s) */}
             <h1
-              className="mt-6 font-serif font-semibold lowercase leading-[1.05] text-ink"
+              className="mt-6 font-serif font-semibold lowercase leading-[1.05] text-museum-ink"
               style={{ fontSize: 'clamp(48px, 8vw, 84px)' }}
               aria-label={c.title}
             >
@@ -97,7 +97,7 @@ export default function DoItHero() {
               {c.hosts.map((host, i) => (
                 <motion.span
                   key={host}
-                  className="inline-flex items-center rounded-[4px] border border-museum-brass/30 bg-museum-stone/60 px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-3"
+                  className="inline-flex items-center rounded-[4px] border border-museum-brass/35 bg-museum-stone px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-2"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.45, ease: BACK, delay: 1.15 + i * 0.06 }}
@@ -118,7 +118,7 @@ export default function DoItHero() {
                 target="_blank"
                 rel="noreferrer"
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center rounded-md border border-ink px-5 py-2.5 font-mono text-sm text-ink transition-colors duration-300 hover:border-clay hover:text-clay"
+                className="inline-flex items-center rounded-md border border-museum-ink px-5 py-2.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-clay hover:text-clay"
               >
                 {c.ctaRepo}
               </motion.a>

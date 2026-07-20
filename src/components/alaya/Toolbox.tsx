@@ -44,7 +44,7 @@ export default function Toolbox() {
 
       <InkReveal amount={0.3} className="mt-10">
         <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="mcp" className="rounded-[10px] border border-hairline bg-paper px-5">
+          <AccordionItem value="mcp" className="rounded-[10px] border border-hairline bg-museum-bg px-5">
             <AccordionTrigger className="py-5 hover:no-underline">
               <span className="flex flex-col items-start gap-1 text-left">
                 <span className="font-serif text-lg font-semibold text-ink">{a.mcpTitle}</span>
@@ -58,7 +58,7 @@ export default function Toolbox() {
 
           <AccordionItem
             value="cli"
-            className="mt-3 rounded-[10px] border border-hairline bg-paper px-5"
+            className="mt-3 rounded-[10px] border border-hairline bg-museum-bg px-5"
           >
             <AccordionTrigger className="py-5 hover:no-underline">
               <span className="font-serif text-lg font-semibold text-ink">{a.cliTitle}</span>

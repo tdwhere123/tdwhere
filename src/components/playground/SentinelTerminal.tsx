@@ -329,17 +329,20 @@ export default function SentinelTerminal() {
           : m.statusOn
 
   return (
-    <section aria-label={t.title} className="relative overflow-hidden rounded-[24px] bg-night">
+    <section aria-label={t.title} className="pg-sentinel relative overflow-hidden rounded-[24px]">
       <style>{`
-        .pg-machine {
-          --pg-chassis-hi: color-mix(in srgb, var(--museum-stone) 62%, var(--museum-brass));
-          --pg-chassis-lo: color-mix(in srgb, var(--museum-brass) 55%, var(--amber-dim));
-          --pg-crt: color-mix(in srgb, var(--night-2) 78%, black);
-          --pg-phosphor: color-mix(in srgb, var(--amber) 72%, var(--museum-stone));
-          --pg-glow: color-mix(in srgb, var(--amber) 45%, transparent);
-          --pg-glow-soft: color-mix(in srgb, var(--amber) 18%, transparent);
-          --pg-seal-muted: color-mix(in srgb, var(--seal) 58%, var(--night));
-          --pg-metal-ink: color-mix(in srgb, var(--ink) 72%, var(--museum-brass));
+        .pg-sentinel {
+          --pg-chassis-hi: color-mix(in srgb, var(--museum-stone) 58%, var(--museum-brass));
+          --pg-chassis-lo: color-mix(in srgb, var(--museum-brass) 62%, var(--museum-dark));
+          --pg-crt: color-mix(in srgb, var(--night-2) 72%, var(--museum-dark));
+          --pg-phosphor: color-mix(in srgb, var(--amber) 48%, var(--museum-brass));
+          --pg-phosphor-hi: color-mix(in srgb, var(--amber) 62%, var(--museum-stone));
+          --pg-glow: color-mix(in srgb, var(--museum-brass) 42%, transparent);
+          --pg-glow-soft: color-mix(in srgb, var(--amber) 14%, transparent);
+          --pg-seal-muted: color-mix(in srgb, var(--seal) 48%, var(--museum-dark));
+          --pg-metal-ink: color-mix(in srgb, var(--museum-ink) 70%, var(--museum-brass));
+          --pg-case-edge: color-mix(in srgb, var(--museum-brass) 55%, transparent);
+          --pg-blurb: var(--museum-muted);
         }
         @keyframes pg-led-breath { 0%,100% { opacity:.3 } 50% { opacity:1 } }
         @keyframes pg-crt-band { from { transform: translateY(-130%) } to { transform: translateY(130%) } }
@@ -350,11 +353,11 @@ export default function SentinelTerminal() {
       `}</style>
 
       <div className="mx-auto max-w-shell px-5 py-[120px] md:px-10">
-        {/* dark-room header */}
+        {/* gallery-wall header */}
         <InkReveal>
-          <Kicker light>{t.kicker}</Kicker>
-          <h2 className="mt-6 font-serif text-h2 font-semibold text-paper">{t.title}</h2>
-          <p className="mt-5 max-w-reading text-[15px] leading-[1.85] text-amber-dim">
+          <Kicker>{t.kicker}</Kicker>
+          <h2 className="mt-6 font-serif text-h2 font-semibold text-museum-ink">{t.title}</h2>
+          <p className="mt-5 max-w-reading text-[15px] leading-[1.85]" style={{ color: 'var(--pg-blurb)' }}>
             {t.blurb}
           </p>
         </InkReveal>
@@ -368,9 +371,12 @@ export default function SentinelTerminal() {
           className="mt-16"
         >
           <div
-            className="pg-machine relative mx-auto w-[min(760px,100%)] rounded-[18px] border border-amber-dim p-4 md:p-6"
+            className="pg-machine relative mx-auto w-[min(760px,100%)] rounded-[18px] border p-4 md:p-6"
             style={{
+              borderColor: 'var(--pg-case-edge)',
               background: 'linear-gradient(160deg, var(--pg-chassis-hi) 0%, var(--pg-chassis-lo) 100%)',
+              boxShadow:
+                '0 0 56px color-mix(in srgb, var(--museum-brass) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--museum-stone) 35%, transparent)',
             }}
           >
             {/* plastic grain */}
@@ -386,13 +392,13 @@ export default function SentinelTerminal() {
               style={{
                 background: 'var(--pg-crt)',
                 boxShadow:
-                  'inset 0 0 70px color-mix(in srgb, var(--night) 92%, transparent), inset 0 0 22px color-mix(in srgb, black 85%, transparent), inset 0 2px 6px color-mix(in srgb, black 90%, transparent)',
+                  'inset 0 0 70px color-mix(in srgb, var(--museum-dark) 92%, transparent), inset 0 0 22px color-mix(in srgb, var(--night-2) 88%, transparent), inset 0 2px 6px color-mix(in srgb, black 80%, transparent)',
               }}
               onClick={() => {
                 if (phaseRef.current === 'chatting') inputRef.current?.focus()
               }}
             >
-              {/* amber glow bloom */}
+              {/* brass-warm phosphor bloom — not game neon */}
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-1000"
@@ -420,12 +426,12 @@ export default function SentinelTerminal() {
                   className="flex-1 overflow-y-auto px-5 pt-5 md:px-7 md:pt-6"
                   style={{
                     scrollbarWidth: 'thin',
-                    scrollbarColor: 'color-mix(in srgb, var(--amber) 32%, transparent) transparent',
+                    scrollbarColor: 'color-mix(in srgb, var(--museum-brass) 36%, transparent) transparent',
                   }}
                 >
                   <div
                     className="font-mono text-[13px] leading-[1.75] md:text-[15px]"
-                    style={{ textShadow: '0 0 8px var(--pg-glow)' }}
+                    style={{ textShadow: '0 0 7px var(--pg-glow)' }}
                   >
                     {lines.map((l) => (
                       <p
@@ -436,8 +442,8 @@ export default function SentinelTerminal() {
                             l.kind === 'bios' || l.kind === 'note'
                               ? 'var(--amber-dim)'
                               : l.kind === 'user'
-                                ? 'var(--pg-phosphor)'
-                                : 'var(--amber)',
+                                ? 'var(--pg-phosphor-hi)'
+                                : 'var(--pg-phosphor)',
                         }}
                       >
                         {l.kind === 'sentinel' ? '> ' : l.kind === 'user' ? '# ' : ''}
@@ -447,7 +453,9 @@ export default function SentinelTerminal() {
                     {typing && (
                       <p
                         className="whitespace-pre-wrap break-words"
-                        style={{ color: typing.kind === 'bios' ? 'var(--amber-dim)' : 'var(--amber)' }}
+                        style={{
+                          color: typing.kind === 'bios' ? 'var(--amber-dim)' : 'var(--pg-phosphor)',
+                        }}
                       >
                         {typing.kind === 'sentinel' ? '> ' : ''}
                         {typing.text}
@@ -455,7 +463,7 @@ export default function SentinelTerminal() {
                       </p>
                     )}
                     {phase === 'chatting' && !typing && !outBusy && (
-                      <p aria-hidden="true" style={{ color: 'var(--amber)' }}>
+                      <p aria-hidden="true" style={{ color: 'var(--pg-phosphor)' }}>
                         {'> '}
                         <span className="pg-caret">▌</span>
                       </p>
@@ -471,7 +479,7 @@ export default function SentinelTerminal() {
                   <span
                     aria-hidden="true"
                     className="font-mono text-[13px] md:text-[15px]"
-                    style={{ color: 'var(--pg-phosphor)', textShadow: '0 0 8px var(--pg-glow)' }}
+                    style={{ color: 'var(--pg-phosphor-hi)', textShadow: '0 0 7px var(--pg-glow)' }}
                   >
                     {'>'}
                   </span>
@@ -488,10 +496,11 @@ export default function SentinelTerminal() {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    className="min-w-0 flex-1 bg-transparent font-mono text-[13px] caret-amber outline-none placeholder:opacity-40 md:text-[15px]"
+                    className="min-w-0 flex-1 bg-transparent font-mono text-[13px] outline-none placeholder:opacity-40 md:text-[15px]"
                     style={{
-                      color: 'var(--pg-phosphor)',
-                      textShadow: '0 0 8px color-mix(in srgb, var(--amber) 35%, transparent)',
+                      color: 'var(--pg-phosphor-hi)',
+                      caretColor: 'var(--pg-phosphor)',
+                      textShadow: '0 0 7px color-mix(in srgb, var(--museum-brass) 32%, transparent)',
                     }}
                   />
                 </form>
@@ -504,9 +513,9 @@ export default function SentinelTerminal() {
                 <div
                   className="pg-band absolute inset-x-0 h-1/3"
                   style={{
-                    opacity: screenOn ? 0.2 : 0,
+                    opacity: screenOn ? 0.18 : 0,
                     background:
-                      'linear-gradient(180deg, transparent, color-mix(in srgb, var(--amber) 55%, transparent) 50%, transparent)',
+                      'linear-gradient(180deg, transparent, color-mix(in srgb, var(--museum-brass) 48%, transparent) 50%, transparent)',
                   }}
                 />
               </div>
@@ -529,11 +538,12 @@ export default function SentinelTerminal() {
                 onClick={togglePower}
                 aria-label={`${m.powerLabel} · ${screenOn ? m.powerOff : m.powerOn}`}
                 aria-pressed={screenOn}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-tea-deep transition-transform duration-100 active:translate-y-px"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border transition-transform duration-100 active:translate-y-px"
                 style={{
-                  background: 'color-mix(in srgb, var(--museum-stone) 55%, var(--museum-brass))',
+                  borderColor: 'color-mix(in srgb, var(--museum-brass) 55%, var(--museum-dark))',
+                  background: 'color-mix(in srgb, var(--museum-stone) 52%, var(--museum-brass))',
                   color: 'var(--pg-metal-ink)',
-                  boxShadow: 'inset 0 -2px 3px color-mix(in srgb, black 25%, transparent)',
+                  boxShadow: 'inset 0 -2px 3px color-mix(in srgb, var(--museum-dark) 28%, transparent)',
                 }}
               >
                 <Power className="h-4 w-4" />
@@ -542,13 +552,17 @@ export default function SentinelTerminal() {
                 aria-hidden="true"
                 className={`h-2 w-2 shrink-0 rounded-full ${screenOn ? '' : 'pg-led'}`}
                 style={{
-                  background: screenOn ? 'var(--amber)' : 'var(--pg-seal-muted)',
+                  background: screenOn ? 'var(--pg-phosphor)' : 'var(--pg-seal-muted)',
                   boxShadow: screenOn
-                    ? '0 0 8px color-mix(in srgb, var(--amber) 70%, transparent)'
-                    : '0 0 6px color-mix(in srgb, var(--pg-seal-muted) 55%, transparent)',
+                    ? '0 0 8px color-mix(in srgb, var(--museum-brass) 55%, transparent)'
+                    : '0 0 6px color-mix(in srgb, var(--pg-seal-muted) 50%, transparent)',
                 }}
               />
-              <span aria-hidden="true" className="hidden h-px w-16 bg-amber-dim sm:block" />
+              <span
+                aria-hidden="true"
+                className="hidden h-px w-16 sm:block"
+                style={{ background: 'color-mix(in srgb, var(--museum-brass) 40%, transparent)' }}
+              />
               <div
                 aria-hidden="true"
                 className="ml-auto hidden h-6 w-24 rounded-sm opacity-60 md:block"
@@ -557,7 +571,10 @@ export default function SentinelTerminal() {
                     'repeating-linear-gradient(90deg, var(--amber-dim) 0 2px, transparent 2px 7px)',
                 }}
               />
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-tea-deep">
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                style={{ color: 'color-mix(in srgb, var(--museum-ink) 75%, var(--museum-brass))' }}
+              >
                 {m.silk}
               </span>
               <button
@@ -565,21 +582,34 @@ export default function SentinelTerminal() {
                 onClick={() => setSound((s) => !s)}
                 aria-label={sound ? m.soundOff : m.soundOn}
                 aria-pressed={sound}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-dim/60 text-tea-deep transition-colors duration-300 hover:text-ink"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-300"
+                style={{
+                  border: '1px solid color-mix(in srgb, var(--museum-brass) 45%, transparent)',
+                  color: 'color-mix(in srgb, var(--museum-ink) 70%, var(--museum-brass))',
+                }}
               >
                 {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
               </button>
             </div>
 
             {/* status line */}
-            <p className="relative mt-3 px-1 font-mono text-[10px] uppercase tracking-[0.18em] text-tea-deep/80">
+            <p
+              className="relative mt-3 px-1 font-mono text-[10px] uppercase tracking-[0.18em]"
+              style={{ color: 'color-mix(in srgb, var(--museum-ink) 55%, var(--museum-brass))' }}
+            >
               status · {statusText}
               <span className="ml-3 normal-case tracking-normal">{m.hint}</span>
             </p>
           </div>
 
-          {/* nameplate */}
-          <div className="mx-auto mt-8 flex w-fit max-w-full flex-col items-center gap-3 rounded-[10px] border border-museum-line/40 bg-museum-stone px-6 py-4 text-center">
+          {/* nameplate — lit stone label under the case */}
+          <div
+            className="mx-auto mt-8 flex w-fit max-w-full flex-col items-center gap-3 rounded-[10px] border bg-museum-stone px-6 py-4 text-center"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--museum-brass) 35%, transparent)',
+              boxShadow: '0 0 28px color-mix(in srgb, var(--museum-brass) 14%, transparent)',
+            }}
+          >
             <div className="flex flex-wrap items-center justify-center gap-3">
               <p className="font-mono text-xs uppercase tracking-[0.14em] text-ink-2">{m.plate}</p>
               <Stamp text={m.stamp} animateOnView />

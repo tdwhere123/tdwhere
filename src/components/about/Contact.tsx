@@ -20,9 +20,9 @@ export default function Contact() {
       aria-labelledby="contact-title"
       className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,140px)] md:px-10"
     >
-      <BrassRule className="mx-auto mb-12 h-2 w-36" />
+      <BrassRule className="mx-auto mb-12 h-2 w-36 text-museum-brass" />
       <InkReveal amount={0.25}>
-        <div className="mx-auto max-w-3xl bg-museum-stone px-6 py-12 text-center md:p-16">
+        <div className="mx-auto max-w-3xl border border-museum-brass/20 bg-museum-stone px-6 py-12 text-center md:p-16">
           <Kicker className="justify-center">{c.kicker}</Kicker>
 
           <h2
@@ -48,7 +48,7 @@ export default function Contact() {
               href={t.meta.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="group inline-flex items-center gap-3 border border-museum-line bg-museum-bg px-6 py-4 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-museum-brass/60"
+              className="group inline-flex items-center gap-3 border border-museum-brass/30 bg-museum-bg px-6 py-4 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-museum-brass/60"
             >
               <Github
                 aria-hidden="true"

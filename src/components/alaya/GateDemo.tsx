@@ -142,7 +142,7 @@ export default function GateDemo() {
             aria-pressed={auto}
             className={cn(
               'inline-flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs uppercase tracking-[0.12em] transition-colors duration-300',
-              auto ? 'border-moss/80 bg-moss/[0.08] text-ink' : 'border-hairline text-ink-3 hover:border-moss',
+              auto ? 'border-moss/70 bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))] text-ink' : 'border-hairline text-ink-3 hover:border-moss',
             )}
           >
             {auto ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
@@ -154,7 +154,7 @@ export default function GateDemo() {
       <div className="mt-6 overflow-hidden rounded-[16px] border border-hairline bg-museum-stone/40 p-4 md:p-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">
           {/* memory pool */}
-          <div className="order-3 w-full shrink-0 rounded-[10px] border border-hairline bg-paper p-4 md:order-1 md:w-[210px]">
+          <div className="order-3 w-full shrink-0 rounded-[10px] border border-hairline bg-museum-bg p-4 md:order-1 md:w-[210px]">
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-faint">{g.pool}</p>
             <div className="relative mt-3 h-[92px]">
               {pool.length === 0 && (
@@ -169,7 +169,7 @@ export default function GateDemo() {
                     initial={{ y: -22, opacity: 0, scale: 0.85 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, ease: ZEN }}
-                    className="absolute rounded-[6px] border border-hairline bg-paper-deep px-2 py-1.5"
+                    className="absolute rounded-[6px] border border-hairline bg-museum-bg-deep px-2 py-1.5"
                     style={{ top: i * 2, left: i * 2, right: 0 }}
                   >
                     <p className="line-clamp-2 text-[10px] leading-snug text-ink-3">
@@ -180,7 +180,7 @@ export default function GateDemo() {
                         <Stamp
                           text={g.written}
                           animateOnView={false}
-                          className="border-moss/80 bg-moss/[0.08] text-moss"
+                          className="border-moss/70 bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))] text-moss"
                         />
                       </span>
                     )}
@@ -209,15 +209,15 @@ export default function GateDemo() {
           <div className="order-2 flex items-center justify-center">
             <div
               aria-hidden="true"
-              className="relative h-24 w-12 overflow-hidden rounded-[4px] border-2 border-ink-3/50 bg-paper md:h-28"
+              className="relative h-24 w-12 overflow-hidden rounded-[4px] border-2 border-ink-3/50 bg-museum-bg md:h-28"
             >
               <motion.span
-                className="absolute inset-y-0 left-0 w-1/2 border-r border-hairline bg-paper-deep"
+                className="absolute inset-y-0 left-0 w-1/2 border-r border-hairline bg-museum-bg-deep"
                 animate={{ x: gateOpen ? -13 : 0 }}
                 transition={{ duration: 0.3, ease: ZEN }}
               />
               <motion.span
-                className="absolute inset-y-0 right-0 w-1/2 border-l border-hairline bg-paper-deep"
+                className="absolute inset-y-0 right-0 w-1/2 border-l border-hairline bg-museum-bg-deep"
                 animate={{ x: gateOpen ? 13 : 0 }}
                 transition={{ duration: 0.3, ease: ZEN }}
               />
@@ -232,7 +232,7 @@ export default function GateDemo() {
             />
             <span
               aria-hidden="true"
-              className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-hairline bg-paper"
+              className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border border-hairline bg-museum-bg"
             />
             <AnimatePresence mode="wait">
               <motion.div
@@ -244,7 +244,7 @@ export default function GateDemo() {
                 onAnimationComplete={handleComplete}
                 className="absolute left-0 top-1/2 w-[min(280px,88%)]"
               >
-                <div className="relative rounded-[10px] border border-hairline bg-paper p-4 shadow-card">
+                <div className="relative rounded-[10px] border border-hairline bg-museum-bg p-4 shadow-card">
                   <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-faint">
                     #{card.key}
                   </p>
@@ -256,7 +256,7 @@ export default function GateDemo() {
                       <button
                         type="button"
                         onClick={() => judge('admit', true)}
-                        className="rounded-full border border-moss/80 px-4 py-1.5 font-mono text-xs text-ink transition-colors duration-300 hover:bg-moss/[0.08]"
+                        className="rounded-full border border-moss/70 px-4 py-1.5 font-mono text-xs text-ink transition-colors duration-300 hover:bg-[color-mix(in_srgb,var(--moss)_6%,var(--museum-stone))]"
                       >
                         {g.admit}
                       </button>

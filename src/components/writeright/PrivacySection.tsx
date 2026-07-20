@@ -6,7 +6,7 @@ import InkReveal from '@/components/InkReveal'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
-/** S6 · 隐私与边界 — narrow card, dai edge grows in. */
+/** S6 · 隐私与边界 — narrow reading band, dai edge grows in. */
 export default function PrivacySection() {
   const { lang } = useLang()
   const c = writeRightContent[lang].privacy
@@ -18,7 +18,7 @@ export default function PrivacySection() {
       </InkReveal>
 
       <InkReveal delay={0.1}>
-        <div className="relative mt-10 max-w-reading overflow-hidden border border-museum-line bg-paper p-7 md:p-9">
+        <div className="relative mt-10 max-w-reading overflow-hidden border-l-[3px] border-l-transparent py-1 pl-7 md:pl-9">
           <motion.span
             aria-hidden="true"
             className="absolute left-0 top-0 h-full w-[3px] origin-top bg-dai"

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { ElementType } from 'react'
+import type { ComponentType } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
 import { useLang } from '@/context/LangContext'
@@ -16,7 +16,7 @@ const ACCENTS: Record<string, string> = {
   'write-right': 'var(--dai)',
 }
 
-const TOTEMS: Record<string, ElementType> = {
+const TOTEMS: Record<string, ComponentType<{ playing: boolean; fast: boolean }>> = {
   'do-it': DoItTotem,
   alaya: AlayaTotem,
   'write-right': WriteRightTotem,

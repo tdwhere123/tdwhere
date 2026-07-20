@@ -8,6 +8,9 @@ export type CubeStageId =
   | 'sentinel'
   | 'vegetarian'
 
+/** How the face art fills the shell opening. */
+export type CubeFaceFill = 'rect' | 'circle'
+
 export type CubeProject = {
   id: CubeStageId
   index: string
@@ -27,6 +30,10 @@ export type CubeProject = {
   ctaEn: string
   face: CubeFacePosition
   shortName: string
+  /** rect = cover square; circle = scale up so disc fills the opening */
+  fill?: CubeFaceFill
+  /** Extra zoom into the shell opening (defaults: rect 1.14, circle 1.42) */
+  fillScale?: number
 }
 
 export const cubeProjects: CubeProject[] = [
@@ -44,10 +51,12 @@ export const cubeProjects: CubeProject[] = [
     tags: [],
     image: '/cube/home.png',
     alt: 'Museum alcove with a floating stone cube',
-    ctaZh: 'SCROLL TO ROTATE',
-    ctaEn: 'SCROLL TO ROTATE',
+    ctaZh: '方向键翻面',
+    ctaEn: 'ROLL WITH ARROWS',
     face: 'front',
     shortName: 'Home',
+    fill: 'rect',
+    fillScale: 1.35,
   },
   {
     id: 'alaya',
@@ -69,6 +78,8 @@ export const cubeProjects: CubeProject[] = [
     ctaEn: 'VIEW PROJECT',
     face: 'right',
     shortName: 'Alaya',
+    fill: 'circle',
+    fillScale: 1.48,
   },
   {
     id: 'do-it',
@@ -90,6 +101,8 @@ export const cubeProjects: CubeProject[] = [
     ctaEn: 'VIEW PROJECT',
     face: 'back',
     shortName: 'do-it',
+    fill: 'circle',
+    fillScale: 1.48,
   },
   {
     id: 'write-right',
@@ -111,6 +124,8 @@ export const cubeProjects: CubeProject[] = [
     ctaEn: 'VIEW PROJECT',
     face: 'left',
     shortName: 'Write-Right',
+    fill: 'rect',
+    fillScale: 1.22,
   },
   {
     id: 'sentinel',
@@ -132,6 +147,8 @@ export const cubeProjects: CubeProject[] = [
     ctaEn: 'OPEN THE TERMINAL',
     face: 'top',
     shortName: 'SENTINEL',
+    fill: 'rect',
+    fillScale: 1.22,
   },
   {
     id: 'vegetarian',
@@ -152,6 +169,8 @@ export const cubeProjects: CubeProject[] = [
     ctaEn: 'VIEW ON GITHUB',
     face: 'bottom',
     shortName: 'Vegetarian',
+    fill: 'rect',
+    fillScale: 1.22,
   },
 ]
 

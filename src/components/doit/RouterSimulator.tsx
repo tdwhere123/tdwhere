@@ -40,7 +40,7 @@ function Mark({ failed, delay }: { failed: boolean; delay: number }) {
     )
   }
   return (
-    <motion.svg viewBox="0 0 20 20" className="h-4 w-4 text-tea" aria-hidden="true">
+    <motion.svg viewBox="0 0 20 20" className="h-4 w-4 text-clay" aria-hidden="true">
       <motion.path
         d="M3.5 10.5 C 6 12.5 7 14 8 15.5 C 10.5 11 13.5 6.5 17 4"
         fill="none"
@@ -112,19 +112,19 @@ export default function RouterSimulator() {
         whileInView={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.9, ease: ZEN }}
-        className="mx-auto max-w-demo rounded-2xl border border-hairline bg-museum-stone p-[clamp(24px,4vw,56px)]"
+        className="mx-auto max-w-demo border border-museum-brass/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
       >
         <div ref={rootRef}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <Kicker>{c.kicker}</Kicker>
-              <h2 className="mt-4 font-serif text-h2 font-semibold text-ink">{c.title}</h2>
+              <h2 className="mt-4 font-serif text-h2 font-semibold text-museum-ink">{c.title}</h2>
             </div>
             {phase !== 'idle' && (
               <button
                 type="button"
                 onClick={() => run(input, failProve)}
-                className="inline-flex items-center gap-2 rounded-md border border-hairline bg-paper px-3.5 py-2 font-mono text-xs text-ink-3 transition-colors duration-300 hover:border-clay hover:text-clay"
+                className="inline-flex items-center gap-2 rounded-md border border-museum-brass/35 bg-museum-bg px-3.5 py-2 font-mono text-xs text-ink-3 transition-colors duration-300 hover:border-clay hover:text-clay"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 {c.replay}
@@ -151,12 +151,12 @@ export default function RouterSimulator() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={c.placeholder}
                 autoComplete="off"
-                className="min-w-0 flex-1 rounded-md border border-hairline bg-paper px-4 py-3.5 font-mono text-[15px] text-ink placeholder:text-faint focus:border-clay focus:outline-none focus:ring-[3px] focus:ring-clay/10"
+                className="min-w-0 flex-1 rounded-md border border-museum-brass/30 bg-museum-bg px-4 py-3.5 font-mono text-[15px] text-museum-ink placeholder:text-ink-3 focus:border-clay focus:outline-none focus:ring-[3px] focus:ring-clay/10"
               />
               <motion.button
                 type="submit"
                 whileTap={{ scale: 0.96 }}
-                className="shrink-0 rounded-md bg-clay px-6 py-3.5 font-mono text-sm font-medium text-paper transition-colors duration-300 hover:bg-tea-deep"
+                className="shrink-0 rounded-md bg-clay px-6 py-3.5 font-mono text-sm font-medium text-museum-bg transition-colors duration-300 hover:bg-clay/85"
               >
                 {c.routeButton}
               </motion.button>
@@ -171,10 +171,10 @@ export default function RouterSimulator() {
                 type="button"
                 onClick={() => run(ex.text, ex.failProve ?? false)}
                 className={cn(
-                  'rounded-full border px-3 py-1.5 text-left font-mono text-xs transition-colors duration-300',
+                  'rounded-[4px] border px-3 py-1.5 text-left font-mono text-xs transition-colors duration-300',
                   input === ex.text
-                    ? 'border-clay bg-clay/10 text-ink'
-                    : 'border-hairline bg-paper text-ink-3 hover:border-clay hover:text-ink',
+                    ? 'border-clay bg-clay/10 text-museum-ink'
+                    : 'border-museum-brass/30 bg-museum-bg text-ink-3 hover:border-clay hover:text-museum-ink',
                 )}
               >
                 {ex.text}
@@ -184,7 +184,7 @@ export default function RouterSimulator() {
 
           {/* ——— result: three acts ——— */}
           <div className="relative mt-10" aria-live="off">
-            {phase === 'idle' && <p className="font-mono text-xs text-faint">{c.idleHint}</p>}
+            {phase === 'idle' && <p className="font-mono text-xs text-ink-3">{c.idleHint}</p>}
 
             {result && at(phase, 'route') && (
               <div key={`acts-${runId}`}>
@@ -208,7 +208,7 @@ export default function RouterSimulator() {
                         ▼
                       </span>
                     </motion.div>
-                    <div className="flex overflow-hidden rounded-md border border-hairline">
+                    <div className="flex overflow-hidden border border-museum-brass/30">
                       {c.levels.map((lv) => {
                         const active = lv === result.level
                         return (
@@ -220,7 +220,7 @@ export default function RouterSimulator() {
                             transition={{ duration: 0.4, ease: ZEN, delay: reduced ? 0 : 0.45 }}
                             className={cn(
                               'flex-1 px-2 py-3 text-center font-mono text-xs tracking-[0.12em] transition-colors duration-500',
-                              active ? 'bg-clay/15 font-medium text-clay' : 'bg-paper text-faint',
+                              active ? 'bg-clay/15 font-medium text-clay' : 'bg-museum-bg text-ink-3',
                             )}
                           >
                             {lv}
@@ -235,7 +235,7 @@ export default function RouterSimulator() {
 
                   {/* signals */}
                   <motion.p
-                    className="mt-4 font-mono text-xs text-ink-3"
+                    className="mt-4 font-mono text-xs text-ink-2"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: ZEN, delay: reduced ? 0 : 0.55 }}
@@ -247,14 +247,14 @@ export default function RouterSimulator() {
 
                   {/* buckets */}
                   <div className="mt-4">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
                       {c.bucketsLabel}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {result.buckets.map((b, i) => (
                         <motion.span
                           key={b}
-                          className="rounded-full border border-clay/50 bg-clay/5 px-3 py-1 font-mono text-xs text-ink-2"
+                          className="rounded-[4px] border border-clay/45 bg-clay/5 px-3 py-1 font-mono text-xs text-ink-2"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{
@@ -303,10 +303,10 @@ export default function RouterSimulator() {
                                 delay: reduced ? 0 : i * 0.05,
                               }}
                               className={cn(
-                                'rounded-md border px-2.5 py-2 font-mono text-[11px] leading-tight',
+                                'border px-2.5 py-2 font-mono text-[11px] leading-tight',
                                 seated
-                                  ? 'border-clay bg-clay/10 text-ink'
-                                  : 'border-hairline bg-paper text-ink-3',
+                                  ? 'border-clay bg-clay/10 text-museum-ink'
+                                  : 'border-museum-brass/25 bg-museum-bg text-ink-3',
                               )}
                             >
                               {agent}
@@ -314,7 +314,7 @@ export default function RouterSimulator() {
                           )
                         })}
                       </div>
-                      <p className="mt-3 font-mono text-[11px] text-faint">{c.delegateNote}</p>
+                      <p className="mt-3 font-mono text-[11px] text-ink-3">{c.delegateNote}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -351,7 +351,7 @@ export default function RouterSimulator() {
                               <span
                                 className={cn(
                                   'grid h-6 w-6 shrink-0 place-items-center rounded-[4px] border',
-                                  failed ? 'border-seal bg-seal/5' : 'border-tea bg-paper',
+                                  failed ? 'border-seal bg-seal/5' : 'border-clay bg-museum-bg',
                                 )}
                               >
                                 <Mark failed={failed} delay={(reduced ? 0 : i * 0.4) + 0.15} />
@@ -406,20 +406,20 @@ export default function RouterSimulator() {
           </div>
 
           {/* ——— act 4 · LEARN (off by default, disabled) ——— */}
-          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-hairline pt-6">
+          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-museum-brass/25 pt-6">
             <button
               type="button"
               disabled
               aria-disabled="true"
               title={c.learnTip}
-              className="relative h-5 w-10 shrink-0 cursor-not-allowed rounded-full bg-hairline/70 opacity-60"
+              className="relative h-5 w-10 shrink-0 cursor-not-allowed rounded-full bg-museum-brass/25 opacity-60"
             >
-              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-paper shadow-xs" />
+              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-museum-bg shadow-xs" />
             </button>
-            <span className="font-mono text-xs text-faint">
+            <span className="font-mono text-xs text-ink-3">
               {c.learnLabel} · {c.learnState}
             </span>
-            <span className="w-full font-mono text-[11px] leading-relaxed text-faint sm:w-auto sm:flex-1">
+            <span className="w-full font-mono text-[11px] leading-relaxed text-ink-3 sm:w-auto sm:flex-1">
               {c.learnTip}
             </span>
           </div>
