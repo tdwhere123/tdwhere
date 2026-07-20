@@ -4,9 +4,19 @@ import { motion } from 'framer-motion'
 import { Power, Volume2, VolumeX } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import { playground } from '@/content/playground'
+import {
+  getCardByCommand,
+  isCardUnlocked,
+  unlockCard,
+  unlockedCount,
+  type CardId,
+  type SentinelCard,
+} from '@/lib/sentinel-eggs'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
 import Stamp from '@/components/Stamp'
+import EggModal from '@/components/playground/EggModal'
+import FinaleMask from '@/components/playground/FinaleMask'
 
 type Phase = 'off' | 'booting' | 'awake' | 'chatting' | 'sleeping'
 type LineKind = 'bios' | 'sentinel' | 'user' | 'note'
@@ -45,6 +55,9 @@ export default function SentinelTerminal() {
   const [input, setInput] = useState('')
   const [sound, setSound] = useState(false)
   const [outBusy, setOutBusy] = useState(false)
+  const [eggOpen, setEggOpen] = useState(false)
+  const [eggCard, setEggCard] = useState<SentinelCard | null>(null)
+  const [finaleOpen, setFinaleOpen] = useState(false)
 
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -224,6 +237,24 @@ export default function SentinelTerminal() {
     sleepPendingRef.current = false
   }, [say, sleep])
 
+  const revealCard = useCallback((id: CardId, card: SentinelCard) => {
+    unlockCard(id)
+    setEggCard(card)
+    setEggOpen(true)
+  }, [])
+
+  /** Drop a concept card if the command matches; returns true when handled. */
+  const tryDropCard = useCallback(
+    (cmd: string, lines: string[], repeat: string[]) => {
+      const card = getCardByCommand(cmd)
+      if (!card) return false
+      const seen = isCardUnlocked(card.id)
+      void say(seen ? repeat : lines).then(() => revealCard(card.id, card))
+      return true
+    },
+    [revealCard, say],
+  )
+
   const handleCommand = useCallback(
     (raw: string) => {
       const s = tRef.current
@@ -290,14 +321,59 @@ export default function SentinelTerminal() {
         case 'sudo':
           void say(s.sudo)
           return
+        case 'cards':
+        case '卡片': {
+          const n = unlockedCount()
+          const progress =
+            lang === 'zh'
+              ? `概念图进度：${n} / 5。`
+              : `Concept cards: ${n} / 5.`
+          void say([progress, ...s.cardsStatus])
+          return
+        }
+        // —— concept-art card drops (commands also scattered as site clues) ——
+        case 'interrogate':
+        case '审讯':
+        case 'ask':
+          tryDropCard(cmd, s.card01, s.card01Repeat)
+          return
+        case 'leads':
+        case '线索':
+        case 'investigate':
+        case '调查':
+          tryDropCard(cmd, s.card02, s.card02Repeat)
+          return
+        case 'materials':
+        case '材料':
+        case 'archive':
+        case '档案':
+          tryDropCard(cmd, s.card03, s.card03Repeat)
+          return
+        case 'ledger':
+        case '账本':
+        case 'notebook':
+          tryDropCard(cmd, s.card04, s.card04Repeat)
+          return
+        case 'publish':
+        case '发布':
+        case 'history':
+        case '历史':
+          tryDropCard(cmd, s.card05, s.card05Repeat)
+          return
         default: {
+          // Any other alias registered on a card
+          const card = getCardByCommand(cmd)
+          if (card) {
+            tryDropCard(cmd, s.cardGeneric, s.cardGenericRepeat)
+            return
+          }
           const i = fallbackIdxRef.current
           fallbackIdxRef.current = (i + 1) % s.fallback.length
           void say([s.fallback[i]])
         }
       }
     },
-    [pushLine, runSleep, say],
+    [pushLine, runSleep, say, tryDropCard],
   )
 
   const onSubmit = useCallback(
@@ -618,6 +694,14 @@ export default function SentinelTerminal() {
           </div>
         </motion.div>
       </div>
+
+      <EggModal
+        card={eggCard}
+        open={eggOpen}
+        onClose={() => setEggOpen(false)}
+        onReadyForFinale={() => setFinaleOpen(true)}
+      />
+      <FinaleMask open={finaleOpen} onClose={() => setFinaleOpen(false)} />
     </section>
   )
 }

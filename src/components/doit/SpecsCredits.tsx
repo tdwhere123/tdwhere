@@ -5,6 +5,7 @@ import { doItContent } from '@/content/doIt'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
 import BrassAccent from '@/components/doit/BrassAccent'
+import SiteClue from '@/components/eggs/SiteClue'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
@@ -84,7 +85,19 @@ export default function SpecsCredits() {
       </div>
 
       <InkReveal delay={0.2}>
-        <BrassAccent className="mx-auto mt-14 h-2 w-36" />
+        <div className="relative mx-auto mt-14 flex w-fit flex-col items-center gap-2">
+          <BrassAccent className="h-2 w-36" />
+          <SiteClue
+            variant="marginalia"
+            className="mt-1"
+            label={{ zh: '可用线索', en: 'available leads' }}
+            hint={{
+              zh: '流程之屋也藏着调查行动。去 SENTINEL 输入 leads。',
+              en: 'Even process rooms hide investigation actions. Type leads in SENTINEL.',
+            }}
+            command="leads"
+          />
+        </div>
       </InkReveal>
     </section>
   )

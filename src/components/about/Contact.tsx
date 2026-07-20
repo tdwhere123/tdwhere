@@ -6,6 +6,7 @@ import CopyEmail from '@/components/CopyEmail'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
 import BrassRule from '@/components/about/BrassRule'
+import SiteClue from '@/components/eggs/SiteClue'
 
 /**
  * S4 · 联系 Say Hello — stone panel: 「写信来。」+ copy-email pill
@@ -68,6 +69,18 @@ export default function Contact() {
           <p className="mx-auto mt-10 max-w-md font-mono text-xs leading-relaxed text-museum-muted">
             {c.note}
           </p>
+
+          <div className="mt-6 flex justify-center">
+            <SiteClue
+              variant="stamp"
+              label={{ zh: 'LEDGER', en: 'LEDGER' }}
+              hint={{
+                zh: '纸质账本还在运转。去角落的 SENTINEL 终端试试。',
+                en: 'The paper ledger still runs. Try it in the SENTINEL terminal at the playground.',
+              }}
+              command="ledger"
+            />
+          </div>
         </div>
       </InkReveal>
     </section>
