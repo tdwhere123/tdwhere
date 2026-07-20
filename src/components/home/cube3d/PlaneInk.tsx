@@ -44,6 +44,8 @@ export default function PlaneInk({
   const [titleSide, setTitleSide] = useState<'left' | 'right'>(
     anchor.preferRight ? 'right' : 'left',
   )
+  /** Park the panel beside the cube only when the face changes — live orbit must not jitter the ink. */
+  const [parked, setParked] = useState({ x: anchor.x, y: anchor.y })
   const preferRightRef = useRef(anchor.preferRight)
   preferRightRef.current = anchor.preferRight
 
@@ -74,7 +76,10 @@ export default function PlaneInk({
   useEffect(() => {
     setPhase('title')
     setTitleSide(preferRightRef.current ? 'right' : 'left')
+    setParked({ x: anchor.x, y: anchor.y })
     onLockChange?.(false)
+    // Only re-park when the face / write cycle changes — not on every orbit frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: ignore live anchor
   }, [writeKey, onLockChange])
 
   useEffect(() => {
@@ -104,15 +109,15 @@ export default function PlaneInk({
 
   const panelSide = phase === 'body' ? 'right' : titleSide
 
-  /** Sit beside the cube (anchor), not pinned to the far corner of the viewport. */
+  /** Sit beside the cube (parked anchor), not pinned to the far corner of the viewport. */
   const panelStyle = useMemo(() => {
-    const top = clamp(anchor.y * 100 - 6, 24, 58)
+    const top = clamp(parked.y * 100 - 6, 24, 58)
     const maxWidth = `min(360px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
     // Leave room for the panel itself so it never hugs the far edge.
     const maxStart = 100 - EDGE_PAD_PCT - 26
 
     if (panelSide === 'right') {
-      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+      const left = clamp(parked.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
       return {
         top: `${top}%`,
         left: `${left}%`,
@@ -121,18 +126,18 @@ export default function PlaneInk({
       } as const
     }
 
-    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+    const right = clamp((1 - parked.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
     return {
       top: `${top}%`,
       right: `${right}%`,
       left: 'auto',
       maxWidth,
     } as const
-  }, [anchor.x, anchor.y, panelSide])
+  }, [parked.x, parked.y, panelSide])
 
   return (
     <div
-      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible transition-[top,left,right] duration-500 ease-zen"
+      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible"
       style={panelStyle}
     >
       <button

@@ -241,6 +241,38 @@ function MobileCubeShowcase() {
   )
 }
 
+function RollDownHint({
+  anchor,
+  lang,
+}: {
+  anchor: CubeScreenAnchor
+  lang: 'zh' | 'en'
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute z-[5] flex -translate-x-1/2 flex-col items-center gap-1"
+      style={{
+        left: `${anchor.x * 100}%`,
+        top: `${Math.min(anchor.y * 100 + 7, 88)}%`,
+      }}
+      aria-hidden="true"
+    >
+      <svg width="22" height="28" viewBox="0 0 22 28" fill="none" className="animate-pulse opacity-70">
+        <path
+          d="M11 2v18M5 14l6 8 6-8"
+          stroke="var(--museum-brass)"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted">
+        {lang === 'zh' ? 'S · 向前滚' : 'S · roll toward you'}
+      </span>
+    </div>
+  )
+}
+
 function DesktopCubeShowcase() {
   const { lang } = useLang()
   const [activeId, setActiveId] = useState<CubeStageId>('home')
@@ -279,6 +311,8 @@ function DesktopCubeShowcase() {
         onFaceChange={onFaceChange}
         onAnchor={onAnchor}
       />
+
+      <RollDownHint anchor={anchor} lang={lang} />
 
       <PlaneInk
         project={project}

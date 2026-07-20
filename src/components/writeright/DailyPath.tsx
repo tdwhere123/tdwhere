@@ -30,7 +30,7 @@ const TypeLine = memo(function TypeLine({ text, active }: { text: string; active
   const done = shown.length >= text.length
 
   return (
-    <span className="font-mono text-[11px] text-museum-brass">
+    <span className="block max-w-full break-all font-mono text-[10px] leading-snug text-museum-brass sm:text-[11px]">
       {shown}
       {active && !done && (
         <span aria-hidden="true" className="animate-caret-blink">
@@ -97,7 +97,7 @@ export default function DailyPath() {
                     onFocus={() => setHovered(step.cmd)}
                     onBlur={() => setHovered(null)}
                     className={cn(
-                      'min-w-0 flex-1 border p-4 text-left transition-colors duration-500',
+                      'flex min-w-0 flex-1 flex-col overflow-hidden border p-3 text-left transition-colors duration-500 sm:p-4',
                       isLit
                         ? 'border-dai bg-[color-mix(in_srgb,var(--dai)_9%,var(--museum-bg))]'
                         : 'border-museum-line bg-museum-stone/40',
@@ -105,14 +105,14 @@ export default function DailyPath() {
                   >
                     <span
                       className={cn(
-                        'block truncate font-mono text-sm font-medium transition-colors duration-500',
+                        'block truncate font-mono text-[12px] font-medium transition-colors duration-500 sm:text-sm',
                         isLit ? 'text-dai' : 'text-ink-2',
                       )}
                     >
                       {step.cmd}
                     </span>
-                    <span className="mt-1 block text-xs text-faint">{step.note}</span>
-                    <span className="mt-3 block h-5">
+                    <span className="mt-1 block truncate text-[11px] text-faint sm:text-xs">{step.note}</span>
+                    <span className="mt-2 block min-h-[2.5rem] overflow-hidden break-all leading-snug">
                       <TypeLine key={step.example} text={step.example} active={hovered === step.cmd} />
                     </span>
                   </button>
@@ -160,7 +160,7 @@ export default function DailyPath() {
                     {step.cmd}
                   </span>
                   <span className="ml-3 text-xs text-faint">{step.note}</span>
-                  <span className="mt-2 block h-5">
+                  <span className="mt-2 block min-h-[2.5rem] overflow-hidden break-all leading-snug">
                     <TypeLine key={step.example} text={step.example} active={hovered === step.cmd} />
                   </span>
                 </button>

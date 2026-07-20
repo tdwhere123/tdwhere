@@ -5,7 +5,7 @@ import type { CubeFacePosition, CubeStageId } from '../cube-data'
 import { cubeProjects } from '../cube-data'
 
 export const CUBE_SIZE = 1.85
-const ROLL_SEC = 0.55
+const ROLL_SEC = 0.72
 /** Soft roam bounds on the museum floor (world units). */
 const BOUND_X = 3.2
 const BOUND_Z = 2.0
@@ -251,7 +251,7 @@ export function useRollingCube({
       tweenRef.current = gsap.to(proxy, {
         t: 1,
         duration: ROLL_SEC,
-        ease: 'power2.inOut',
+        ease: 'power3.inOut',
         onUpdate: () => {
           const a = angle * proxy.t
           _qDelta.setFromAxisAngle(axis, a)

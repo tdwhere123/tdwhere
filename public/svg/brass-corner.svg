@@ -1,18 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-hidden="true">
-  <!-- Museum corner ornament  original geometric mark, brass stroke -->
-  <path
-    d="M8 40 V12 H36"
-    stroke="#8a734e"
-    stroke-width="1.25"
-    stroke-linecap="square"
-    opacity="0.85"
-  />
-  <path
-    d="M8 28 V18 H22"
-    stroke="#8a734e"
-    stroke-width="0.6"
-    stroke-linecap="square"
-    opacity="0.45"
-  />
-  <circle cx="8" cy="12" r="1.6" fill="#8a734e" opacity="0.7" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <path d="M8 40 V12 H36" stroke="#8a734e" stroke-width="1.25" stroke-linecap="square" opacity="0.85"/>
+  <path d="M8 28 V18 H22" stroke="#8a734e" stroke-width="0.6" stroke-linecap="square" opacity="0.45"/>
+  <circle cx="8" cy="12" r="1.6" fill="#8a734e" opacity="0.7"/>
 </svg>
