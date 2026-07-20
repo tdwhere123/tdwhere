@@ -119,7 +119,7 @@ function ScreenAnchorReporter({
     v.current.project(camera)
     const x = (v.current.x + 1) / 2
     const y = (1 - v.current.y) / 2
-    if (Math.abs(x - last.current.x) < 0.004 && Math.abs(y - last.current.y) < 0.004) return
+    if (Math.abs(x - last.current.x) < 0.012 && Math.abs(y - last.current.y) < 0.012) return
     last.current = { x, y }
     onAnchor({
       x: THREE.MathUtils.clamp(x, 0.1, 0.9),

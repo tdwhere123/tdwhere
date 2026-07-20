@@ -1,6 +1,6 @@
-import { asset } from '@/lib/asset'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
 
 type IllustrationPlateProps = {
@@ -16,6 +16,61 @@ type IllustrationPlateProps = {
   className?: string
   /** Prefer lazy for below-fold plates */
   priority?: boolean
+}
+
+/** Inline brass corner — avoids external SVG MIME/parse failures on Pages. */
+function BrassCorner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 48 48"
+      fill="none"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8 40 V12 H36"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="square"
+        opacity="0.85"
+      />
+      <path
+        d="M8 28 V18 H22"
+        stroke="currentColor"
+        strokeWidth="0.6"
+        strokeLinecap="square"
+        opacity="0.45"
+      />
+      <circle cx="8" cy="12" r="1.6" fill="currentColor" opacity="0.7" />
+    </svg>
+  )
+}
+
+function BrassLozenge({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 48 48"
+      fill="none"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M24 6 L42 24 L24 42 L6 24 Z"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        opacity="0.8"
+      />
+      <path
+        d="M24 14 L34 24 L24 34 L14 24 Z"
+        stroke="currentColor"
+        strokeWidth="0.55"
+        opacity="0.4"
+      />
+      <circle cx="24" cy="24" r="1.4" fill="currentColor" opacity="0.55" />
+    </svg>
+  )
 }
 
 /**
@@ -56,19 +111,8 @@ export default function IllustrationPlate({
             bleed ? 'border-x-0' : '',
           )}
         >
-          {/* quiet brass corner ornaments */}
-          <img
-            src={asset('svg/brass-corner.svg')}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-3 z-[1] h-7 w-7 select-none opacity-70 md:left-4 md:top-4 md:h-8 md:w-8"
-          />
-          <img
-            src={asset('svg/brass-corner.svg')}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-3 right-3 z-[1] h-7 w-7 rotate-180 select-none opacity-70 md:bottom-4 md:right-4 md:h-8 md:w-8"
-          />
+          <BrassCorner className="pointer-events-none absolute left-3 top-3 z-[1] h-7 w-7 text-museum-brass opacity-70 md:left-4 md:top-4 md:h-8 md:w-8" />
+          <BrassCorner className="pointer-events-none absolute bottom-3 right-3 z-[1] h-7 w-7 rotate-180 text-museum-brass opacity-70 md:bottom-4 md:right-4 md:h-8 md:w-8" />
 
           <img
             src={asset(src)}
@@ -88,13 +132,8 @@ export default function IllustrationPlate({
       {caption ? (
         <InkReveal delay={0.16} className={cn(bleed && 'mx-auto max-w-shell px-5 md:px-10')}>
           <figcaption className="mt-5 flex items-start gap-3 font-mono text-xs leading-relaxed text-museum-muted md:text-[13px]">
-            <img
-              src={asset('svg/brass-lozenge.svg')}
-              alt=""
-              aria-hidden="true"
-              className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80"
-            />
-            <span>{caption}</span>
+            <BrassLozenge className="mt-0.5 h-3.5 w-3.5 shrink-0 text-museum-brass opacity-80" />
+            <span className="min-w-0 flex-1 break-words">{caption}</span>
           </figcaption>
         </InkReveal>
       ) : null}
