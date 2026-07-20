@@ -58,6 +58,10 @@ export default function SentinelTerminal() {
   const [eggOpen, setEggOpen] = useState(false)
   const [eggCard, setEggCard] = useState<SentinelCard | null>(null)
   const [finaleOpen, setFinaleOpen] = useState(false)
+  const eggOpenRef = useRef(false)
+  eggOpenRef.current = eggOpen
+  const finaleOpenRef = useRef(false)
+  finaleOpenRef.current = finaleOpen
 
   const phaseRef = useRef(phase)
   phaseRef.current = phase
@@ -239,8 +243,16 @@ export default function SentinelTerminal() {
 
   const revealCard = useCallback((id: CardId, card: SentinelCard) => {
     unlockCard(id)
+    inputRef.current?.blur()
     setEggCard(card)
     setEggOpen(true)
+  }, [])
+
+  const closeEgg = useCallback(() => {
+    setEggOpen(false)
+    window.setTimeout(() => {
+      if (!finaleOpenRef.current) inputRef.current?.focus()
+    }, 80)
   }, [])
 
   /** Drop a concept card if the command matches; returns true when handled. */
@@ -373,19 +385,23 @@ export default function SentinelTerminal() {
         }
       }
     },
-    [pushLine, runSleep, say, tryDropCard],
+    [lang, pushLine, runSleep, say, tryDropCard],
   )
 
   const onSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault()
       if (phaseRef.current !== 'chatting' || sleepPendingRef.current) return
+      // Ignore keystrokes while a card modal / finale mask owns the screen.
+      if (eggOpenRef.current || finaleOpenRef.current) return
+      // Wait for typewriter to finish so commands don't pile up silently.
+      if (outBusy) return
       const raw = input.trim()
       if (!raw) return
       setInput('')
       handleCommand(raw)
     },
-    [handleCommand, input],
+    [handleCommand, input, outBusy],
   )
 
   const onInputKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
@@ -393,7 +409,8 @@ export default function SentinelTerminal() {
   }, [])
 
   const screenOn = phase !== 'off'
-  const inputEnabled = phase === 'chatting'
+  const inputEnabled = phase === 'chatting' && !eggOpen && !finaleOpen
+  const inputAccepting = inputEnabled && !outBusy
   const m = t.machine
   const statusText =
     phase === 'off'
@@ -565,9 +582,18 @@ export default function SentinelTerminal() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={onInputKeyDown}
-                    disabled={!inputEnabled}
+                    disabled={!inputAccepting}
+                    aria-busy={outBusy || undefined}
                     aria-label={m.inputLabel}
-                    placeholder={inputEnabled ? m.placeholder : ''}
+                    placeholder={
+                      !inputEnabled
+                        ? ''
+                        : outBusy
+                          ? lang === 'zh'
+                            ? 'SENTINEL 正在回答 …'
+                            : 'SENTINEL is speaking …'
+                          : m.placeholder
+                    }
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="off"
@@ -577,6 +603,7 @@ export default function SentinelTerminal() {
                       color: 'var(--pg-phosphor-hi)',
                       caretColor: 'var(--pg-phosphor)',
                       textShadow: '0 0 7px color-mix(in srgb, var(--museum-brass) 32%, transparent)',
+                      opacity: inputAccepting ? 1 : 0.55,
                     }}
                   />
                 </form>
@@ -698,10 +725,19 @@ export default function SentinelTerminal() {
       <EggModal
         card={eggCard}
         open={eggOpen}
-        onClose={() => setEggOpen(false)}
-        onReadyForFinale={() => setFinaleOpen(true)}
+        onClose={closeEgg}
+        onReadyForFinale={() => {
+          setFinaleOpen(true)
+          inputRef.current?.blur()
+        }}
       />
-      <FinaleMask open={finaleOpen} onClose={() => setFinaleOpen(false)} />
+      <FinaleMask
+        open={finaleOpen}
+        onClose={() => {
+          setFinaleOpen(false)
+          window.setTimeout(() => inputRef.current?.focus(), 80)
+        }}
+      />
     </section>
   )
 }

@@ -55,10 +55,22 @@ export default function EggModal({ card, open, onClose, onReadyForFinale }: Prop
     }
   }, [open, card])
 
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
   const handleClose = useCallback(() => {
     const complete = unlockedCount() >= ALL_CARD_IDS.length
     onClose()
-    if (complete) onReadyForFinale?.()
+    // Defer finale so egg modal exit animation doesn't fight the mask.
+    if (complete) {
+      window.setTimeout(() => onReadyForFinale?.(), 280)
+    }
   }, [onClose, onReadyForFinale])
 
   const title = card ? card.title[lang] : ''
