@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-hidden="true">
+  <!-- Museum lozenge ornament  original geometric mark, brass stroke -->
+  <path
+    d="M24 6 L42 24 L24 42 L6 24 Z"
+    stroke="#8a734e"
+    stroke-width="1.1"
+    opacity="0.8"
+  />
+  <path
+    d="M24 14 L34 24 L24 34 L14 24 Z"
+    stroke="#8a734e"
+    stroke-width="0.55"
+    opacity="0.4"
+  />
+  <circle cx="24" cy="24" r="1.4" fill="#8a734e" opacity="0.55" />
+</svg>

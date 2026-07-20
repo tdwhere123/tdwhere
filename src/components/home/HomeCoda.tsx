@@ -4,6 +4,7 @@ import { useLang } from '@/context/LangContext'
 import useCopyText from '@/hooks/useCopyText'
 import Stamp from '@/components/Stamp'
 import SealMark from '@/components/SealMark'
+import SiteClue from '@/components/eggs/SiteClue'
 import BrassRule from './svg/BrassRule'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
@@ -19,7 +20,18 @@ export default function HomeCoda() {
   return (
     <section className="relative mx-auto max-w-reading px-5 py-24 text-center md:py-32">
       <BrassRule className="mx-auto mb-10 h-2 w-40" />
-      <SealMark size={36} className="mx-auto mb-8 opacity-80" />
+      <div className="relative mx-auto mb-2 flex w-fit items-center justify-center gap-3">
+        <SealMark size={36} className="opacity-80" />
+        <SiteClue
+          variant="timestamp"
+          label={{ zh: '审讯', en: 'ASK' }}
+          hint={{
+            zh: '去角落的 SENTINEL 终端输入 interrogate。',
+            en: 'In the playground SENTINEL terminal, type interrogate.',
+          }}
+          command="interrogate"
+        />
+      </div>
 
       <p className="font-serif text-[24px] font-semibold leading-snug text-museum-ink md:text-[28px]">
         {line}

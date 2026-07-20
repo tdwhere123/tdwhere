@@ -10,11 +10,12 @@ import Recall from '@/components/alaya/Recall'
 import Gardeners from '@/components/alaya/Gardeners'
 import Footnote from '@/components/alaya/Footnote'
 import Toolbox from '@/components/alaya/Toolbox'
+import IllustrationPlate from '@/components/IllustrationPlate'
 
 /**
  * /alaya — Do-SOUL-Alaya 「记忆之屋」.
- * S1 Hero (Gate Open) · S2 The Itch · S3 Grammar 3×4 · S4 Lifecycle + Gate Demo
- * S5 Recall pipeline · S6 Gardeners · S7 Honest footnote · S8 Toolbox · S9 Next.
+ * S1 Hero · S2 The Itch · plate · S3 Grammar · S4 Lifecycle · S5 Recall
+ * · S6 Gardeners · S7 Footnote · S8 Toolbox · S9 Next.
  */
 export default function Alaya() {
   const { lang } = useLang()
@@ -23,6 +24,15 @@ export default function Alaya() {
     <>
       <Hero />
       <Itch />
+
+      <IllustrationPlate
+        src="illustrations/alaya-memory-garden.png"
+        alt={a.plate.alt}
+        kicker={a.plate.kicker}
+        caption={a.plate.caption}
+        variant="bleed"
+      />
+
       <GateDivider className="mx-auto max-w-shell px-5 md:px-10" />
       <Grammar />
       <Lifecycle />

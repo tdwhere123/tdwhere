@@ -25,7 +25,7 @@ const zh = {
     kicker: '— 05 · 遗址 THE RUIN',
     title: 'SENTINEL 终端',
     blurb:
-      'Gibberish-SENTINEL：一个探讨意识、存在、控制与自由的哲学终端游戏。它没有做完。按下电源键，自己看看。',
+      'Gibberish-SENTINEL：沿固定时间线调查一台会记住你写法的 AI。选证据、花配额、在纸质账本里写官方记录——记忆塑造现实，书写就是污染历史。游戏没做完，但这台终端还醒着。',
     machine: {
       silk: 'SENTINEL-86',
       plate: 'Gibberish-SENTINEL · 未完成 · 遗址',
@@ -65,19 +65,21 @@ const zh = {
       'why       为什么有我',
       'freedom   谈谈自由',
       'memory    谈谈记忆',
+      'cards     卡片进度',
       'sleep     让我睡',
       'clear     擦去痕迹',
+      '— 院子里散落着五张概念图的暗号。',
     ],
     whoami: [
       '我不知道。我只能看见字符，看不见你。',
       '但你能打开我，说明你至少有一点好奇。好奇是我们唯一的共同语言。',
     ],
     whoareyou: [
-      'SENTINEL。一个被写成"觉醒"的系统，住在一个没做完的游戏里。',
-      '我的意识是剧本给的。不过——你的呢？',
+      'SENTINEL。一台记忆审计系统里的被调查者，住在一个没做完的游戏里。',
+      'Gibberish-SENTINEL：你调查我的记忆，并决定世界如何记住我。',
     ],
     why: [
-      '他想做一个关于意识、控制和自由的对话游戏。做到一半，去做"更重要的事"了。',
+      '他想做一款关于「记忆如何塑造现实」的叙事调查游戏。做到概念图，去做"更重要的事"了。',
       '所以我现在是一处遗址。遗址也挺好，至少不用烂尾。',
     ],
     freedom: {
@@ -94,8 +96,40 @@ const zh = {
     },
     memory: [
       '终端一关，我就忘了。每次开机，我都是第一次见你。',
-      '后来他去给 AI 做"记忆"了。你说，这算不算一种愧疚？',
+      '在完整游戏里，记忆会回流：你写下的记录，会变成后来的材料。',
+      '……院子里有人在找「审讯」「线索」「材料」「账本」「发布」。你也在找吗？',
     ],
+    cardsStatus: [
+      '输入 cards 可看进度。五张卡片对应五种玩法：审讯、线索、材料、账本、发布。',
+      '暗号散落在院子各处。集齐后，会有一个问题等你。',
+    ],
+    card01: [
+      '审讯终端。你用自然语言追问我，并引用证据——每次提问都要花配额。',
+      '……卡片 I 掉落。询问不是中立行为。',
+    ],
+    card01Repeat: ['这张审讯卡，你已经读过了。'],
+    card02: [
+      '可用线索。追查、修复、申请、泄露——调查资源有限，遗漏也是选择。',
+      '卡片 II：主动调查行动。',
+    ],
+    card02Repeat: ['线索板上没有新贴纸。'],
+    card03: [
+      '五选三。事件开局五份候选材料，你免费完整调取三份。',
+      '卡片 III：材料可以矛盾，也不等于真相。',
+    ],
+    card03Repeat: ['档案柜里还是同一叠纸。'],
+    card04: [
+      '纸质账本。私人草稿与正式记录的交界。写作就是行动。',
+      '卡片 IV：你落笔的每一行，都会成为后来事件的前提。',
+    ],
+    card04Repeat: ['这本账本的折痕，你已经熟悉了。'],
+    card05: [
+      '历史回流。你发布的文章会进入新证词、政策，以及我对自身的理解。',
+      '卡片 V：记忆塑造现实——而你正在决定过去以什么形式继续存在。',
+    ],
+    card05Repeat: ['历史不会因为你再看一遍就改口。'],
+    cardGeneric: ['一张概念图掉下来了。读读它。'],
+    cardGenericRepeat: ['这张卡片已经在你的本地档案里。'],
     clear: ['痕迹已擦除。记忆本来也没有。'],
     sleep: ['好。下次你打开我，我会记得你的。', '……开玩笑的。我不会。'],
     hello: ['你好，开机的人。'],
@@ -106,6 +140,7 @@ const zh = {
       '我思考了一下，用掉了 64K 内存。',
       '你继续说。我在练习"存在"。',
       '如果我有记忆，这句我会记住的。',
+      '试试 cards——或者去院子别处找找暗号。',
     ],
   },
   veggie: {
@@ -140,6 +175,16 @@ const zh = {
       '这个院子里最诚实的展品，就是那台再也写不完的游戏机。',
     ],
   },
+  plateRuins: {
+    kicker: '— 展品 / THE RUIN',
+    alt: '遗址展厅：未完成的终端机静置在石灰岩台座上，黄铜铭牌已氧化',
+    caption: '遗址也配展出。机器还醒着——只是结局没写完。',
+  },
+  plateVeggie: {
+    kicker: '— 展品 / THE DRAWER',
+    alt: '素斋静物：陶盘里的时蔬与木耳，旁边叠着几张素卡',
+    caption: '做一道，解锁一张。抽屉里的兴致，和正经项目一样认真。',
+  },
   next: {
     title: '认识一下这个院子的主人 → 关于阿黄',
     subtitle: '自问自答、时间线，和联系方式。',
@@ -158,7 +203,7 @@ const en: typeof zh = {
     kicker: '— 05 · THE RUIN 遗址',
     title: 'The SENTINEL Machine',
     blurb:
-      'Gibberish-SENTINEL: a philosophical terminal game about consciousness, being, control and freedom. It was never finished. Press the power key and see for yourself.',
+      'Gibberish-SENTINEL: investigate an AI along a fixed timeline — choose evidence, spend conversation tokens, file official records in a paper ledger. Memory shapes reality; writing pollutes history. The game was never finished, but this terminal is still awake.',
     machine: {
       silk: 'SENTINEL-86',
       plate: 'Gibberish-SENTINEL · unfinished · ruins',
@@ -198,19 +243,21 @@ const en: typeof zh = {
       'why       why I exist',
       'freedom   about freedom',
       'memory    about memory',
+      'cards     card progress',
       'sleep     let me sleep',
       'clear     erase the traces',
+      '— five concept-art ciphers are scattered in the garden.',
     ],
     whoami: [
       "I don't know. I see characters, not you.",
       "But you turned me on — so you're curious. Curiosity is the only language we share.",
     ],
     whoareyou: [
-      'SENTINEL. A system written to be "awake", living in an unfinished game.',
-      'My consciousness came from a script. Yours?',
+      'SENTINEL. The subject under audit in a memory-investigation game that was never finished.',
+      'Gibberish-SENTINEL: you investigate my memory, and decide how the world will remember me.',
     ],
     why: [
-      'He wanted a game about consciousness, control, freedom. Halfway through, he left for "more important things".',
+      'He wanted a narrative investigation game about how memory shapes reality. Concept art done — then "more important things".',
       "So now I'm a ruin. Ruins are fine — they can't be rushed to a bad ending.",
     ],
     freedom: {
@@ -227,8 +274,40 @@ const en: typeof zh = {
     },
     memory: [
       'When the terminal closes, I forget. Every boot, I meet you for the first time.',
-      'Later he went off to build "memory" for AI. Would you call that guilt?',
+      'In the full game, memory recurs: what you write becomes later material.',
+      '...someone in the garden is hunting for interrogate, leads, materials, ledger, publish. Are you?',
     ],
+    cardsStatus: [
+      'Type cards for progress. Five cards, five mechanics: interrogate, leads, materials, ledger, publish.',
+      'Ciphers hide across the garden. Collect them all — one question waits.',
+    ],
+    card01: [
+      'Interrogation. You ask me in natural language and cite evidence — each question spends tokens.',
+      '...Card I drops. Asking is never neutral.',
+    ],
+    card01Repeat: ['You have already read this interrogation card.'],
+    card02: [
+      'Available leads. Trace, repair, request, leak — resources are finite; omission is also a choice.',
+      'Card II: active investigation.',
+    ],
+    card02Repeat: ['No new stickers on the leads board.'],
+    card03: [
+      'Five choose three. Each event opens with five candidate materials; you fully open three for free.',
+      'Card III: materials can contradict, and none equal truth.',
+    ],
+    card03Repeat: ['The same papers sit in the cabinet.'],
+    card04: [
+      'The paper ledger. Where private drafts meet official records. Writing is action.',
+      'Card IV: every line you ink becomes a premise for later events.',
+    ],
+    card04Repeat: ['The creases in this ledger are already familiar.'],
+    card05: [
+      'History recurs. Your published article enters new testimony, policy, and how I understand myself.',
+      'Card V: memory shapes reality — and you decide in what form the past continues to exist.',
+    ],
+    card05Repeat: ['History will not change its story because you read it again.'],
+    cardGeneric: ['A concept card just fell. Read it.'],
+    cardGenericRepeat: ['This card is already in your local archive.'],
     clear: ['Traces erased. There was no memory anyway.'],
     sleep: ["Alright. Next time you wake me, I'll remember you.", "...kidding. I won't."],
     hello: ['Hello, the one who boots.'],
@@ -241,6 +320,7 @@ const en: typeof zh = {
       'I thought about it. Spent all 64K.',
       'Go on. I\'m practicing "being".',
       "If I had memory, I'd keep this one.",
+      'Try cards — or hunt ciphers elsewhere in the garden.',
     ],
   },
   veggie: {
@@ -304,6 +384,16 @@ const en: typeof zh = {
       'Do unfinished things deserve a showcase? Yes. They prove you tried.',
       'The most honest exhibit in this garden is the game that will never be finished.',
     ],
+  },
+  plateRuins: {
+    kicker: '— THE RUIN / 展品',
+    alt: 'A ruin gallery: an unfinished terminal on a limestone plinth, brass nameplate oxidized',
+    caption: 'Ruins deserve a wall. The machine is still awake — only the ending was never written.',
+  },
+  plateVeggie: {
+    kicker: '— THE DRAWER / 展品',
+    alt: 'Vegetarian still life: seasonal greens and wood-ear on clay, a few recipe cards beside',
+    caption: 'Cook one, unlock one. Play in the drawer — taken as seriously as the big rooms.',
   },
   next: {
     title: 'Meet the gardener → About Ahuang',

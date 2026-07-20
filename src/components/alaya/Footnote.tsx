@@ -3,6 +3,7 @@ import { useLang } from '@/context/LangContext'
 import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import SiteClue from '@/components/eggs/SiteClue'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
@@ -28,6 +29,17 @@ export default function Footnote() {
           />
           <p className="pl-2 font-mono text-sm leading-relaxed text-ink-2">{a.line1}</p>
           <p className="mt-3 pl-2 text-sm leading-relaxed text-ink-3">{a.line2}</p>
+          <div className="mt-4 pl-2">
+            <SiteClue
+              variant="seal"
+              label={{ zh: '材', en: 'M' }}
+              hint={{
+                zh: '记忆之屋的材料要挑选。去 SENTINEL 输入 materials。',
+                en: 'Materials in the memory house must be chosen. Type materials in SENTINEL.',
+              }}
+              command="materials"
+            />
+          </div>
         </div>
       </InkReveal>
     </section>

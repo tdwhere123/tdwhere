@@ -9,11 +9,11 @@ import RepoTree from '@/components/writeright/RepoTree'
 import DailyPath from '@/components/writeright/DailyPath'
 import PrivacySection from '@/components/writeright/PrivacySection'
 import BrassRule from '@/components/writeright/BrassRule'
+import IllustrationPlate from '@/components/IllustrationPlate'
 
 /**
  * /write-right — 写作之屋 · project page.
- * S1 hero · S2 scope · S3 genre router · S4 repo shape · S5 daily path
- * · S6 privacy · S7 next.
+ * S1 hero · S2 scope · plate · S3 genre router · S4 repo · S5 daily · S6 privacy · S7 next.
  */
 export default function WriteRight() {
   const { lang } = useLang()
@@ -28,6 +28,14 @@ export default function WriteRight() {
       </div>
 
       <ScopeSection />
+
+      <IllustrationPlate
+        src="illustrations/write-right-desk.png"
+        alt={c.plate.alt}
+        kicker={c.plate.kicker}
+        caption={c.plate.caption}
+        variant="bleed"
+      />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
         <BrassRule className="mx-auto h-2 w-full max-w-xs opacity-90" />

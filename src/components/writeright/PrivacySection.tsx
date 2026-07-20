@@ -3,6 +3,7 @@ import { useLang } from '@/context/LangContext'
 import { writeRightContent } from '@/content/writeRight'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
+import SiteClue from '@/components/eggs/SiteClue'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
@@ -33,6 +34,17 @@ export default function PrivacySection() {
                 {line}
               </p>
             ))}
+          </div>
+          <div className="mt-6">
+            <SiteClue
+              variant="marginalia"
+              label={{ zh: '所写即发布', en: 'what is written gets published' }}
+              hint={{
+                zh: '落笔会回流进世界。去 SENTINEL 输入 publish。',
+                en: 'Ink recurs into the world. Type publish in SENTINEL.',
+              }}
+              command="publish"
+            />
           </div>
         </div>
       </InkReveal>

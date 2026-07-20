@@ -8,10 +8,11 @@ import RouterSimulator from '@/components/doit/RouterSimulator'
 import FourMoves from '@/components/doit/FourMoves'
 import DecisionLadder from '@/components/doit/DecisionLadder'
 import SpecsCredits from '@/components/doit/SpecsCredits'
+import IllustrationPlate from '@/components/IllustrationPlate'
 
 /**
  * /do-it — 流程之屋 · project page.
- * S1 hero · S2 why · S3 router simulator · S4 four moves · S5 decision ladder
+ * S1 hero · S2 why · plate · S3 router simulator · S4 four moves · S5 decision ladder
  * · S6 specs & credits · S7 next room.
  */
 export default function DoIt() {
@@ -27,6 +28,15 @@ export default function DoIt() {
       </div>
 
       <WhySection />
+
+      <IllustrationPlate
+        src="illustrations/do-it-gate-router.png"
+        alt={c.plate.alt}
+        kicker={c.plate.kicker}
+        caption={c.plate.caption}
+        variant="bleed"
+      />
+
       <RouterSimulator />
       <FourMoves />
       <DecisionLadder />
