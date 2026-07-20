@@ -11,7 +11,14 @@ let rafCallback: ((time: number) => void) | null = null
 export function initSmoothScroll(): () => void {
   if (lenis) return () => undefined
 
-  lenis = new Lenis({ lerp: 0.09, smoothWheel: true })
+  // Keep touch native (syncTouch: false) so phones can freely pan-scroll;
+  // only smooth the wheel path on desktop.
+  lenis = new Lenis({
+    lerp: 0.09,
+    smoothWheel: true,
+    syncTouch: false,
+    touchMultiplier: 1.15,
+  })
   lenis.on('scroll', ScrollTrigger.update)
 
   rafCallback = (time: number) => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Lang } from '@/context/LangContext'
@@ -18,6 +18,18 @@ type Props = {
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
+
+/** Keep ink panels away from the viewport edge (was 3.5% — too tight). */
+const EDGE_PAD_PCT = 8
+/**
+ * Offset from the cube's projected center toward the free side.
+ * Clears most of the cube face while keeping the title visually paired.
+ */
+const CUBE_GAP_PCT = 12
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
 
 export default function PlaneInk({
   project,
@@ -92,12 +104,36 @@ export default function PlaneInk({
 
   const panelSide = phase === 'body' ? 'right' : titleSide
 
+  /** Sit beside the cube (anchor), not pinned to the far corner of the viewport. */
+  const panelStyle = useMemo(() => {
+    const top = clamp(anchor.y * 100 - 6, 24, 58)
+    const maxWidth = `min(360px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
+    // Leave room for the panel itself so it never hugs the far edge.
+    const maxStart = 100 - EDGE_PAD_PCT - 26
+
+    if (panelSide === 'right') {
+      const left = clamp(anchor.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+      return {
+        top: `${top}%`,
+        left: `${left}%`,
+        right: 'auto',
+        maxWidth,
+      } as const
+    }
+
+    const right = clamp((1 - anchor.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+    return {
+      top: `${top}%`,
+      right: `${right}%`,
+      left: 'auto',
+      maxWidth,
+    } as const
+  }, [anchor.x, anchor.y, panelSide])
+
   return (
     <div
-      className={cn(
-        'pointer-events-none absolute z-10 top-[18%] max-w-[min(520px,48vw)] overflow-visible',
-        panelSide === 'right' ? 'right-[3.5%] left-auto' : 'left-[3.5%] right-auto',
-      )}
+      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible transition-[top,left,right] duration-500 ease-zen"
+      style={panelStyle}
     >
       <button
         type="button"
