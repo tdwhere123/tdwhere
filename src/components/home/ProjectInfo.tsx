@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import type { Lang } from '@/context/LangContext'
+import { cn } from '@/lib/utils'
 import type { CubeProject } from './cube-data'
 import ScrollHintMark from './svg/ScrollHintMark'
 
@@ -10,16 +11,18 @@ type Props = {
   project: CubeProject
   lang: Lang
   showScrollHint: boolean
+  /** Tighter vertical rhythm for the mobile stacked layout. */
+  compact?: boolean
 }
 
-export default function ProjectInfo({ project, lang, showScrollHint }: Props) {
+export default function ProjectInfo({ project, lang, showScrollHint, compact = false }: Props) {
   const category = lang === 'zh' ? project.categoryZh : project.categoryEn
   const statement = lang === 'zh' ? project.statementZh : project.statementEn
   const description = lang === 'zh' ? project.descriptionZh : project.descriptionEn
   const cta = lang === 'zh' ? project.ctaZh : project.ctaEn
 
   return (
-    <div className="relative min-h-[280px] md:min-h-[340px]">
+    <div className={cn('relative', compact ? 'min-h-0' : 'min-h-[280px] md:min-h-[340px]')}>
       <AnimatePresence mode="wait">
         <motion.div
           key={project.id}
@@ -33,25 +36,47 @@ export default function ProjectInfo({ project, lang, showScrollHint }: Props) {
             {project.shortName} · {category}
           </p>
 
-          <h2 className="mt-4 font-serif text-[32px] font-semibold leading-[1.1] text-museum-ink md:text-[clamp(48px,5vw,64px)]">
+          <h2
+            className={cn(
+              'font-serif font-semibold leading-[1.1] text-museum-ink',
+              compact
+                ? 'mt-3 text-[28px]'
+                : 'mt-4 text-[32px] md:text-[clamp(48px,5vw,64px)]',
+            )}
+          >
             {project.title}
           </h2>
 
-          <p className="mt-5 max-w-md font-serif text-[18px] leading-snug text-ink-2 md:text-[22px]">
+          <p
+            className={cn(
+              'max-w-md font-serif leading-snug text-ink-2',
+              compact ? 'mt-3 text-[17px]' : 'mt-5 text-[18px] md:text-[22px]',
+            )}
+          >
             {statement}
           </p>
 
-          <p className="mt-4 max-w-md text-[14px] leading-relaxed text-museum-muted md:text-[16px]">
+          <p
+            className={cn(
+              'max-w-md leading-relaxed text-museum-muted',
+              compact ? 'mt-3 text-[14px]' : 'mt-4 text-[14px] md:text-[16px]',
+            )}
+          >
             {description}
           </p>
 
           {project.tags.length > 0 && (
-            <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.12em] text-museum-brass md:text-[12px]">
+            <p
+              className={cn(
+                'font-mono uppercase tracking-[0.12em] text-museum-brass',
+                compact ? 'mt-4 text-[11px]' : 'mt-6 text-[11px] md:text-[12px]',
+              )}
+            >
               {project.tags.join(' · ')}
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-5">
+          <div className={cn('flex flex-wrap items-center gap-5', compact ? 'mt-5' : 'mt-8')}>
             {project.id === 'home' ? (
               showScrollHint && (
                 <div className="flex items-center gap-3 text-museum-muted">

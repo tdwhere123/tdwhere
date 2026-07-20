@@ -136,11 +136,14 @@ function RollingScene({
   locked,
   onFaceChange,
   onAnchor,
+  allowTouchOrbit = true,
 }: {
   enabled: boolean
   locked: boolean
   onFaceChange: (id: CubeStageId) => void
   onAnchor?: (a: CubeScreenAnchor) => void
+  /** When false (coarse pointer), one-finger gestures scroll the page instead of orbiting. */
+  allowTouchOrbit?: boolean
 }) {
   const textures = useLoader(THREE.TextureLoader, FACE_URLS)
   const groupRef = useRef<THREE.Group>(null)
@@ -162,8 +165,8 @@ function RollingScene({
   useEffect(() => {
     const controls = controlsRef.current
     if (!controls) return
-    controls.enableRotate = !busy && !locked
-  }, [busy, locked])
+    controls.enableRotate = allowTouchOrbit && !busy && !locked
+  }, [busy, locked, allowTouchOrbit])
 
   const maps = useMemo(
     () => (Array.isArray(textures) ? textures : [textures]),
@@ -190,7 +193,8 @@ function RollingScene({
         ref={controlsRef}
         makeDefault
         enablePan={false}
-        enableZoom
+        enableZoom={allowTouchOrbit}
+        enableRotate={allowTouchOrbit}
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.55}
@@ -222,9 +226,16 @@ export default function MuseumCubeCanvas({
   className,
 }: Props) {
   const [ready, setReady] = useState(false)
+  /** One-finger drag orbits on mouse; on touch, let the page scroll instead. */
+  const [touchOrbit, setTouchOrbit] = useState(false)
 
   useEffect(() => {
     setReady(true)
+    const coarse = window.matchMedia('(pointer: coarse)')
+    setTouchOrbit(coarse.matches)
+    const onChange = () => setTouchOrbit(coarse.matches)
+    coarse.addEventListener('change', onChange)
+    return () => coarse.removeEventListener('change', onChange)
   }, [])
 
   if (!ready) {
@@ -236,7 +247,10 @@ export default function MuseumCubeCanvas({
   }
 
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={{ touchAction: touchOrbit ? 'pan-y' : 'none' }}
+    >
       <Canvas
         dpr={[1, 1.5]}
         camera={{ position: INITIAL_CAM.toArray() as [number, number, number], fov: 32, near: 0.1, far: 60 }}
@@ -246,6 +260,7 @@ export default function MuseumCubeCanvas({
           toneMapping: THREE.NoToneMapping,
           preserveDrawingBuffer: true,
         }}
+        style={{ touchAction: touchOrbit ? 'pan-y' : 'none' }}
         onCreated={({ camera, gl }) => {
           camera.lookAt(0, CUBE_SIZE * 0.2, 0)
           gl.setClearColor(0x000000, 0)
@@ -257,6 +272,7 @@ export default function MuseumCubeCanvas({
             locked={locked}
             onFaceChange={onFaceChange}
             onAnchor={onAnchor}
+            allowTouchOrbit={!touchOrbit}
           />
         </Suspense>
       </Canvas>

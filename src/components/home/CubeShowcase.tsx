@@ -25,7 +25,7 @@ function MobileCubeShowcase() {
         ([entry]) => {
           if (entry.isIntersecting) setActiveIndex(index)
         },
-        { threshold: 0.55 },
+        { threshold: 0.45, rootMargin: '-10% 0px -10% 0px' },
       )
       io.observe(el)
       observers.push(io)
@@ -34,7 +34,7 @@ function MobileCubeShowcase() {
   }, [])
 
   return (
-    <div className="relative pb-16">
+    <div className="relative touch-pan-y pb-16">
       {cubeProjects.map((project, index) => {
         const rot = cubeRotations[project.id]
         return (
@@ -43,14 +43,15 @@ function MobileCubeShowcase() {
             ref={(el) => {
               sectionRefs.current[index] = el
             }}
-            className="flex min-h-[100svh] flex-col justify-center px-5 py-20"
+            className="flex min-h-[100svh] flex-col justify-center px-7 py-16 sm:px-8"
           >
             <ProjectInfo
               project={project}
               lang={lang}
               showScrollHint={project.id === 'home'}
+              compact
             />
-            <div className="relative mx-auto mt-10 w-full max-w-[360px]">
+            <div className="relative mx-auto mt-5 w-full max-w-[min(300px,78vw)]">
               <div
                 className="relative transition-transform duration-500 ease-zen"
                 style={{
@@ -120,7 +121,7 @@ function DesktopCubeShowcase() {
   }, [])
 
   return (
-    <div className="relative min-h-[100svh] w-full">
+    <div className="relative min-h-[100svh] w-full touch-pan-y">
       <MuseumCubeCanvas
         className="absolute inset-0 z-0 h-[100svh] w-full"
         enabled
@@ -137,7 +138,7 @@ function DesktopCubeShowcase() {
         onLockChange={onInkLockChange}
       />
 
-      <p className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-museum-muted">
+      <p className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 px-6 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-museum-muted">
         {lang === 'zh'
           ? '方向键翻滚 · 拖拽转视角 · 点击手写字'
           : 'Arrows roll · drag to orbit · click the ink'}
