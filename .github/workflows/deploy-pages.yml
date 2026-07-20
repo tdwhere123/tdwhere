@@ -15,8 +15,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Same gate as CI — Pages must not deploy a broken build.
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4

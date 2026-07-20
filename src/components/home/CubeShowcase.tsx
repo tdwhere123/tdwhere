@@ -250,22 +250,28 @@ function RollDownHint({
 }) {
   return (
     <div
-      className="pointer-events-none absolute z-[5] flex -translate-x-1/2 flex-col items-center gap-1"
+      className="pointer-events-none absolute z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5"
       style={{
-        left: `${anchor.x * 100}%`,
-        top: `${Math.min(anchor.y * 100 + 7, 88)}%`,
+        left: `${anchor.rollHintX * 100}%`,
+        top: `${anchor.rollHintY * 100}%`,
       }}
       aria-hidden="true"
     >
-      <svg width="22" height="28" viewBox="0 0 22 28" fill="none" className="animate-pulse opacity-70">
-        <path
-          d="M11 2v18M5 14l6 8 6-8"
-          stroke="var(--museum-brass)"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <div
+        className="flex flex-col items-center gap-1.5 transition-transform duration-300 ease-zen"
+        style={{ transform: `rotate(${anchor.rollAngleDeg}deg)` }}
+      >
+        <svg width="22" height="28" viewBox="0 0 22 28" fill="none" className="opacity-75">
+          <path
+            d="M11 2v18M5 14l6 8 6-8"
+            stroke="var(--museum-brass)"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      {/* Label stays upright for readability */}
       <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted">
         {lang === 'zh' ? 'S · 向前滚' : 'S · roll toward you'}
       </span>
@@ -282,6 +288,9 @@ function DesktopCubeShowcase() {
     x: 0.5,
     y: 0.62,
     preferRight: true,
+    rollHintX: 0.5,
+    rollHintY: 0.78,
+    rollAngleDeg: 0,
   })
 
   const project = cubeProjects.find((p) => p.id === activeId) ?? cubeProjects[0]
