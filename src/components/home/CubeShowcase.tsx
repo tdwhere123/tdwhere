@@ -259,7 +259,7 @@ function RollDownHint({
       aria-hidden="true"
       data-testid="roll-s-label"
     >
-      <span className="font-hand text-[13px] leading-none text-museum-ink/70">
+      <span className="font-hand text-[11px] leading-none text-museum-ink/55">
         {lang === 'zh' ? 'S · 此向滚' : 'S · this way'}
       </span>
     </div>

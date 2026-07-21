@@ -23,8 +23,9 @@ const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
 
 /** Floor S-mark: world +Z from cube centre (matches KeyS / ↓). */
 const FLOOR_S_DIR = WORLD_ROLL_DIR.pz
-const FLOOR_ARROW_DIST = CUBE_SIZE * 0.95
-const FLOOR_ARROW_SIZE: [number, number] = [1.15, 1.55]
+/** Keep the mark close to the cube so it doesn't crowd footer / ink text. */
+const FLOOR_ARROW_DIST = CUBE_SIZE * 0.72
+const FLOOR_ARROW_SIZE: [number, number] = [0.42, 0.58]
 
 export type CubeScreenAnchor = {
   /** Park point beside the cube for PlaneInk (normalized 0–1). */
@@ -250,7 +251,7 @@ function FloorRollArrow({ targetRef }: { targetRef: React.RefObject<THREE.Group 
           transparent
           depthWrite={false}
           depthTest={false}
-          opacity={0.92}
+          opacity={0.78}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -268,7 +269,7 @@ function ScreenAnchorReporter({
   const { camera } = useThree()
   const center = useRef(new THREE.Vector3())
   const tip = useRef(new THREE.Vector3())
-  const park = useRef(new THREE.Vector3())
+  const side = useRef(new THREE.Vector3())
   const ndc = useRef(new THREE.Vector3())
   const last = useRef({ x: -1, y: -1, hx: -1, hy: -1 })
 
@@ -277,28 +278,38 @@ function ScreenAnchorReporter({
 
     targetRef.current.getWorldPosition(center.current)
 
-    // Caption parks at the world-fixed floor S-mark tip (+Z from cube)
+    // Caption near the compact floor mark tip (+Z), kept off the footer band
     tip.current
       .copy(center.current)
-      .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.38)
+      .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.35)
     tip.current.y = 0.03
 
-    // Ink park: slightly to the free side of the cube (screen-stable-ish)
-    const preferRight = (() => {
-      ndc.current.copy(center.current).project(camera)
-      return (ndc.current.x + 1) / 2 < 0.55
-    })()
-    park.current.copy(center.current)
-    park.current.x += preferRight ? CUBE_SIZE * 0.55 : -CUBE_SIZE * 0.55
-    park.current.y = 0.2
+    ndc.current.copy(center.current).project(camera)
+    const cx = (ndc.current.x + 1) / 2
+    const cy = (1 - ndc.current.y) / 2
+    const preferRight = cx < 0.55
 
-    ndc.current.copy(park.current).project(camera)
-    const x = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.1, 0.9)
-    const y = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.2, 0.86)
+    // Measure cube half-width in screen space, then park ink clear of the silhouette
+    side.current.copy(center.current)
+    side.current.x += preferRight ? CUBE_SIZE * 0.55 : -CUBE_SIZE * 0.55
+    side.current.y = center.current.y
+    ndc.current.copy(side.current).project(camera)
+    const sideX = (ndc.current.x + 1) / 2
+    const halfW = Math.max(0.12, Math.abs(sideX - cx))
+    const inkMargin = 0.07
+
+    const x = THREE.MathUtils.clamp(
+      preferRight ? cx + halfW + inkMargin : cx - halfW - inkMargin,
+      0.14,
+      0.86,
+    )
+    // Slightly above cube centre so title sits in the open side, not over the faces
+    const y = THREE.MathUtils.clamp(cy - 0.04, 0.28, 0.52)
 
     ndc.current.copy(tip.current).project(camera)
-    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.06, 0.94)
-    const hy = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.12, 0.92)
+    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.1, 0.9)
+    // Keep S caption above the bottom instruction strip
+    const hy = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.58, 0.82)
 
     const L = last.current
     if (
@@ -317,7 +328,6 @@ function ScreenAnchorReporter({
       preferRight,
       rollHintX: hx,
       rollHintY: hy,
-      // kept for API compat; 3D arrow owns orientation now
       rollAngleDeg: 0,
     })
   })

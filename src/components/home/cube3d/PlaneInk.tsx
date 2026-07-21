@@ -19,13 +19,13 @@ type Props = {
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
-/** Keep ink panels away from the viewport edge (was 3.5% — too tight). */
-const EDGE_PAD_PCT = 8
+/** Keep ink panels away from the viewport edge. */
+const EDGE_PAD_PCT = 7
 /**
- * Offset from the cube's projected center toward the free side.
- * Clears most of the cube face while keeping the title visually paired.
+ * Extra gap past the cube silhouette (anchor already sits just outside).
+ * Title needs less; expanded body needs a clearer side column.
  */
-const CUBE_GAP_PCT = 12
+const TITLE_GAP_PCT = 4
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -108,36 +108,56 @@ export default function PlaneInk({
   }
 
   const panelSide = phase === 'body' ? 'right' : titleSide
+  const isBody = phase === 'body'
 
-  /** Sit beside the cube (parked anchor), not pinned to the far corner of the viewport. */
+  /**
+   * Title: beside the cube, clear of its silhouette.
+   * Body: a calmer right-side reading column — not glued to the cube edge.
+   */
   const panelStyle = useMemo(() => {
-    const top = clamp(parked.y * 100 - 6, 24, 58)
-    const maxWidth = `min(360px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
-    // Leave room for the panel itself so it never hugs the far edge.
-    const maxStart = 100 - EDGE_PAD_PCT - 26
+    if (isBody) {
+      // Dedicated side column — clear of cube + S-arrow zone
+      return {
+        top: '22%',
+        left: 'auto',
+        right: `${EDGE_PAD_PCT}%`,
+        width: 'min(340px, 32vw)',
+        maxWidth: `min(340px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`,
+      } as const
+    }
+
+    const top = clamp(parked.y * 100 - 4, 26, 48)
+    const gap = TITLE_GAP_PCT
+    const maxWidth = `min(300px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
+    const maxStart = 100 - EDGE_PAD_PCT - 22
 
     if (panelSide === 'right') {
-      const left = clamp(parked.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+      const left = clamp(parked.x * 100 + gap, EDGE_PAD_PCT, maxStart)
       return {
         top: `${top}%`,
         left: `${left}%`,
         right: 'auto',
+        width: 'min(300px, 34vw)',
         maxWidth,
       } as const
     }
 
-    const right = clamp((1 - parked.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
+    const right = clamp((1 - parked.x) * 100 + gap, EDGE_PAD_PCT, maxStart)
     return {
       top: `${top}%`,
       right: `${right}%`,
       left: 'auto',
+      width: 'min(300px, 34vw)',
       maxWidth,
     } as const
-  }, [parked.x, parked.y, panelSide])
+  }, [parked.x, parked.y, panelSide, isBody])
 
   return (
     <div
-      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible"
+      className={cn(
+        'pointer-events-none absolute z-10 overflow-visible',
+        isBody && 'z-[12]',
+      )}
       style={panelStyle}
     >
       <button
@@ -160,14 +180,14 @@ export default function PlaneInk({
             >
               <p
                 className={cn(
-                  'plane-ink-title font-hand text-[clamp(28px,3.2vw,44px)] font-normal leading-[1.25] text-museum-ink',
+                  'plane-ink-title font-hand text-[clamp(26px,2.8vw,40px)] font-normal leading-[1.2] text-museum-ink',
                   phase === 'erasing' && 'plane-ink-erase',
                 )}
               >
                 <span className="plane-ink-write">{project.title}</span>
               </p>
               {phase === 'title' && (
-                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
                   {hint}
                 </p>
               )}
@@ -177,19 +197,19 @@ export default function PlaneInk({
           {phase === 'body' && (
             <motion.div
               key={`${writeKey}-body`}
-              initial={{ opacity: 0, x: 28 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: ZEN }}
+              transition={{ duration: 0.45, ease: ZEN }}
               className="space-y-3 overflow-visible"
             >
-              <p className="font-hand text-[clamp(26px,2.8vw,38px)] leading-[1.25] text-museum-ink">
+              <p className="font-hand text-[clamp(24px,2.6vw,36px)] leading-[1.2] text-museum-ink">
                 {project.title}
               </p>
-              <p className="plane-ink-body font-serif text-[clamp(15px,1.5vw,19px)] leading-relaxed text-ink-2">
+              <p className="plane-ink-body font-serif text-[clamp(14px,1.35vw,17px)] leading-relaxed text-ink-2">
                 {statement}
               </p>
-              <p className="plane-ink-body font-serif text-[14px] leading-relaxed text-museum-muted md:text-[15px]">
+              <p className="plane-ink-body font-serif text-[13px] leading-relaxed text-museum-muted md:text-[14px]">
                 {description}
               </p>
               <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
