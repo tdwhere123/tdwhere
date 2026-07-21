@@ -70,17 +70,17 @@ const CORNER_SIGNS: ReadonlyArray<readonly [number, number, number]> = [
 export function emptyCubeAnchor(): CubeScreenAnchor {
   return {
     cube: {
-      left: 0.38,
-      right: 0.62,
-      top: 0.28,
-      bottom: 0.66,
+      left: 0.39,
+      right: 0.61,
+      top: 0.3,
+      bottom: 0.64,
       cx: 0.5,
       cy: 0.47,
-      width: 0.24,
-      height: 0.38,
+      width: 0.22,
+      height: 0.34,
     },
     x: 0.66,
-    y: 0.36,
+    y: 0.52,
     preferRight: true,
     rollHintX: 0.5,
     rollHintY: 0.7,
@@ -412,7 +412,7 @@ function ScreenAnchorReporter({
 }
 
 /** Target cube silhouette width as a fraction of the viewport. */
-const TARGET_CUBE_WIDTH = 0.24
+const TARGET_CUBE_WIDTH = 0.22
 
 /**
  * Dolly the camera so the cube occupies a stable share of the page.

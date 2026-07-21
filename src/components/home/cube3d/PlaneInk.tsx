@@ -21,17 +21,17 @@ const ERASE_MS = 560
 
 /** Viewport edge padding as a fraction of width/height. */
 const EDGE = 0.045
-/** Clearance between cube silhouette and ink (fraction of viewport). */
-const CLEAR = 0.008
+/** Clearance budget when sizing the ink column. */
+const CLEAR = 0.012
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
 }
 
 /**
- * Measured AABB pads brass / perspective; inset so ink hugs the visible mass.
+ * Measured AABB pads brass / perspective; light inset so gap is vs visible mass.
  */
-function layoutCube(cube: CubeScreenRect, insetFrac = 0.08): CubeScreenRect {
+function layoutCube(cube: CubeScreenRect, insetFrac = 0.06): CubeScreenRect {
   const dx = cube.width * insetFrac
   const dy = cube.height * insetFrac
   return {
@@ -46,46 +46,35 @@ function layoutCube(cube: CubeScreenRect, insetFrac = 0.08): CubeScreenRect {
   }
 }
 
-/** Layout ink from the measured cube screen rect. */
+/** Layout ink at the cube’s lower-right corner. */
 function layoutFromCube(
   cubeIn: CubeScreenRect,
-  side: 'left' | 'right',
+  _side: 'left' | 'right',
   mode: 'title' | 'body',
 ) {
   const cube = layoutCube(cubeIn)
-  const gutterRight = 1 - EDGE - cube.right
-  const gutterLeft = cube.left - EDGE
-  const useRight =
-    side === 'right'
-      ? gutterRight >= 0.14 || gutterRight >= gutterLeft
-      : gutterLeft >= 0.14 && gutterLeft > gutterRight
-        ? false
-        : gutterRight >= gutterLeft
-
-  const avail = useRight ? Math.max(0.22, gutterRight) : Math.max(0.22, gutterLeft)
+  // Always park on the right — “右下角” of the exhibit.
+  const useRight = true
+  const avail = Math.max(0.22, 1 - EDGE - cube.right)
   const widthFrac = clamp(
     mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.42),
     0.24,
     mode === 'body' ? 0.42 : 0.4,
   )
 
-  // Sit near the cube’s upper third — reads as a label beside the exhibit.
-  const topFrac = clamp(
-    mode === 'body' ? cube.top + cube.height * 0.02 : cube.top + cube.height * 0.04,
-    0.15,
-    0.36,
-  )
-
   const titlePx = clamp(Math.round(widthFrac * 100 * 1.35), 36, 58)
 
-  // Small positive gap after AABB inset (~2–4% viewport ≈ 25–50px).
-  const gap = 0.014
-  const leftFrac = useRight
-    ? clamp(cube.right + gap, EDGE, 1 - EDGE - widthFrac)
-    : clamp(cube.left - gap - widthFrac, EDGE, 1 - EDGE - widthFrac)
+  // Slightly farther from the silhouette than the previous hug.
+  const gap = 0.03
+  const leftFrac = clamp(cube.right + gap, EDGE, 1 - EDGE - widthFrac)
+
+  // Bottom-align to the cube’s lower edge; block grows upward.
+  // Nudge a touch below the AABB so it reads as the corner, not mid-face.
+  const bottomFrac = clamp(1 - cube.bottom - 0.01, 0.14, 0.42)
 
   return {
-    top: `${topFrac * 100}%`,
+    top: 'auto' as const,
+    bottom: `${bottomFrac * 100}%`,
     left: `${leftFrac * 100}%`,
     right: 'auto' as const,
     width: `${widthFrac * 100}%`,
@@ -104,13 +93,8 @@ export default function PlaneInk({
 }: Props) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('title')
-  const [titleSide, setTitleSide] = useState<'left' | 'right'>(
-    anchor.preferRight ? 'right' : 'left',
-  )
   /** Freeze cube silhouette when the face changes — orbit must not jitter ink. */
   const [parkedCube, setParkedCube] = useState<CubeScreenRect>(anchor.cube)
-  const preferRightRef = useRef(anchor.preferRight)
-  preferRightRef.current = anchor.preferRight
   const cubeRef = useRef(anchor.cube)
   cubeRef.current = anchor.cube
   const seededRef = useRef(false)
@@ -141,7 +125,6 @@ export default function PlaneInk({
 
   useEffect(() => {
     setPhase('title')
-    setTitleSide(preferRightRef.current ? 'right' : 'left')
     setParkedCube(cubeRef.current)
     seededRef.current = false
     onLockChange?.(false)
@@ -182,16 +165,16 @@ export default function PlaneInk({
   }
 
   const isBody = phase === 'body'
-  const panelSide = isBody ? 'right' : titleSide
 
   const layout = useMemo(
-    () => layoutFromCube(parkedCube, panelSide, isBody ? 'body' : 'title'),
-    [parkedCube, panelSide, isBody],
+    () => layoutFromCube(parkedCube, 'right', isBody ? 'body' : 'title'),
+    [parkedCube, isBody],
   )
 
   const panelStyle = useMemo(
     () => ({
       top: layout.top,
+      bottom: layout.bottom,
       left: layout.left,
       right: layout.right,
       width: layout.width,
