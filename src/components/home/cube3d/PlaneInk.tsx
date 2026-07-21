@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Lang } from '@/context/LangContext'
 import type { CubeProject } from '../cube-data'
-import type { CubeScreenAnchor } from './MuseumCubeCanvas'
+import type { CubeScreenAnchor, CubeScreenRect } from './MuseumCubeCanvas'
 import { cn } from '@/lib/utils'
 
 type Phase = 'title' | 'erasing' | 'body'
@@ -19,16 +19,58 @@ type Props = {
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
-/** Keep ink panels away from the viewport edge (was 3.5% — too tight). */
-const EDGE_PAD_PCT = 8
-/**
- * Offset from the cube's projected center toward the free side.
- * Clears most of the cube face while keeping the title visually paired.
- */
-const CUBE_GAP_PCT = 12
+/** Viewport edge padding as a fraction of width/height. */
+const EDGE = 0.06
+/** Clearance between cube silhouette and ink (fraction of viewport). */
+const CLEAR = 0.036
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
+}
+
+/** Layout ink from the measured cube screen rect. */
+function layoutFromCube(
+  cube: CubeScreenRect,
+  side: 'left' | 'right',
+  mode: 'title' | 'body',
+) {
+  const gutterRight = 1 - EDGE - cube.right
+  const gutterLeft = cube.left - EDGE
+  const useRight =
+    side === 'right'
+      ? gutterRight >= 0.14 || gutterRight >= gutterLeft
+      : gutterLeft >= 0.14 && gutterLeft > gutterRight
+        ? false
+        : gutterRight >= gutterLeft
+
+  const avail = useRight ? Math.max(0.14, gutterRight) : Math.max(0.14, gutterLeft)
+  const widthFrac = clamp(
+    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.32),
+    0.15,
+    mode === 'body' ? 0.34 : 0.3,
+  )
+
+  const topFrac = clamp(
+    mode === 'body' ? cube.top + cube.height * 0.02 : cube.top + cube.height * 0.1,
+    0.14,
+    0.42,
+  )
+
+  const titlePx = clamp(Math.round(widthFrac * 100 * 0.85), 22, 38)
+
+  const leftFrac = useRight
+    ? clamp(cube.right + CLEAR, EDGE, 1 - EDGE - widthFrac)
+    : clamp(cube.left - CLEAR - widthFrac, EDGE, 1 - EDGE - widthFrac)
+
+  return {
+    top: `${topFrac * 100}%`,
+    left: `${leftFrac * 100}%`,
+    right: 'auto' as const,
+    width: `${widthFrac * 100}%`,
+    maxWidth: `min(${Math.round(widthFrac * 1100)}px, 340px)`,
+    titlePx,
+    useRight,
+  }
 }
 
 export default function PlaneInk({
@@ -40,14 +82,16 @@ export default function PlaneInk({
 }: Props) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('title')
-  /** Freeze side per face so orbiting doesn't shove the title mid-write. */
   const [titleSide, setTitleSide] = useState<'left' | 'right'>(
     anchor.preferRight ? 'right' : 'left',
   )
-  /** Park the panel beside the cube only when the face changes — live orbit must not jitter the ink. */
-  const [parked, setParked] = useState({ x: anchor.x, y: anchor.y })
+  /** Freeze cube silhouette when the face changes — orbit must not jitter ink. */
+  const [parkedCube, setParkedCube] = useState<CubeScreenRect>(anchor.cube)
   const preferRightRef = useRef(anchor.preferRight)
   preferRightRef.current = anchor.preferRight
+  const cubeRef = useRef(anchor.cube)
+  cubeRef.current = anchor.cube
+  const seededRef = useRef(false)
 
   const statement = lang === 'zh' ? project.statementZh : project.statementEn
   const description = lang === 'zh' ? project.descriptionZh : project.descriptionEn
@@ -76,11 +120,19 @@ export default function PlaneInk({
   useEffect(() => {
     setPhase('title')
     setTitleSide(preferRightRef.current ? 'right' : 'left')
-    setParked({ x: anchor.x, y: anchor.y })
+    setParkedCube(cubeRef.current)
+    seededRef.current = false
     onLockChange?.(false)
-    // Only re-park when the face / write cycle changes — not on every orbit frame.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: ignore live anchor
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- park only on face/write cycle
   }, [writeKey, onLockChange])
+
+  // After load / face change, lock layout to the first measured cube silhouette
+  useEffect(() => {
+    if (seededRef.current) return
+    if (anchor.cube.width < 0.12) return
+    setParkedCube(anchor.cube)
+    seededRef.current = true
+  }, [anchor.cube])
 
   useEffect(() => {
     if (phase !== 'erasing') return
@@ -107,38 +159,35 @@ export default function PlaneInk({
     }
   }
 
-  const panelSide = phase === 'body' ? 'right' : titleSide
+  const isBody = phase === 'body'
+  const panelSide = isBody ? 'right' : titleSide
 
-  /** Sit beside the cube (parked anchor), not pinned to the far corner of the viewport. */
-  const panelStyle = useMemo(() => {
-    const top = clamp(parked.y * 100 - 6, 24, 58)
-    const maxWidth = `min(360px, calc(100vw - ${EDGE_PAD_PCT * 2}vw))`
-    // Leave room for the panel itself so it never hugs the far edge.
-    const maxStart = 100 - EDGE_PAD_PCT - 26
+  const layout = useMemo(
+    () => layoutFromCube(parkedCube, panelSide, isBody ? 'body' : 'title'),
+    [parkedCube, panelSide, isBody],
+  )
 
-    if (panelSide === 'right') {
-      const left = clamp(parked.x * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
-      return {
-        top: `${top}%`,
-        left: `${left}%`,
-        right: 'auto',
-        maxWidth,
-      } as const
-    }
-
-    const right = clamp((1 - parked.x) * 100 + CUBE_GAP_PCT, EDGE_PAD_PCT, maxStart)
-    return {
-      top: `${top}%`,
-      right: `${right}%`,
-      left: 'auto',
-      maxWidth,
-    } as const
-  }, [parked.x, parked.y, panelSide])
+  const panelStyle = useMemo(
+    () => ({
+      top: layout.top,
+      left: layout.left,
+      right: layout.right,
+      width: layout.width,
+      maxWidth: layout.maxWidth,
+    }),
+    [layout],
+  )
 
   return (
     <div
-      className="pointer-events-none absolute z-10 w-[min(360px,38vw)] overflow-visible"
+      className={cn(
+        'pointer-events-none absolute z-10 overflow-visible',
+        isBody && 'z-[12]',
+      )}
       style={panelStyle}
+      data-testid="plane-ink"
+      data-cube-left={parkedCube.left.toFixed(3)}
+      data-cube-right={parkedCube.right.toFixed(3)}
     >
       <button
         type="button"
@@ -160,14 +209,15 @@ export default function PlaneInk({
             >
               <p
                 className={cn(
-                  'plane-ink-title font-hand text-[clamp(28px,3.2vw,44px)] font-normal leading-[1.25] text-museum-ink',
+                  'plane-ink-title font-hand font-normal leading-[1.2] text-museum-ink',
                   phase === 'erasing' && 'plane-ink-erase',
                 )}
+                style={{ fontSize: `${layout.titlePx}px` }}
               >
                 <span className="plane-ink-write">{project.title}</span>
               </p>
               {phase === 'title' && (
-                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
                   {hint}
                 </p>
               )}
@@ -177,19 +227,22 @@ export default function PlaneInk({
           {phase === 'body' && (
             <motion.div
               key={`${writeKey}-body`}
-              initial={{ opacity: 0, x: 28 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: ZEN }}
+              transition={{ duration: 0.45, ease: ZEN }}
               className="space-y-3 overflow-visible"
             >
-              <p className="font-hand text-[clamp(26px,2.8vw,38px)] leading-[1.25] text-museum-ink">
+              <p
+                className="font-hand leading-[1.2] text-museum-ink"
+                style={{ fontSize: `${Math.max(22, layout.titlePx - 2)}px` }}
+              >
                 {project.title}
               </p>
-              <p className="plane-ink-body font-serif text-[clamp(15px,1.5vw,19px)] leading-relaxed text-ink-2">
+              <p className="plane-ink-body font-serif text-[clamp(14px,1.3vw,17px)] leading-relaxed text-ink-2">
                 {statement}
               </p>
-              <p className="plane-ink-body font-serif text-[14px] leading-relaxed text-museum-muted md:text-[15px]">
+              <p className="plane-ink-body font-serif text-[13px] leading-relaxed text-museum-muted md:text-[14px]">
                 {description}
               </p>
               <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">

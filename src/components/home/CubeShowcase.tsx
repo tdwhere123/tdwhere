@@ -7,7 +7,10 @@ import {
   cubeRotations,
   type CubeStageId,
 } from './cube-data'
-import MuseumCubeCanvas, { type CubeScreenAnchor } from './cube3d/MuseumCubeCanvas'
+import MuseumCubeCanvas, {
+  emptyCubeAnchor,
+  type CubeScreenAnchor,
+} from './cube3d/MuseumCubeCanvas'
 import PlaneInk from './cube3d/PlaneInk'
 import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
@@ -248,32 +251,19 @@ function RollDownHint({
   anchor: CubeScreenAnchor
   lang: 'zh' | 'en'
 }) {
+  // Caption only — the hand-ink arrow lives on the museum floor in the canvas.
   return (
     <div
-      className="pointer-events-none absolute z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5"
+      className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
       style={{
         left: `${anchor.rollHintX * 100}%`,
         top: `${anchor.rollHintY * 100}%`,
       }}
       aria-hidden="true"
+      data-testid="roll-s-label"
     >
-      <div
-        className="flex flex-col items-center gap-1.5 transition-transform duration-300 ease-zen"
-        style={{ transform: `rotate(${anchor.rollAngleDeg}deg)` }}
-      >
-        <svg width="22" height="28" viewBox="0 0 22 28" fill="none" className="opacity-75">
-          <path
-            d="M11 2v18M5 14l6 8 6-8"
-            stroke="var(--museum-brass)"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-      {/* Label stays upright for readability */}
-      <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted">
-        {lang === 'zh' ? 'S · 向前滚' : 'S · roll toward you'}
+      <span className="font-hand text-[11px] leading-none text-museum-ink/55">
+        {lang === 'zh' ? 'S · 此向滚' : 'S · this way'}
       </span>
     </div>
   )
@@ -284,14 +274,7 @@ function DesktopCubeShowcase() {
   const [activeId, setActiveId] = useState<CubeStageId>('home')
   const [writeKey, setWriteKey] = useState(0)
   const [inkLocked, setInkLocked] = useState(false)
-  const [anchor, setAnchor] = useState<CubeScreenAnchor>({
-    x: 0.5,
-    y: 0.62,
-    preferRight: true,
-    rollHintX: 0.5,
-    rollHintY: 0.78,
-    rollAngleDeg: 0,
-  })
+  const [anchor, setAnchor] = useState<CubeScreenAnchor>(() => emptyCubeAnchor())
 
   const project = cubeProjects.find((p) => p.id === activeId) ?? cubeProjects[0]
 

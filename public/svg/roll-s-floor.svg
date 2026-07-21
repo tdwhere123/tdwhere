@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160" fill="none">
+  <!-- Hand-ink S-roll mark: tip toward +V (maps to world +Z on the floor) -->
+  <path
+    d="M58 18
+       C56 42 61 58 59 78
+       C58 98 60 112 58 124"
+    stroke="#3a342c"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    opacity="0.72"
+  />
+  <path
+    d="M60 16
+       C62 40 57 56 59 76
+       C60 96 58 110 60 122"
+    stroke="#2c2822"
+    stroke-width="1.35"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+  <!-- arrow head, slightly uneven -->
+  <path
+    d="M59 128
+       L38 102
+       C46 108 52 112 59 118
+       C66 112 72 106 80 100
+       Z"
+    fill="#2c2822"
+    opacity="0.7"
+  />
+  <path
+    d="M40 104 C48 110 54 114 59 120 M78 102 C70 108 64 112 59 118"
+    stroke="#5a5044"
+    stroke-width="1.1"
+    stroke-linecap="round"
+    opacity="0.45"
+  />
+  <!-- tiny floor tick -->
+  <circle cx="59" cy="142" r="2.2" fill="#2c2822" opacity="0.35" />
+</svg>
