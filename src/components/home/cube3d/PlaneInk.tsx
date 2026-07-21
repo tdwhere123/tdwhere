@@ -20,20 +20,39 @@ const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
 /** Viewport edge padding as a fraction of width/height. */
-const EDGE = 0.05
+const EDGE = 0.045
 /** Clearance between cube silhouette and ink (fraction of viewport). */
-const CLEAR = 0.018
+const CLEAR = 0.008
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
 }
 
+/**
+ * Measured AABB pads brass / perspective; inset so ink hugs the visible mass.
+ */
+function layoutCube(cube: CubeScreenRect, insetFrac = 0.1): CubeScreenRect {
+  const dx = cube.width * insetFrac
+  const dy = cube.height * insetFrac
+  return {
+    left: cube.left + dx,
+    right: cube.right - dx,
+    top: cube.top + dy,
+    bottom: cube.bottom - dy,
+    cx: cube.cx,
+    cy: cube.cy,
+    width: Math.max(0.08, cube.width - 2 * dx),
+    height: Math.max(0.08, cube.height - 2 * dy),
+  }
+}
+
 /** Layout ink from the measured cube screen rect. */
 function layoutFromCube(
-  cube: CubeScreenRect,
+  cubeIn: CubeScreenRect,
   side: 'left' | 'right',
   mode: 'title' | 'body',
 ) {
+  const cube = layoutCube(cubeIn)
   const gutterRight = 1 - EDGE - cube.right
   const gutterLeft = cube.left - EDGE
   const useRight =
@@ -43,21 +62,21 @@ function layoutFromCube(
         ? false
         : gutterRight >= gutterLeft
 
-  const avail = useRight ? Math.max(0.18, gutterRight) : Math.max(0.18, gutterLeft)
+  const avail = useRight ? Math.max(0.22, gutterRight) : Math.max(0.22, gutterLeft)
   const widthFrac = clamp(
-    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.38),
-    0.2,
-    mode === 'body' ? 0.4 : 0.36,
+    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.42),
+    0.24,
+    mode === 'body' ? 0.42 : 0.4,
   )
 
   // Sit near the cube’s upper third — reads as a label beside the exhibit.
   const topFrac = clamp(
-    mode === 'body' ? cube.top + cube.height * 0.04 : cube.top + cube.height * 0.06,
-    0.16,
-    0.38,
+    mode === 'body' ? cube.top + cube.height * 0.02 : cube.top + cube.height * 0.04,
+    0.15,
+    0.36,
   )
 
-  const titlePx = clamp(Math.round(widthFrac * 100 * 1.05), 30, 52)
+  const titlePx = clamp(Math.round(widthFrac * 100 * 1.25), 34, 56)
 
   const leftFrac = useRight
     ? clamp(cube.right + CLEAR, EDGE, 1 - EDGE - widthFrac)
@@ -68,7 +87,7 @@ function layoutFromCube(
     left: `${leftFrac * 100}%`,
     right: 'auto' as const,
     width: `${widthFrac * 100}%`,
-    maxWidth: `min(${Math.round(widthFrac * 1200)}px, 420px)`,
+    maxWidth: `min(${Math.round(widthFrac * 1300)}px, 460px)`,
     titlePx,
     useRight,
   }
@@ -236,14 +255,14 @@ export default function PlaneInk({
             >
               <p
                 className="font-hand leading-[1.15] text-museum-ink"
-                style={{ fontSize: `${Math.max(28, layout.titlePx - 2)}px` }}
+                style={{ fontSize: `${Math.max(32, layout.titlePx - 2)}px` }}
               >
                 {project.title}
               </p>
-              <p className="plane-ink-body font-serif text-[clamp(16px,1.55vw,20px)] leading-relaxed text-ink-2">
+              <p className="plane-ink-body font-serif text-[clamp(17px,1.7vw,22px)] leading-relaxed text-ink-2">
                 {statement}
               </p>
-              <p className="plane-ink-body font-serif text-[15px] leading-relaxed text-museum-muted md:text-[16px]">
+              <p className="plane-ink-body font-serif text-[15px] leading-relaxed text-museum-muted md:text-[17px]">
                 {description}
               </p>
               <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">
