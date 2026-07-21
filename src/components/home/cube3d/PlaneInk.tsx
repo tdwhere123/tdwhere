@@ -20,54 +20,61 @@ const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
 /** Viewport edge padding as a fraction of width/height. */
-const EDGE = 0.06
-/** Clearance between cube silhouette and ink (fraction of viewport). */
-const CLEAR = 0.036
+const EDGE = 0.045
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
 }
 
-/** Layout ink from the measured cube screen rect. */
+/**
+ * Measured AABB pads brass / perspective; light inset so gap is vs visible mass.
+ */
+function layoutCube(cube: CubeScreenRect, insetFrac = 0.06): CubeScreenRect {
+  const dx = cube.width * insetFrac
+  const dy = cube.height * insetFrac
+  return {
+    left: cube.left + dx,
+    right: cube.right - dx,
+    top: cube.top + dy,
+    bottom: cube.bottom - dy,
+    cx: cube.cx,
+    cy: cube.cy,
+    width: Math.max(0.08, cube.width - 2 * dx),
+    height: Math.max(0.08, cube.height - 2 * dy),
+  }
+}
+
+/** Layout ink at the cube’s lower-right corner. */
 function layoutFromCube(
-  cube: CubeScreenRect,
-  side: 'left' | 'right',
+  cubeIn: CubeScreenRect,
+  _side: 'left' | 'right',
   mode: 'title' | 'body',
 ) {
-  const gutterRight = 1 - EDGE - cube.right
-  const gutterLeft = cube.left - EDGE
-  const useRight =
-    side === 'right'
-      ? gutterRight >= 0.14 || gutterRight >= gutterLeft
-      : gutterLeft >= 0.14 && gutterLeft > gutterRight
-        ? false
-        : gutterRight >= gutterLeft
+  const cube = layoutCube(cubeIn)
+  const useRight = true
 
-  const avail = useRight ? Math.max(0.14, gutterRight) : Math.max(0.14, gutterLeft)
+  // Gap first — don’t let a wide column eat the clearance.
+  const gap = 0.032
+  const leftFrac = clamp(cube.right + gap, EDGE, 0.72)
+  const maxWidthFromEdge = Math.max(0.18, 1 - EDGE - leftFrac)
   const widthFrac = clamp(
-    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.32),
-    0.15,
-    mode === 'body' ? 0.34 : 0.3,
+    mode === 'body' ? maxWidthFromEdge : Math.min(maxWidthFromEdge, 0.36),
+    0.2,
+    mode === 'body' ? 0.38 : 0.34,
   )
 
-  const topFrac = clamp(
-    mode === 'body' ? cube.top + cube.height * 0.02 : cube.top + cube.height * 0.1,
-    0.14,
-    0.42,
-  )
+  const titlePx = clamp(Math.round(widthFrac * 100 * 1.35), 36, 58)
 
-  const titlePx = clamp(Math.round(widthFrac * 100 * 0.85), 22, 38)
-
-  const leftFrac = useRight
-    ? clamp(cube.right + CLEAR, EDGE, 1 - EDGE - widthFrac)
-    : clamp(cube.left - CLEAR - widthFrac, EDGE, 1 - EDGE - widthFrac)
+  // Bottom-align to the cube’s lower edge; block grows upward.
+  const bottomFrac = clamp(1 - cube.bottom - 0.01, 0.14, 0.42)
 
   return {
-    top: `${topFrac * 100}%`,
+    top: 'auto' as const,
+    bottom: `${bottomFrac * 100}%`,
     left: `${leftFrac * 100}%`,
     right: 'auto' as const,
     width: `${widthFrac * 100}%`,
-    maxWidth: `min(${Math.round(widthFrac * 1100)}px, 340px)`,
+    maxWidth: `min(${Math.round(widthFrac * 1300)}px, 460px)`,
     titlePx,
     useRight,
   }
@@ -82,13 +89,8 @@ export default function PlaneInk({
 }: Props) {
   const navigate = useNavigate()
   const [phase, setPhase] = useState<Phase>('title')
-  const [titleSide, setTitleSide] = useState<'left' | 'right'>(
-    anchor.preferRight ? 'right' : 'left',
-  )
   /** Freeze cube silhouette when the face changes — orbit must not jitter ink. */
   const [parkedCube, setParkedCube] = useState<CubeScreenRect>(anchor.cube)
-  const preferRightRef = useRef(anchor.preferRight)
-  preferRightRef.current = anchor.preferRight
   const cubeRef = useRef(anchor.cube)
   cubeRef.current = anchor.cube
   const seededRef = useRef(false)
@@ -119,7 +121,6 @@ export default function PlaneInk({
 
   useEffect(() => {
     setPhase('title')
-    setTitleSide(preferRightRef.current ? 'right' : 'left')
     setParkedCube(cubeRef.current)
     seededRef.current = false
     onLockChange?.(false)
@@ -160,16 +161,16 @@ export default function PlaneInk({
   }
 
   const isBody = phase === 'body'
-  const panelSide = isBody ? 'right' : titleSide
 
   const layout = useMemo(
-    () => layoutFromCube(parkedCube, panelSide, isBody ? 'body' : 'title'),
-    [parkedCube, panelSide, isBody],
+    () => layoutFromCube(parkedCube, 'right', isBody ? 'body' : 'title'),
+    [parkedCube, isBody],
   )
 
   const panelStyle = useMemo(
     () => ({
       top: layout.top,
+      bottom: layout.bottom,
       left: layout.left,
       right: layout.right,
       width: layout.width,
@@ -217,7 +218,7 @@ export default function PlaneInk({
                 <span className="plane-ink-write">{project.title}</span>
               </p>
               {phase === 'title' && (
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+                <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">
                   {hint}
                 </p>
               )}
@@ -234,18 +235,18 @@ export default function PlaneInk({
               className="space-y-3 overflow-visible"
             >
               <p
-                className="font-hand leading-[1.2] text-museum-ink"
-                style={{ fontSize: `${Math.max(22, layout.titlePx - 2)}px` }}
+                className="font-hand leading-[1.15] text-museum-ink"
+                style={{ fontSize: `${Math.max(32, layout.titlePx - 2)}px` }}
               >
                 {project.title}
               </p>
-              <p className="plane-ink-body font-serif text-[clamp(14px,1.3vw,17px)] leading-relaxed text-ink-2">
+              <p className="plane-ink-body font-serif text-[clamp(17px,1.7vw,22px)] leading-relaxed text-ink-2">
                 {statement}
               </p>
-              <p className="plane-ink-body font-serif text-[13px] leading-relaxed text-museum-muted md:text-[14px]">
+              <p className="plane-ink-body font-serif text-[15px] leading-relaxed text-museum-muted md:text-[17px]">
                 {description}
               </p>
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">
                 {hint}
               </p>
             </motion.div>
