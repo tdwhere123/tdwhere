@@ -5,10 +5,12 @@ import type { CubeFacePosition, CubeStageId } from '../cube-data'
 import { cubeProjects } from '../cube-data'
 
 export const CUBE_SIZE = 1.85
-const ROLL_SEC = 0.72
-/** Soft roam bounds on the museum floor (world units). */
-const BOUND_X = 3.2
-const BOUND_Z = 2.0
+/** Snappier roll so chained faces (e.g. do-it) feel reachable. */
+const ROLL_SEC = 0.52
+/** Soft recenter after a roll so the cube never paints itself into a corner. */
+const RECENTER_SEC = 0.28
+/** Queue depth while a roll / recenter is in flight. */
+const QUEUE_MAX = 2
 
 export type RollDir = 'px' | 'nx' | 'pz' | 'nz'
 
@@ -46,7 +48,6 @@ const _qDelta = new THREE.Quaternion()
 /**
  * Edge-pivot recipes (Y-up, XZ floor).
  * Pivot = centre + (half toward move, half down); rotate ±90° about rim axis.
- * Same kinematics as the Three.js pivot.attach() cycle, without reparenting.
  */
 const ROLL: Record<
   RollDir,
@@ -76,13 +77,6 @@ const ROLL: Record<
     axis: new THREE.Vector3(-1, 0, 0),
     angle: Math.PI / 2,
   },
-}
-
-function clampBounds(x: number, z: number) {
-  return {
-    x: THREE.MathUtils.clamp(x, -BOUND_X, BOUND_X),
-    z: THREE.MathUtils.clamp(z, -BOUND_Z, BOUND_Z),
-  }
 }
 
 function snapToCardinal(v: THREE.Vector3) {
@@ -163,16 +157,17 @@ export function useRollingCube({
   groupRef,
   cameraRef: _cameraRef,
   enabled,
-  locked = false,
+  locked: _locked = false,
   onFaceChange,
 }: Options) {
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
-  const lockedRef = useRef(locked)
-  lockedRef.current = locked
   const tweenRef = useRef<gsap.core.Tween | null>(null)
+  const recenterRef = useRef<gsap.core.Tween | null>(null)
+  const queueRef = useRef<RollDir[]>([])
   const onFaceChangeRef = useRef(onFaceChange)
   onFaceChangeRef.current = onFaceChange
+  const rollRef = useRef<(key: RollDir) => boolean>(() => false)
 
   const syncFacing = useCallback(() => {
     const group = groupRef.current
@@ -184,9 +179,24 @@ export function useRollingCube({
 
   const dirFromKey = useCallback((key: RollDir) => WORLD_ROLL_DIR[key].clone(), [])
 
+  const flushQueue = useCallback(() => {
+    const next = queueRef.current.shift()
+    if (next) {
+      // Defer one frame so busyRef is cleared before the next roll starts.
+      requestAnimationFrame(() => rollRef.current(next))
+    }
+  }, [])
+
   const roll = useCallback(
     (key: RollDir): boolean => {
-      if (!enabled || lockedRef.current || busyRef.current) return false
+      if (!enabled) return false
+      // Ink erase no longer blocks rolls — only orbit is gated via `locked` in the canvas.
+      if (busyRef.current) {
+        if (queueRef.current.length < QUEUE_MAX) {
+          queueRef.current.push(key)
+        }
+        return false
+      }
       const group = groupRef.current
       if (!group) return false
 
@@ -197,18 +207,13 @@ export function useRollingCube({
       const recipe = ROLL[recipeKey]
       const s = CUBE_SIZE
 
+      // Always roll from the exhibit centre — no floor bounds to paint into.
+      recenterRef.current?.kill()
+      group.position.set(0, s / 2, 0)
       const startPos = group.position.clone()
       const startQuat = group.quaternion.clone()
       const endX = startPos.x + recipe.move.x * s
       const endZ = startPos.z + recipe.move.z * s
-      const clamped = clampBounds(endX, endZ)
-      if (Math.abs(clamped.x - endX) > 0.01 || Math.abs(clamped.z - endZ) > 0.01) {
-        return false
-      }
-
-      const landX = Math.round(endX / s) * s
-      const landZ = Math.round(endZ / s) * s
-      const land = clampBounds(landX, landZ)
 
       _pivot.set(
         startPos.x + recipe.pivot.x * s,
@@ -242,18 +247,37 @@ export function useRollingCube({
           group.quaternion.copy(_qDelta).multiply(startQuat)
         },
         onComplete: () => {
-          group.position.set(land.x, s / 2, land.z)
+          group.position.set(endX, s / 2, endZ)
           group.quaternion.copy(endQuat)
+          syncFacing()
           busyRef.current = false
           setBusy(false)
-          syncFacing()
+
+          // Chained input: snap home and fire next roll immediately (do-it = S→S).
+          if (queueRef.current.length > 0) {
+            group.position.set(0, s / 2, 0)
+            flushQueue()
+            return
+          }
+
+          recenterRef.current = gsap.to(group.position, {
+            x: 0,
+            z: 0,
+            duration: RECENTER_SEC,
+            ease: 'power2.out',
+            onComplete: () => {
+              group.position.set(0, s / 2, 0)
+            },
+          })
         },
       })
 
       return true
     },
-    [dirFromKey, enabled, groupRef, syncFacing],
+    [dirFromKey, enabled, flushQueue, groupRef, syncFacing],
   )
+
+  rollRef.current = roll
 
   useEffect(() => {
     const group = groupRef.current
@@ -288,14 +312,32 @@ export function useRollingCube({
       roll(dir)
     }
 
+    /** Mouse wheel → roll along world ±Z (same as S / W). */
+    const onWheel = (e: WheelEvent) => {
+      // Ignore tiny trackpad noise; prefer vertical intent.
+      if (Math.abs(e.deltaY) < 8 && Math.abs(e.deltaX) < 8) return
+      e.preventDefault()
+      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+        roll(e.deltaY > 0 ? 'pz' : 'nz')
+      } else {
+        roll(e.deltaX > 0 ? 'px' : 'nx')
+      }
+    }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('wheel', onWheel)
+    }
   }, [enabled, roll])
 
   useEffect(() => {
     return () => {
       tweenRef.current?.kill()
+      recenterRef.current?.kill()
       busyRef.current = false
+      queueRef.current = []
     }
   }, [])
 

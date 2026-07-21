@@ -17,7 +17,7 @@ type Props = {
 }
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
-const ERASE_MS = 560
+const ERASE_MS = 420
 
 /** Viewport edge padding as a fraction of width/height. */
 const EDGE = 0.045
