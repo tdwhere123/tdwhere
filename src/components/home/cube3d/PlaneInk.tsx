@@ -31,7 +31,7 @@ function clamp(n: number, min: number, max: number) {
 /**
  * Measured AABB pads brass / perspective; inset so ink hugs the visible mass.
  */
-function layoutCube(cube: CubeScreenRect, insetFrac = 0.16): CubeScreenRect {
+function layoutCube(cube: CubeScreenRect, insetFrac = 0.08): CubeScreenRect {
   const dx = cube.width * insetFrac
   const dy = cube.height * insetFrac
   return {
@@ -78,8 +78,8 @@ function layoutFromCube(
 
   const titlePx = clamp(Math.round(widthFrac * 100 * 1.35), 36, 58)
 
-  // Slight negative clearance: AABB already pads beyond the visual face.
-  const gap = -0.012
+  // Small positive gap after AABB inset (~2–4% viewport ≈ 25–50px).
+  const gap = 0.014
   const leftFrac = useRight
     ? clamp(cube.right + gap, EDGE, 1 - EDGE - widthFrac)
     : clamp(cube.left - gap - widthFrac, EDGE, 1 - EDGE - widthFrac)
