@@ -20,9 +20,9 @@ const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 const ERASE_MS = 560
 
 /** Viewport edge padding as a fraction of width/height. */
-const EDGE = 0.06
+const EDGE = 0.05
 /** Clearance between cube silhouette and ink (fraction of viewport). */
-const CLEAR = 0.036
+const CLEAR = 0.018
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -43,20 +43,21 @@ function layoutFromCube(
         ? false
         : gutterRight >= gutterLeft
 
-  const avail = useRight ? Math.max(0.14, gutterRight) : Math.max(0.14, gutterLeft)
+  const avail = useRight ? Math.max(0.18, gutterRight) : Math.max(0.18, gutterLeft)
   const widthFrac = clamp(
-    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.32),
-    0.15,
-    mode === 'body' ? 0.34 : 0.3,
+    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.38),
+    0.2,
+    mode === 'body' ? 0.4 : 0.36,
   )
 
+  // Sit near the cube’s upper third — reads as a label beside the exhibit.
   const topFrac = clamp(
-    mode === 'body' ? cube.top + cube.height * 0.02 : cube.top + cube.height * 0.1,
-    0.14,
-    0.42,
+    mode === 'body' ? cube.top + cube.height * 0.04 : cube.top + cube.height * 0.06,
+    0.16,
+    0.38,
   )
 
-  const titlePx = clamp(Math.round(widthFrac * 100 * 0.85), 22, 38)
+  const titlePx = clamp(Math.round(widthFrac * 100 * 1.05), 30, 52)
 
   const leftFrac = useRight
     ? clamp(cube.right + CLEAR, EDGE, 1 - EDGE - widthFrac)
@@ -67,7 +68,7 @@ function layoutFromCube(
     left: `${leftFrac * 100}%`,
     right: 'auto' as const,
     width: `${widthFrac * 100}%`,
-    maxWidth: `min(${Math.round(widthFrac * 1100)}px, 340px)`,
+    maxWidth: `min(${Math.round(widthFrac * 1200)}px, 420px)`,
     titlePx,
     useRight,
   }
@@ -217,7 +218,7 @@ export default function PlaneInk({
                 <span className="plane-ink-write">{project.title}</span>
               </p>
               {phase === 'title' && (
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+                <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">
                   {hint}
                 </p>
               )}
@@ -234,18 +235,18 @@ export default function PlaneInk({
               className="space-y-3 overflow-visible"
             >
               <p
-                className="font-hand leading-[1.2] text-museum-ink"
-                style={{ fontSize: `${Math.max(22, layout.titlePx - 2)}px` }}
+                className="font-hand leading-[1.15] text-museum-ink"
+                style={{ fontSize: `${Math.max(28, layout.titlePx - 2)}px` }}
               >
                 {project.title}
               </p>
-              <p className="plane-ink-body font-serif text-[clamp(14px,1.3vw,17px)] leading-relaxed text-ink-2">
+              <p className="plane-ink-body font-serif text-[clamp(16px,1.55vw,20px)] leading-relaxed text-ink-2">
                 {statement}
               </p>
-              <p className="plane-ink-body font-serif text-[13px] leading-relaxed text-museum-muted md:text-[14px]">
+              <p className="plane-ink-body font-serif text-[15px] leading-relaxed text-museum-muted md:text-[16px]">
                 {description}
               </p>
-              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/80">
+              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">
                 {hint}
               </p>
             </motion.div>

@@ -141,6 +141,26 @@ async function main() {
       ok(`screen projection moved with orbit (Δ=${screenDelta.toFixed(1)}px)`)
     }
 
+    // Caption must track the tip (world-projected), not stay glued under the cube AABB
+    const labelTrack = await page.evaluate(() => {
+      const label = document.querySelector('[data-testid="roll-s-label"]')
+      const a = window.__tdwhereRollArrow
+      if (!label || !a) return null
+      const r = label.getBoundingClientRect()
+      const lx = r.left + r.width / 2
+      const ly = r.top + r.height / 2
+      return { lx, ly, sx: a.sx, sy: a.sy, dist: Math.hypot(lx - a.sx, ly - a.sy) }
+    })
+    if (!labelTrack) {
+      fail('could not measure caption vs tip')
+    } else if (labelTrack.dist > 90) {
+      fail(
+        `caption drifted from tip (Δ=${labelTrack.dist.toFixed(1)}px) — still screen-clamped?`,
+      )
+    } else {
+      ok(`caption tracks tip (Δ=${labelTrack.dist.toFixed(1)}px)`)
+    }
+
     await setOrbit(page, -Math.PI / 2)
     const after2 = await waitForArrow(page)
     await page.screenshot({ path: path.join(OUT, '03-azimuth-neg90.png'), fullPage: false })

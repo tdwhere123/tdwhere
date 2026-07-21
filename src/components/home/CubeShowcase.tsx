@@ -251,7 +251,8 @@ function RollDownHint({
   anchor: CubeScreenAnchor
   lang: 'zh' | 'en'
 }) {
-  // Caption only — the hand-ink arrow lives on the museum floor in the canvas.
+  // Caption only — tracks the floor mark tip in screen space (world +Z).
+  // The hand-ink arrow itself lives on the museum floor in the canvas.
   return (
     <div
       className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
@@ -262,7 +263,7 @@ function RollDownHint({
       aria-hidden="true"
       data-testid="roll-s-label"
     >
-      <span className="font-hand text-[11px] leading-none text-museum-ink/55">
+      <span className="font-hand text-[13px] leading-none tracking-[0.04em] text-museum-ink/60">
         {lang === 'zh' ? 'S · 此向滚' : 'S · this way'}
       </span>
     </div>

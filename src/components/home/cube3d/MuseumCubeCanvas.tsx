@@ -70,20 +70,20 @@ const CORNER_SIGNS: ReadonlyArray<readonly [number, number, number]> = [
 export function emptyCubeAnchor(): CubeScreenAnchor {
   return {
     cube: {
-      left: 0.28,
-      right: 0.72,
-      top: 0.22,
-      bottom: 0.72,
+      left: 0.365,
+      right: 0.635,
+      top: 0.26,
+      bottom: 0.68,
       cx: 0.5,
       cy: 0.47,
-      width: 0.44,
-      height: 0.5,
+      width: 0.27,
+      height: 0.42,
     },
-    x: 0.78,
-    y: 0.4,
+    x: 0.68,
+    y: 0.38,
     preferRight: true,
     rollHintX: 0.5,
-    rollHintY: 0.78,
+    rollHintY: 0.72,
     rollAngleDeg: 0,
   }
 }
@@ -374,18 +374,15 @@ function ScreenAnchorReporter({
     )
     const y = THREE.MathUtils.clamp(cy - height * 0.08, 0.18, 0.55)
 
+    // Same world ray as FloorRollArrow tip — orbit only reprojects (no
+    // screen-space "glue under cube AABB" clamp).
     tip.current
       .copy(center.current)
-      .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.35)
-    tip.current.y = 0.03
+      .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.55)
+    tip.current.y = 0.04
     ndc.current.copy(tip.current).project(camera)
-    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.08, 0.92)
-    // Sit just under the measured cube bottom, above footer
-    const hy = THREE.MathUtils.clamp(
-      Math.max((1 - ndc.current.y) / 2, bottom + 0.02),
-      0.55,
-      0.84,
-    )
+    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.04, 0.96)
+    const hy = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.04, 0.96)
 
     const L = last.current
     if (
@@ -415,7 +412,7 @@ function ScreenAnchorReporter({
 }
 
 /** Target cube silhouette width as a fraction of the viewport. */
-const TARGET_CUBE_WIDTH = 0.36
+const TARGET_CUBE_WIDTH = 0.27
 
 /**
  * Dolly the camera so the cube occupies a stable share of the page.
