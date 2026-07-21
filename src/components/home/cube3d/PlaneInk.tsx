@@ -21,8 +21,6 @@ const ERASE_MS = 560
 
 /** Viewport edge padding as a fraction of width/height. */
 const EDGE = 0.045
-/** Clearance budget when sizing the ink column. */
-const CLEAR = 0.012
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))
@@ -53,23 +51,21 @@ function layoutFromCube(
   mode: 'title' | 'body',
 ) {
   const cube = layoutCube(cubeIn)
-  // Always park on the right — “右下角” of the exhibit.
   const useRight = true
-  const avail = Math.max(0.22, 1 - EDGE - cube.right)
+
+  // Gap first — don’t let a wide column eat the clearance.
+  const gap = 0.032
+  const leftFrac = clamp(cube.right + gap, EDGE, 0.72)
+  const maxWidthFromEdge = Math.max(0.18, 1 - EDGE - leftFrac)
   const widthFrac = clamp(
-    mode === 'body' ? avail - CLEAR : Math.min(avail - CLEAR, 0.42),
-    0.24,
-    mode === 'body' ? 0.42 : 0.4,
+    mode === 'body' ? maxWidthFromEdge : Math.min(maxWidthFromEdge, 0.36),
+    0.2,
+    mode === 'body' ? 0.38 : 0.34,
   )
 
   const titlePx = clamp(Math.round(widthFrac * 100 * 1.35), 36, 58)
 
-  // Slightly farther from the silhouette than the previous hug.
-  const gap = 0.03
-  const leftFrac = clamp(cube.right + gap, EDGE, 1 - EDGE - widthFrac)
-
   // Bottom-align to the cube’s lower edge; block grows upward.
-  // Nudge a touch below the AABB so it reads as the corner, not mid-face.
   const bottomFrac = clamp(1 - cube.bottom - 0.01, 0.14, 0.42)
 
   return {
