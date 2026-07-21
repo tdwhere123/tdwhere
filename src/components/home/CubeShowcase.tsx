@@ -248,31 +248,25 @@ function RollDownHint({
   anchor: CubeScreenAnchor
   lang: 'zh' | 'en'
 }) {
+  // Arrow itself is a 3D object in the canvas; this is only the upright caption
+  // parked at the projected tip of that marker.
   return (
     <div
-      className="pointer-events-none absolute z-[5] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5"
+      className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
       style={{
         left: `${anchor.rollHintX * 100}%`,
         top: `${anchor.rollHintY * 100}%`,
       }}
       aria-hidden="true"
+      data-testid="roll-s-label"
     >
-      <div
-        className="flex flex-col items-center gap-1.5 transition-transform duration-300 ease-zen"
-        style={{ transform: `rotate(${anchor.rollAngleDeg}deg)` }}
+      <span
+        className="inline-block rounded-[2px] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted"
+        style={{
+          background: 'color-mix(in srgb, var(--museum-bg) 78%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--museum-brass) 35%, transparent)',
+        }}
       >
-        <svg width="22" height="28" viewBox="0 0 22 28" fill="none" className="opacity-75">
-          <path
-            d="M11 2v18M5 14l6 8 6-8"
-            stroke="var(--museum-brass)"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-      {/* Label stays upright for readability */}
-      <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted">
         {lang === 'zh' ? 'S · 向前滚' : 'S · roll toward you'}
       </span>
     </div>

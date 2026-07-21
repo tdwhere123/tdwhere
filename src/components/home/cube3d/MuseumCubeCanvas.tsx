@@ -109,6 +109,105 @@ function FollowControls({
   return null
 }
 
+declare global {
+  interface Window {
+    /** Live S-roll arrow pose for E2E (world + screen + face normal). */
+    __tdwhereRollArrow?: {
+      wx: number
+      wy: number
+      wz: number
+      sx: number
+      sy: number
+      faceNx: number
+      faceNz: number
+    }
+    /** Programmatic orbit for E2E — azimuth/polar around the cube (radians). */
+    __tdwhereSetOrbit?: (azimuthRad: number, polarRad?: number) => void
+  }
+}
+
+/**
+ * S-roll arrow lying on the TOP face of the cube, pointing toward the camera
+ * on XZ (KeyS = roll toward viewer).
+ *
+ * Why top face (not vertical near face): the product camera is near-top-down,
+ * so a vertical-face shaft foreshortens to a stray tip under the cube. A flat
+ * top-face chevron stays readable and clearly rotates when you orbit.
+ */
+function RollSArrow3D({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) {
+  const groupRef = useRef<THREE.Group>(null)
+  const { camera, size } = useThree()
+  const center = useRef(new THREE.Vector3())
+  const towardCam = useRef(new THREE.Vector3())
+  const tipWorld = useRef(new THREE.Vector3())
+  const ndc = useRef(new THREE.Vector3())
+  const brass = useMemo(() => new THREE.Color('#8a6a2a'), [])
+  const mat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: brass,
+        depthTest: false,
+        depthWrite: false,
+        transparent: true,
+        opacity: 0.9,
+      }),
+    [brass],
+  )
+
+  useEffect(() => () => mat.dispose(), [mat])
+
+  useFrame(() => {
+    const cube = targetRef.current
+    const g = groupRef.current
+    if (!cube || !g) return
+
+    cube.getWorldPosition(center.current)
+
+    towardCam.current.set(
+      camera.position.x - center.current.x,
+      0,
+      camera.position.z - center.current.z,
+    )
+    if (towardCam.current.lengthSq() < 1e-6) towardCam.current.set(0, 0, 1)
+    else towardCam.current.normalize()
+
+    // Sit on the top face, toward the S (near) edge so orbit motion is obvious
+    g.position.copy(center.current)
+    g.position.y = center.current.y + CUBE_SIZE * 0.5 + 0.04
+    g.position.addScaledVector(towardCam.current, CUBE_SIZE * 0.22)
+
+    // Local +Z = toward camera (S). Yaw only — stays flat on the top face.
+    const yaw = Math.atan2(towardCam.current.x, towardCam.current.z)
+    g.rotation.set(0, yaw, 0)
+    g.updateWorldMatrix(true, false)
+
+    // Tip of chevron (local +Z)
+    tipWorld.current.set(0, 0.02, 0.42).applyMatrix4(g.matrixWorld)
+    ndc.current.copy(tipWorld.current).project(camera)
+    window.__tdwhereRollArrow = {
+      wx: tipWorld.current.x,
+      wy: tipWorld.current.y,
+      wz: tipWorld.current.z,
+      sx: ((ndc.current.x + 1) / 2) * size.width,
+      sy: ((1 - ndc.current.y) / 2) * size.height,
+      faceNx: towardCam.current.x,
+      faceNz: towardCam.current.z,
+    }
+  })
+
+  return (
+    <group ref={groupRef} userData={{ rollHint: 's-top' }}>
+      {/* Flat on top face; local +Z = toward camera (S) */}
+      <mesh position={[0, 0.02, 0.06]} material={mat}>
+        <boxGeometry args={[0.1, 0.04, 0.4]} />
+      </mesh>
+      <mesh position={[0, 0.02, 0.36]} rotation={[-Math.PI / 2, 0, 0]} material={mat}>
+        <coneGeometry args={[0.16, 0.3, 3]} />
+      </mesh>
+    </group>
+  )
+}
+
 function ScreenAnchorReporter({
   targetRef,
   onAnchor,
@@ -119,70 +218,66 @@ function ScreenAnchorReporter({
   const { camera } = useThree()
   const center = useRef(new THREE.Vector3())
   const tip = useRef(new THREE.Vector3())
+  const park = useRef(new THREE.Vector3())
   const forward = useRef(new THREE.Vector3())
-  const ndcCenter = useRef(new THREE.Vector3())
-  const ndcTip = useRef(new THREE.Vector3())
-  const last = useRef({ x: -1, y: -1, hx: -1, hy: -1, ang: 0 })
+  const ndc = useRef(new THREE.Vector3())
+  const last = useRef({ x: -1, y: -1, hx: -1, hy: -1 })
 
   useFrame(() => {
     if (!onAnchor || !targetRef.current) return
 
     targetRef.current.getWorldPosition(center.current)
 
-    // Same camera-relative "S" direction as useRollingCube KeyS → nz:
-    // opposite of camera look on the museum floor (toward the viewer).
-    camera.getWorldDirection(forward.current)
-    forward.current.y = 0
-    if (forward.current.lengthSq() < 1e-6) forward.current.set(0, 0, -1)
-    forward.current.normalize()
-    // Snap to cardinal so the hint stays stable while orbiting slightly.
-    if (Math.abs(forward.current.x) >= Math.abs(forward.current.z)) {
-      forward.current.set(Math.sign(forward.current.x) || 1, 0, 0)
-    } else {
-      forward.current.set(0, 0, Math.sign(forward.current.z) || 1)
-    }
-    // S rolls opposite camera-forward → toward viewer
+    // Toward camera on XZ = face that hosts the 3D S-arrow; tip near arrow tip
+    forward.current.set(
+      camera.position.x - center.current.x,
+      0,
+      camera.position.z - center.current.z,
+    )
+    if (forward.current.lengthSq() < 1e-6) forward.current.set(0, 0, 1)
+    else forward.current.normalize()
+
     tip.current
       .copy(center.current)
-      .addScaledVector(forward.current, -CUBE_SIZE * 0.72)
-    tip.current.y = 0.06
+      .addScaledVector(forward.current, CUBE_SIZE * 0.32)
+    tip.current.y = center.current.y + CUBE_SIZE * 0.52
 
-    ndcCenter.current.copy(center.current).project(camera)
-    ndcTip.current.copy(tip.current).project(camera)
+    // Ink park: slightly to the free side of the cube (screen-stable-ish)
+    const preferRight = (() => {
+      ndc.current.copy(center.current).project(camera)
+      return (ndc.current.x + 1) / 2 < 0.55
+    })()
+    park.current.copy(center.current)
+    park.current.x += preferRight ? CUBE_SIZE * 0.55 : -CUBE_SIZE * 0.55
+    park.current.y = 0.2
 
-    const cx = (ndcCenter.current.x + 1) / 2
-    const cy = (1 - ndcCenter.current.y) / 2
-    const hx = (ndcTip.current.x + 1) / 2
-    const hy = (1 - ndcTip.current.y) / 2
+    ndc.current.copy(park.current).project(camera)
+    const x = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.1, 0.9)
+    const y = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.2, 0.86)
 
-    // Screen delta; SVG arrow defaults to pointing down (+Y).
-    const dx = hx - cx
-    const dy = hy - cy
-    const rollAngleDeg = (Math.atan2(dx, dy) * 180) / Math.PI
-
-    // Ink park point: slightly toward free side of the tip
-    const parkX = THREE.MathUtils.clamp(hx, 0.1, 0.9)
-    const parkY = THREE.MathUtils.clamp(hy, 0.2, 0.86)
+    ndc.current.copy(tip.current).project(camera)
+    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.06, 0.94)
+    const hy = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.12, 0.92)
 
     const L = last.current
     if (
-      Math.abs(parkX - L.x) < 0.01 &&
-      Math.abs(parkY - L.y) < 0.01 &&
+      Math.abs(x - L.x) < 0.01 &&
+      Math.abs(y - L.y) < 0.01 &&
       Math.abs(hx - L.hx) < 0.01 &&
-      Math.abs(hy - L.hy) < 0.01 &&
-      Math.abs(rollAngleDeg - L.ang) < 2.5
+      Math.abs(hy - L.hy) < 0.01
     ) {
       return
     }
-    last.current = { x: parkX, y: parkY, hx, hy, ang: rollAngleDeg }
+    last.current = { x, y, hx, hy }
 
     onAnchor({
-      x: parkX,
-      y: parkY,
-      preferRight: parkX < 0.55,
-      rollHintX: THREE.MathUtils.clamp(hx, 0.06, 0.94),
-      rollHintY: THREE.MathUtils.clamp(hy, 0.12, 0.92),
-      rollAngleDeg,
+      x,
+      y,
+      preferRight,
+      rollHintX: hx,
+      rollHintY: hy,
+      // kept for API compat; 3D arrow owns orientation now
+      rollAngleDeg: 0,
     })
   })
 
@@ -226,6 +321,31 @@ function RollingScene({
     controls.enableRotate = allowTouchOrbit && !busy && !locked
   }, [busy, locked, allowTouchOrbit])
 
+  // E2E hook: set camera azimuth/polar around the cube without relying on mouse drag
+  useEffect(() => {
+    window.__tdwhereSetOrbit = (azimuthRad: number, polarRad?: number) => {
+      const controls = controlsRef.current
+      const cam = cameraRef.current
+      if (!controls || !cam) return
+      const target = controls.target
+      const polar =
+        polarRad ??
+        THREE.MathUtils.clamp(controls.getPolarAngle(), controls.minPolarAngle, controls.maxPolarAngle)
+      const radius = cam.position.distanceTo(target)
+      const p = THREE.MathUtils.clamp(polar, controls.minPolarAngle, controls.maxPolarAngle)
+      cam.position.set(
+        target.x + radius * Math.sin(p) * Math.sin(azimuthRad),
+        target.y + radius * Math.cos(p),
+        target.z + radius * Math.sin(p) * Math.cos(azimuthRad),
+      )
+      cam.lookAt(target)
+      controls.update()
+    }
+    return () => {
+      delete window.__tdwhereSetOrbit
+    }
+  }, [])
+
   const maps = useMemo(
     () => (Array.isArray(textures) ? textures : [textures]),
     [textures],
@@ -263,6 +383,7 @@ function RollingScene({
         target={[0, CUBE_SIZE * 0.2, 0]}
       />
       <FollowControls targetRef={groupRef} controlsRef={controlsRef} busyRef={busyRef} />
+      <RollSArrow3D targetRef={groupRef} />
       <ScreenAnchorReporter targetRef={groupRef} onAnchor={onAnchor} />
     </>
   )
