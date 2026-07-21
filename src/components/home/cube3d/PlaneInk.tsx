@@ -22,7 +22,7 @@ const ERASE_MS = 560
 /** Viewport edge padding as a fraction of width/height. */
 const EDGE = 0.06
 /** Clearance between cube silhouette and ink (fraction of viewport). */
-const CLEAR = 0.028
+const CLEAR = 0.036
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n))

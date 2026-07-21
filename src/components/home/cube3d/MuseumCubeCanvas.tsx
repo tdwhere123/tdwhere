@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -414,6 +414,97 @@ function ScreenAnchorReporter({
   return null
 }
 
+/** Target cube silhouette width as a fraction of the viewport. */
+const TARGET_CUBE_WIDTH = 0.36
+
+/**
+ * Dolly the camera so the cube occupies a stable share of the page.
+ * Runs on mount + resize; does not fight user orbit mid-drag.
+ */
+function FitCubeFraming({
+  targetRef,
+  controlsRef,
+}: {
+  targetRef: React.RefObject<THREE.Group | null>
+  controlsRef: React.RefObject<OrbitControlsImpl | null>
+}) {
+  const { camera, size } = useThree()
+  const center = useRef(new THREE.Vector3())
+  const corner = useRef(new THREE.Vector3())
+  const ndc = useRef(new THREE.Vector3())
+  const lastW = useRef(0)
+
+  const measureWidth = useCallback(() => {
+    const cube = targetRef.current
+    if (!cube) return 0
+    cube.getWorldPosition(center.current)
+    const half = CUBE_SIZE * 0.52
+    let minX = 1
+    let maxX = 0
+    for (const [sx, sy, sz] of CORNER_SIGNS) {
+      corner.current.set(
+        center.current.x + sx * half,
+        center.current.y + sy * half,
+        center.current.z + sz * half,
+      )
+      ndc.current.copy(corner.current).project(camera)
+      const px = (ndc.current.x + 1) / 2
+      if (px < minX) minX = px
+      if (px > maxX) maxX = px
+    }
+    return Math.max(0.05, maxX - minX)
+  }, [camera, targetRef])
+
+  const fit = useCallback(() => {
+    const controls = controlsRef.current
+    if (!controls || !targetRef.current) return
+
+    const target = controls.target.clone()
+    let radius = camera.position.distanceTo(target)
+    const polar = controls.getPolarAngle()
+    const azimuth = controls.getAzimuthalAngle()
+
+    for (let i = 0; i < 8; i++) {
+      camera.position.set(
+        target.x + radius * Math.sin(polar) * Math.sin(azimuth),
+        target.y + radius * Math.cos(polar),
+        target.z + radius * Math.sin(polar) * Math.cos(azimuth),
+      )
+      camera.lookAt(target)
+      camera.updateMatrixWorld()
+      const w = measureWidth()
+      if (Math.abs(w - TARGET_CUBE_WIDTH) < 0.012) break
+      const scale = w / TARGET_CUBE_WIDTH
+      radius = THREE.MathUtils.clamp(radius * scale, controls.minDistance, controls.maxDistance)
+    }
+
+    camera.position.set(
+      target.x + radius * Math.sin(polar) * Math.sin(azimuth),
+      target.y + radius * Math.cos(polar),
+      target.z + radius * Math.sin(polar) * Math.cos(azimuth),
+    )
+    camera.lookAt(target)
+    controls.update()
+  }, [camera, controlsRef, measureWidth, targetRef])
+
+  useEffect(() => {
+    const id = window.setTimeout(fit, 80)
+    const onResize = () => {
+      if (Math.abs(size.width - lastW.current) < 8) return
+      lastW.current = size.width
+      fit()
+    }
+    lastW.current = size.width
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.clearTimeout(id)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [fit, size.width])
+
+  return null
+}
+
 function RollingScene({
   enabled,
   locked,
@@ -506,12 +597,13 @@ function RollingScene({
         enableDamping
         dampingFactor={0.08}
         rotateSpeed={0.55}
-        minDistance={5.5}
-        maxDistance={14}
+        minDistance={6.5}
+        maxDistance={16}
         minPolarAngle={0.12}
         maxPolarAngle={1.05}
         target={[0, CUBE_SIZE * 0.2, 0]}
       />
+      <FitCubeFraming targetRef={groupRef} controlsRef={controlsRef} />
       <FollowControls targetRef={groupRef} controlsRef={controlsRef} busyRef={busyRef} />
       <FloorRollArrow targetRef={groupRef} />
       <ScreenAnchorReporter targetRef={groupRef} onAnchor={onAnchor} />
