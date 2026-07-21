@@ -24,22 +24,68 @@ const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
 /** Floor S-mark: world +Z from cube centre (matches KeyS / ↓). */
 const FLOOR_S_DIR = WORLD_ROLL_DIR.pz
 /** Keep the mark close to the cube so it doesn't crowd footer / ink text. */
-const FLOOR_ARROW_DIST = CUBE_SIZE * 0.72
-const FLOOR_ARROW_SIZE: [number, number] = [0.42, 0.58]
+const FLOOR_ARROW_DIST = CUBE_SIZE * 0.68
+const FLOOR_ARROW_SIZE: [number, number] = [0.28, 0.4]
+
+export type CubeScreenRect = {
+  /** Viewport fractions 0–1. */
+  left: number
+  right: number
+  top: number
+  bottom: number
+  cx: number
+  cy: number
+  width: number
+  height: number
+}
 
 export type CubeScreenAnchor = {
-  /** Park point beside the cube for PlaneInk (normalized 0–1). */
+  /** Measured cube silhouette in the viewport (drives ink layout). */
+  cube: CubeScreenRect
+  /**
+   * Convenience park point just outside the free side of `cube`
+   * (normalized 0–1). Kept for caption / legacy callers.
+   */
   x: number
   y: number
   preferRight: boolean
   /** Tip of the S-roll hint in screen space (normalized 0–1). */
   rollHintX: number
   rollHintY: number
-  /**
-   * CSS degrees to rotate a down-pointing arrow so it aligns with the
-   * camera-relative S roll direction (toward the viewer on the floor).
-   */
+  /** @deprecated kept for API compat */
   rollAngleDeg: number
+}
+
+const CORNER_SIGNS: ReadonlyArray<readonly [number, number, number]> = [
+  [-1, -1, -1],
+  [-1, -1, 1],
+  [-1, 1, -1],
+  [-1, 1, 1],
+  [1, -1, -1],
+  [1, -1, 1],
+  [1, 1, -1],
+  [1, 1, 1],
+]
+
+export function emptyCubeAnchor(): CubeScreenAnchor {
+  return {
+    cube: {
+      left: 0.28,
+      right: 0.72,
+      top: 0.22,
+      bottom: 0.72,
+      cx: 0.5,
+      cy: 0.47,
+      width: 0.44,
+      height: 0.5,
+    },
+    x: 0.78,
+    y: 0.4,
+    preferRight: true,
+    rollHintX: 0.5,
+    rollHintY: 0.78,
+    rollAngleDeg: 0,
+  }
 }
 
 function CubeMesh({ textures }: { textures: THREE.Texture[] }) {
@@ -269,60 +315,93 @@ function ScreenAnchorReporter({
   const { camera } = useThree()
   const center = useRef(new THREE.Vector3())
   const tip = useRef(new THREE.Vector3())
-  const side = useRef(new THREE.Vector3())
+  const corner = useRef(new THREE.Vector3())
   const ndc = useRef(new THREE.Vector3())
-  const last = useRef({ x: -1, y: -1, hx: -1, hy: -1 })
+  const last = useRef({
+    left: -1,
+    right: -1,
+    top: -1,
+    bottom: -1,
+    hx: -1,
+    hy: -1,
+  })
 
   useFrame(() => {
     if (!onAnchor || !targetRef.current) return
 
-    targetRef.current.getWorldPosition(center.current)
+    const cubeObj = targetRef.current
+    cubeObj.getWorldPosition(center.current)
+    // Include a little padding for brass trim beyond the mesh half-extent
+    const half = CUBE_SIZE * 0.52
 
-    // Caption near the compact floor mark tip (+Z), kept off the footer band
+    let minX = 1
+    let maxX = 0
+    let minY = 1
+    let maxY = 0
+
+    for (const [sx, sy, sz] of CORNER_SIGNS) {
+      corner.current.set(
+        center.current.x + sx * half,
+        center.current.y + sy * half,
+        center.current.z + sz * half,
+      )
+      ndc.current.copy(corner.current).project(camera)
+      const px = (ndc.current.x + 1) / 2
+      const py = (1 - ndc.current.y) / 2
+      if (px < minX) minX = px
+      if (px > maxX) maxX = px
+      if (py < minY) minY = py
+      if (py > maxY) maxY = py
+    }
+
+    // Clamp to viewport; keep a usable silhouette even if projection clips
+    const left = THREE.MathUtils.clamp(minX, 0.02, 0.9)
+    const right = THREE.MathUtils.clamp(maxX, 0.1, 0.98)
+    const top = THREE.MathUtils.clamp(minY, 0.06, 0.85)
+    const bottom = THREE.MathUtils.clamp(maxY, 0.15, 0.94)
+    const width = Math.max(0.08, right - left)
+    const height = Math.max(0.08, bottom - top)
+    const cx = (left + right) / 2
+    const cy = (top + bottom) / 2
+
+    const preferRight = cx < 0.55
+    // Park just outside the measured silhouette (+ small gutter scaled by cube width)
+    const gutter = THREE.MathUtils.clamp(width * 0.12, 0.025, 0.05)
+    const x = THREE.MathUtils.clamp(
+      preferRight ? right + gutter : left - gutter,
+      0.08,
+      0.92,
+    )
+    const y = THREE.MathUtils.clamp(cy - height * 0.08, 0.18, 0.55)
+
     tip.current
       .copy(center.current)
       .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.35)
     tip.current.y = 0.03
-
-    ndc.current.copy(center.current).project(camera)
-    const cx = (ndc.current.x + 1) / 2
-    const cy = (1 - ndc.current.y) / 2
-    const preferRight = cx < 0.55
-
-    // Measure cube half-width in screen space, then park ink clear of the silhouette
-    side.current.copy(center.current)
-    side.current.x += preferRight ? CUBE_SIZE * 0.55 : -CUBE_SIZE * 0.55
-    side.current.y = center.current.y
-    ndc.current.copy(side.current).project(camera)
-    const sideX = (ndc.current.x + 1) / 2
-    const halfW = Math.max(0.12, Math.abs(sideX - cx))
-    const inkMargin = 0.07
-
-    const x = THREE.MathUtils.clamp(
-      preferRight ? cx + halfW + inkMargin : cx - halfW - inkMargin,
-      0.14,
-      0.86,
-    )
-    // Slightly above cube centre so title sits in the open side, not over the faces
-    const y = THREE.MathUtils.clamp(cy - 0.04, 0.28, 0.52)
-
     ndc.current.copy(tip.current).project(camera)
-    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.1, 0.9)
-    // Keep S caption above the bottom instruction strip
-    const hy = THREE.MathUtils.clamp((1 - ndc.current.y) / 2, 0.58, 0.82)
+    const hx = THREE.MathUtils.clamp((ndc.current.x + 1) / 2, 0.08, 0.92)
+    // Sit just under the measured cube bottom, above footer
+    const hy = THREE.MathUtils.clamp(
+      Math.max((1 - ndc.current.y) / 2, bottom + 0.02),
+      0.55,
+      0.84,
+    )
 
     const L = last.current
     if (
-      Math.abs(x - L.x) < 0.01 &&
-      Math.abs(y - L.y) < 0.01 &&
+      Math.abs(left - L.left) < 0.008 &&
+      Math.abs(right - L.right) < 0.008 &&
+      Math.abs(top - L.top) < 0.008 &&
+      Math.abs(bottom - L.bottom) < 0.008 &&
       Math.abs(hx - L.hx) < 0.01 &&
       Math.abs(hy - L.hy) < 0.01
     ) {
       return
     }
-    last.current = { x, y, hx, hy }
+    last.current = { left, right, top, bottom, hx, hy }
 
     onAnchor({
+      cube: { left, right, top, bottom, cx, cy, width, height },
       x,
       y,
       preferRight,

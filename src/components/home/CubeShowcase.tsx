@@ -7,7 +7,10 @@ import {
   cubeRotations,
   type CubeStageId,
 } from './cube-data'
-import MuseumCubeCanvas, { type CubeScreenAnchor } from './cube3d/MuseumCubeCanvas'
+import MuseumCubeCanvas, {
+  emptyCubeAnchor,
+  type CubeScreenAnchor,
+} from './cube3d/MuseumCubeCanvas'
 import PlaneInk from './cube3d/PlaneInk'
 import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
@@ -271,14 +274,7 @@ function DesktopCubeShowcase() {
   const [activeId, setActiveId] = useState<CubeStageId>('home')
   const [writeKey, setWriteKey] = useState(0)
   const [inkLocked, setInkLocked] = useState(false)
-  const [anchor, setAnchor] = useState<CubeScreenAnchor>({
-    x: 0.5,
-    y: 0.62,
-    preferRight: true,
-    rollHintX: 0.5,
-    rollHintY: 0.78,
-    rollAngleDeg: 0,
-  })
+  const [anchor, setAnchor] = useState<CubeScreenAnchor>(() => emptyCubeAnchor())
 
   const project = cubeProjects.find((p) => p.id === activeId) ?? cubeProjects[0]
 
