@@ -1,6 +1,6 @@
 /**
- * E2E: S-roll 3D arrow is face-mounted and follows cube when orbiting.
- * Uses window.__tdwhereSetOrbit + __tdwhereRollArrow (no mouse drag).
+ * E2E: floor S-arrow is world-fixed (+Z), not camera-relative.
+ * Orbit must NOT flip the mark's world direction.
  * Usage: node scripts/e2e-s-arrow.mjs [baseUrl]
  */
 import puppeteer from 'puppeteer-core'
@@ -11,8 +11,7 @@ const BASE = process.argv[2] || 'http://localhost:3000'
 const OUT = '/opt/cursor/artifacts/e2e-s-arrow'
 fs.mkdirSync(OUT, { recursive: true })
 
-/** Slightly tilted polar so the face arrow is readable in screenshots. */
-const POLAR = 0.92
+const POLAR = 0.22 // product-like near-top view
 
 function ok(msg) {
   console.log(`PASS  ${msg}`)
@@ -92,65 +91,69 @@ async function main() {
     const before = await waitForArrow(page)
     await page.screenshot({ path: path.join(OUT, '01-azimuth-0.png'), fullPage: false })
     ok(
-      `azimuth=0 arrow world=(${before.wx.toFixed(2)}, ${before.wy.toFixed(2)}, ${before.wz.toFixed(2)}) ` +
-        `faceN=(${before.faceNx.toFixed(2)}, ${before.faceNz.toFixed(2)})`,
+      `azimuth=0 tip world=(${before.wx.toFixed(2)}, ${before.wz.toFixed(2)}) ` +
+        `dir=(${before.dirX.toFixed(2)}, ${before.dirZ.toFixed(2)})`,
     )
+
+    // Must point world +Z
+    if (Math.abs(before.dirX) > 0.05 || before.dirZ < 0.9) {
+      fail(`expected world +Z dir, got (${before.dirX}, ${before.dirZ})`)
+    } else {
+      ok('floor mark points world +Z')
+    }
+    if (before.wz < 0.5) {
+      fail(`tip should sit on +Z side of cube (wz=${before.wz.toFixed(2)})`)
+    } else {
+      ok(`tip on +Z side (wz=${before.wz.toFixed(2)})`)
+    }
 
     await setOrbit(page, Math.PI / 2)
     const after = await waitForArrow(page)
     await page.screenshot({ path: path.join(OUT, '02-azimuth-90.png'), fullPage: false })
     ok(
-      `azimuth=π/2 arrow world=(${after.wx.toFixed(2)}, ${after.wy.toFixed(2)}, ${after.wz.toFixed(2)}) ` +
-        `faceN=(${after.faceNx.toFixed(2)}, ${after.faceNz.toFixed(2)})`,
+      `azimuth=π/2 tip world=(${after.wx.toFixed(2)}, ${after.wz.toFixed(2)}) ` +
+        `dir=(${after.dirX.toFixed(2)}, ${after.dirZ.toFixed(2)})`,
     )
 
+    // Direction must NOT follow camera
+    if (Math.abs(after.dirX - before.dirX) > 0.05 || Math.abs(after.dirZ - before.dirZ) > 0.05) {
+      fail(
+        `dir followed camera after orbit: before=(${before.dirX},${before.dirZ}) ` +
+          `after=(${after.dirX},${after.dirZ})`,
+      )
+    } else {
+      ok('dir unchanged after orbit (world-fixed)')
+    }
+
+    // World tip should stay put (cube idle) — not swing around the cube with camera
     const worldDelta = Math.hypot(after.wx - before.wx, after.wz - before.wz)
-    const faceDot = before.faceNx * after.faceNx + before.faceNz * after.faceNz
-
-    if (worldDelta < 0.75) {
-      fail(`world tip barely moved on XZ (Δ=${worldDelta.toFixed(2)}) — still fixed in world?`)
+    if (worldDelta > 0.15) {
+      fail(`world tip moved with orbit (Δ=${worldDelta.toFixed(2)}) — still camera-chasing?`)
     } else {
-      ok(`world tip moved on XZ (Δ=${worldDelta.toFixed(2)})`)
+      ok(`world tip stayed put (Δ=${worldDelta.toFixed(3)})`)
     }
 
-    if (faceDot > 0.35) {
-      fail(`face normal barely rotated (dot=${faceDot.toFixed(3)})`)
+    // Screen position SHOULD change (projection), proving it's in the 3D scene
+    const screenDelta = Math.hypot(after.sx - before.sx, after.sy - before.sy)
+    if (screenDelta < 20) {
+      fail(`screen tip barely moved (Δ=${screenDelta.toFixed(1)}) — looks like fixed HUD?`)
     } else {
-      ok(`face normal rotated with camera (dot=${faceDot.toFixed(3)})`)
-    }
-
-    const beforeAxis = Math.abs(before.faceNx) > Math.abs(before.faceNz) ? 'x' : 'z'
-    const afterAxis = Math.abs(after.faceNx) > Math.abs(after.faceNz) ? 'x' : 'z'
-    if (beforeAxis === afterAxis) {
-      fail(`still on same axis face (${beforeAxis}) after 90° orbit`)
-    } else {
-      ok(`switched cube face axis ${beforeAxis} → ${afterAxis}`)
+      ok(`screen projection moved with orbit (Δ=${screenDelta.toFixed(1)}px)`)
     }
 
     await setOrbit(page, -Math.PI / 2)
     const after2 = await waitForArrow(page)
     await page.screenshot({ path: path.join(OUT, '03-azimuth-neg90.png'), fullPage: false })
-    const worldDelta2 = Math.hypot(after2.wx - after.wx, after2.wz - after.wz)
-    const faceDot2 = after.faceNx * after2.faceNx + after.faceNz * after2.faceNz
-    if (worldDelta2 < 0.75 || faceDot2 > 0.35) {
-      fail(
-        `second orbit weak: worldΔ=${worldDelta2.toFixed(2)} faceDot=${faceDot2.toFixed(3)}`,
-      )
+    if (Math.abs(after2.dirZ - 1) > 0.05 || Math.abs(after2.wx - before.wx) > 0.15) {
+      fail('second orbit broke world-fixed pose')
     } else {
-      ok(`second orbit moved worldΔ=${worldDelta2.toFixed(2)} faceDot=${faceDot2.toFixed(3)}`)
+      ok('second orbit still world-fixed +Z')
     }
 
-    if (after.wx * after2.wx >= 0) {
-      fail(`±90° tips not on opposite X faces (wx ${after.wx.toFixed(2)} vs ${after2.wx.toFixed(2)})`)
-    } else {
-      ok(`±90° tips on opposite sides (wx ${after.wx.toFixed(2)} vs ${after2.wx.toFixed(2)})`)
-    }
-
-    // Default-ish top view too (matches product camera feel)
-    await setOrbit(page, 0, 0.22)
+    await setOrbit(page, 0, 0.92)
     await waitForArrow(page)
-    await page.screenshot({ path: path.join(OUT, '04-topish-default.png'), fullPage: false })
-    ok('captured top-ish default polar screenshot')
+    await page.screenshot({ path: path.join(OUT, '04-tilted.png'), fullPage: false })
+    ok('captured tilted view screenshot')
 
     const hasFixedSvgArrow = await page.evaluate(() => {
       const label = document.querySelector('[data-testid="roll-s-label"]')
@@ -158,7 +161,7 @@ async function main() {
       return !!label.querySelector('svg')
     })
     if (hasFixedSvgArrow) fail('2D SVG arrow still present in overlay')
-    else ok('overlay is caption-only; arrow is 3D in canvas')
+    else ok('overlay is caption-only; mark is on the floor plane')
 
     const labelText = await page.$eval(labelSel, (el) => el.textContent?.trim() || '')
     if (!/S/.test(labelText)) fail(`label missing S caption: ${labelText}`)
@@ -170,20 +173,7 @@ async function main() {
 
     fs.writeFileSync(
       path.join(OUT, 'summary.json'),
-      JSON.stringify(
-        {
-          before,
-          after,
-          after2,
-          worldDelta,
-          faceDot,
-          worldDelta2,
-          labelText,
-          pageErrors,
-        },
-        null,
-        2,
-      ),
+      JSON.stringify({ before, after, after2, worldDelta, screenDelta, labelText, pageErrors }, null, 2),
     )
   } catch (e) {
     fail(String(e))

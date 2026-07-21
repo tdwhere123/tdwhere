@@ -12,6 +12,18 @@ const BOUND_Z = 2.0
 
 export type RollDir = 'px' | 'nx' | 'pz' | 'nz'
 
+/**
+ * World-fixed roll axes (XZ floor). Matches the floor S-arrow mark:
+ * S / ↓ → +Z (recipe pz), W / ↑ → −Z (recipe nz), D → +X, A → −X.
+ * Camera orbit does not remap these — the arrow on the plane stays the truth.
+ */
+export const WORLD_ROLL_DIR: Record<RollDir, THREE.Vector3> = {
+  pz: new THREE.Vector3(0, 0, 1),
+  nz: new THREE.Vector3(0, 0, -1),
+  px: new THREE.Vector3(1, 0, 0),
+  nx: new THREE.Vector3(-1, 0, 0),
+}
+
 const FACE_LOCAL: Record<CubeFacePosition, THREE.Vector3> = {
   right: new THREE.Vector3(1, 0, 0),
   left: new THREE.Vector3(-1, 0, 0),
@@ -26,8 +38,6 @@ const FACE_TO_ID = Object.fromEntries(
 ) as Record<CubeFacePosition, CubeStageId>
 
 const UP = new THREE.Vector3(0, 1, 0)
-const _forward = new THREE.Vector3()
-const _right = new THREE.Vector3()
 const _pivot = new THREE.Vector3()
 const _offset = new THREE.Vector3()
 const _axis = new THREE.Vector3()
@@ -151,7 +161,7 @@ type Options = {
 
 export function useRollingCube({
   groupRef,
-  cameraRef,
+  cameraRef: _cameraRef,
   enabled,
   locked = false,
   onFaceChange,
@@ -172,34 +182,7 @@ export function useRollingCube({
     queueMicrotask(() => onFaceChangeRef.current(id))
   }, [groupRef])
 
-  const dirFromKey = useCallback(
-    (key: RollDir) => {
-      const cam = cameraRef.current
-      if (cam) {
-        cam.getWorldDirection(_forward)
-        _forward.y = 0
-        if (_forward.lengthSq() < 1e-6) _forward.set(0, 0, -1)
-        _forward.normalize()
-        _forward.copy(snapToCardinal(_forward))
-        _right.crossVectors(_forward, UP).normalize()
-      } else {
-        _forward.set(0, 0, -1)
-        _right.set(1, 0, 0)
-      }
-
-      switch (key) {
-        case 'pz':
-          return _forward.clone()
-        case 'nz':
-          return _forward.clone().multiplyScalar(-1)
-        case 'px':
-          return _right.clone()
-        case 'nx':
-          return _right.clone().multiplyScalar(-1)
-      }
-    },
-    [cameraRef],
-  )
+  const dirFromKey = useCallback((key: RollDir) => WORLD_ROLL_DIR[key].clone(), [])
 
   const roll = useCallback(
     (key: RollDir): boolean => {
@@ -294,10 +277,10 @@ export function useRollingCube({
         KeyD: 'px',
         ArrowLeft: 'nx',
         KeyA: 'nx',
-        ArrowUp: 'pz',
-        KeyW: 'pz',
-        ArrowDown: 'nz',
-        KeyS: 'nz',
+        ArrowUp: 'nz',
+        KeyW: 'nz',
+        ArrowDown: 'pz',
+        KeyS: 'pz',
       }
       const dir = map[e.code]
       if (!dir) return

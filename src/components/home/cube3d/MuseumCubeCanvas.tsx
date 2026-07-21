@@ -4,7 +4,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { CubeFacePosition, CubeStageId } from '../cube-data'
-import { CUBE_SIZE, useRollingCube } from './useRollingCube'
+import { CUBE_SIZE, useRollingCube, WORLD_ROLL_DIR } from './useRollingCube'
 import { asset } from '@/lib/asset'
 
 const MATERIAL_FACES: CubeFacePosition[] = [
@@ -20,6 +20,11 @@ const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.png`))
 
 /** Near-top view (~80°): cube reads upright on the plane. */
 const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
+
+/** Floor S-mark: world +Z from cube centre (matches KeyS / ↓). */
+const FLOOR_S_DIR = WORLD_ROLL_DIR.pz
+const FLOOR_ARROW_DIST = CUBE_SIZE * 0.95
+const FLOOR_ARROW_SIZE: [number, number] = [1.15, 1.55]
 
 export type CubeScreenAnchor = {
   /** Park point beside the cube for PlaneInk (normalized 0–1). */
@@ -111,15 +116,16 @@ function FollowControls({
 
 declare global {
   interface Window {
-    /** Live S-roll arrow pose for E2E (world + screen + face normal). */
+    /** Live floor S-arrow tip for E2E (world-fixed direction, follows cube XZ). */
     __tdwhereRollArrow?: {
       wx: number
       wy: number
       wz: number
       sx: number
       sy: number
-      faceNx: number
-      faceNz: number
+      /** World direction the mark points (unit XZ). */
+      dirX: number
+      dirZ: number
     }
     /** Programmatic orbit for E2E — azimuth/polar around the cube (radians). */
     __tdwhereSetOrbit?: (azimuthRad: number, polarRad?: number) => void
@@ -127,34 +133,80 @@ declare global {
 }
 
 /**
- * S-roll arrow lying on the TOP face of the cube, pointing toward the camera
- * on XZ (KeyS = roll toward viewer).
- *
- * Why top face (not vertical near face): the product camera is near-top-down,
- * so a vertical-face shaft foreshortens to a stray tip under the cube. A flat
- * top-face chevron stays readable and clearly rotates when you orbit.
+ * Hand-ink S-roll mark painted on the museum floor.
+ * World-fixed: always points +Z (KeyS / ↓). Camera orbit does not rotate it —
+ * only the cube’s XZ position is followed so the mark stays beside the cube.
  */
-function RollSArrow3D({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) {
+function FloorRollArrow({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) {
   const groupRef = useRef<THREE.Group>(null)
   const { camera, size } = useThree()
   const center = useRef(new THREE.Vector3())
-  const towardCam = useRef(new THREE.Vector3())
   const tipWorld = useRef(new THREE.Vector3())
   const ndc = useRef(new THREE.Vector3())
-  const brass = useMemo(() => new THREE.Color('#8a6a2a'), [])
-  const mat = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: brass,
-        depthTest: false,
-        depthWrite: false,
-        transparent: true,
-        opacity: 0.9,
-      }),
-    [brass],
-  )
 
-  useEffect(() => () => mat.dispose(), [mat])
+  const texture = useMemo(() => {
+    const w = 256
+    const h = 320
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, w, h)
+
+    const ink = (a: number) => `rgba(44, 40, 34, ${a})`
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+
+    // Shaft — two slightly offset strokes for ink wobble
+    ctx.strokeStyle = ink(0.55)
+    ctx.lineWidth = 3.2
+    ctx.beginPath()
+    ctx.moveTo(124, 36)
+    ctx.bezierCurveTo(118, 90, 132, 140, 126, 200)
+    ctx.bezierCurveTo(124, 230, 128, 250, 125, 268)
+    ctx.stroke()
+
+    ctx.strokeStyle = ink(0.4)
+    ctx.lineWidth = 1.8
+    ctx.beginPath()
+    ctx.moveTo(132, 40)
+    ctx.bezierCurveTo(136, 95, 122, 145, 130, 205)
+    ctx.bezierCurveTo(132, 235, 126, 252, 129, 270)
+    ctx.stroke()
+
+    // Arrow head — uneven triangular blot
+    ctx.fillStyle = ink(0.62)
+    ctx.beginPath()
+    ctx.moveTo(128, 292)
+    ctx.lineTo(78, 232)
+    ctx.quadraticCurveTo(104, 248, 128, 268)
+    ctx.quadraticCurveTo(152, 246, 178, 228)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.strokeStyle = ink(0.35)
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.moveTo(86, 238)
+    ctx.quadraticCurveTo(108, 252, 128, 274)
+    ctx.moveTo(170, 236)
+    ctx.quadraticCurveTo(148, 250, 128, 274)
+    ctx.stroke()
+
+    // Floor tick under tip
+    ctx.fillStyle = ink(0.28)
+    ctx.beginPath()
+    ctx.arc(128, 304, 4, 0, Math.PI * 2)
+    ctx.fill()
+
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.anisotropy = 4
+    tex.needsUpdate = true
+    return tex
+  }, [])
+
+  useEffect(() => () => texture.dispose(), [texture])
 
   useFrame(() => {
     const cube = targetRef.current
@@ -163,26 +215,20 @@ function RollSArrow3D({ targetRef }: { targetRef: React.RefObject<THREE.Group | 
 
     cube.getWorldPosition(center.current)
 
-    towardCam.current.set(
-      camera.position.x - center.current.x,
-      0,
-      camera.position.z - center.current.z,
+    g.position.set(
+      center.current.x + FLOOR_S_DIR.x * FLOOR_ARROW_DIST,
+      0.03,
+      center.current.z + FLOOR_S_DIR.z * FLOOR_ARROW_DIST,
     )
-    if (towardCam.current.lengthSq() < 1e-6) towardCam.current.set(0, 0, 1)
-    else towardCam.current.normalize()
+    // Plane on XZ. After Rx(-π/2), canvas +V maps to world −Z.
+    // Ry(π) flips so the ink tip (+V) aims world +Z (away from cube).
+    g.rotation.set(-Math.PI / 2, Math.PI, 0)
 
-    // Sit on the top face, toward the S (near) edge so orbit motion is obvious
-    g.position.copy(center.current)
-    g.position.y = center.current.y + CUBE_SIZE * 0.5 + 0.04
-    g.position.addScaledVector(towardCam.current, CUBE_SIZE * 0.22)
-
-    // Local +Z = toward camera (S). Yaw only — stays flat on the top face.
-    const yaw = Math.atan2(towardCam.current.x, towardCam.current.z)
-    g.rotation.set(0, yaw, 0)
-    g.updateWorldMatrix(true, false)
-
-    // Tip of chevron (local +Z)
-    tipWorld.current.set(0, 0.02, 0.42).applyMatrix4(g.matrixWorld)
+    tipWorld.current.set(
+      g.position.x + FLOOR_S_DIR.x * FLOOR_ARROW_SIZE[1] * 0.42,
+      0.04,
+      g.position.z + FLOOR_S_DIR.z * FLOOR_ARROW_SIZE[1] * 0.42,
+    )
     ndc.current.copy(tipWorld.current).project(camera)
     window.__tdwhereRollArrow = {
       wx: tipWorld.current.x,
@@ -190,19 +236,23 @@ function RollSArrow3D({ targetRef }: { targetRef: React.RefObject<THREE.Group | 
       wz: tipWorld.current.z,
       sx: ((ndc.current.x + 1) / 2) * size.width,
       sy: ((1 - ndc.current.y) / 2) * size.height,
-      faceNx: towardCam.current.x,
-      faceNz: towardCam.current.z,
+      dirX: FLOOR_S_DIR.x,
+      dirZ: FLOOR_S_DIR.z,
     }
   })
 
   return (
-    <group ref={groupRef} userData={{ rollHint: 's-top' }}>
-      {/* Flat on top face; local +Z = toward camera (S) */}
-      <mesh position={[0, 0.02, 0.06]} material={mat}>
-        <boxGeometry args={[0.1, 0.04, 0.4]} />
-      </mesh>
-      <mesh position={[0, 0.02, 0.36]} rotation={[-Math.PI / 2, 0, 0]} material={mat}>
-        <coneGeometry args={[0.16, 0.3, 3]} />
+    <group ref={groupRef} userData={{ rollHint: 's-floor' }}>
+      <mesh renderOrder={5}>
+        <planeGeometry args={FLOOR_ARROW_SIZE} />
+        <meshBasicMaterial
+          map={texture}
+          transparent
+          depthWrite={false}
+          depthTest={false}
+          opacity={0.92}
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </group>
   )
@@ -219,7 +269,6 @@ function ScreenAnchorReporter({
   const center = useRef(new THREE.Vector3())
   const tip = useRef(new THREE.Vector3())
   const park = useRef(new THREE.Vector3())
-  const forward = useRef(new THREE.Vector3())
   const ndc = useRef(new THREE.Vector3())
   const last = useRef({ x: -1, y: -1, hx: -1, hy: -1 })
 
@@ -228,19 +277,11 @@ function ScreenAnchorReporter({
 
     targetRef.current.getWorldPosition(center.current)
 
-    // Toward camera on XZ = face that hosts the 3D S-arrow; tip near arrow tip
-    forward.current.set(
-      camera.position.x - center.current.x,
-      0,
-      camera.position.z - center.current.z,
-    )
-    if (forward.current.lengthSq() < 1e-6) forward.current.set(0, 0, 1)
-    else forward.current.normalize()
-
+    // Caption parks at the world-fixed floor S-mark tip (+Z from cube)
     tip.current
       .copy(center.current)
-      .addScaledVector(forward.current, CUBE_SIZE * 0.32)
-    tip.current.y = center.current.y + CUBE_SIZE * 0.52
+      .addScaledVector(FLOOR_S_DIR, FLOOR_ARROW_DIST + FLOOR_ARROW_SIZE[1] * 0.38)
+    tip.current.y = 0.03
 
     // Ink park: slightly to the free side of the cube (screen-stable-ish)
     const preferRight = (() => {
@@ -383,7 +424,7 @@ function RollingScene({
         target={[0, CUBE_SIZE * 0.2, 0]}
       />
       <FollowControls targetRef={groupRef} controlsRef={controlsRef} busyRef={busyRef} />
-      <RollSArrow3D targetRef={groupRef} />
+      <FloorRollArrow targetRef={groupRef} />
       <ScreenAnchorReporter targetRef={groupRef} onAnchor={onAnchor} />
     </>
   )

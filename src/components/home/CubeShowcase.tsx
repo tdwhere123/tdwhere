@@ -248,8 +248,7 @@ function RollDownHint({
   anchor: CubeScreenAnchor
   lang: 'zh' | 'en'
 }) {
-  // Arrow itself is a 3D object in the canvas; this is only the upright caption
-  // parked at the projected tip of that marker.
+  // Caption only — the hand-ink arrow lives on the museum floor in the canvas.
   return (
     <div
       className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
@@ -260,14 +259,8 @@ function RollDownHint({
       aria-hidden="true"
       data-testid="roll-s-label"
     >
-      <span
-        className="inline-block rounded-[2px] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-museum-muted"
-        style={{
-          background: 'color-mix(in srgb, var(--museum-bg) 78%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--museum-brass) 35%, transparent)',
-        }}
-      >
-        {lang === 'zh' ? 'S · 向前滚' : 'S · roll toward you'}
+      <span className="font-hand text-[13px] leading-none text-museum-ink/70">
+        {lang === 'zh' ? 'S · 此向滚' : 'S · this way'}
       </span>
     </div>
   )
