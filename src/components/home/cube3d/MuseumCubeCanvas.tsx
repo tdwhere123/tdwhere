@@ -16,7 +16,7 @@ const MATERIAL_FACES: CubeFacePosition[] = [
   'back',
 ]
 
-const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.png`))
+const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.jpg`))
 
 /** Near-top view (~80°): cube reads upright on the plane. */
 const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
@@ -93,7 +93,10 @@ function CubeMesh({ textures }: { textures: THREE.Texture[] }) {
     () =>
       textures.map((map) => {
         map.colorSpace = THREE.SRGBColorSpace
-        map.anisotropy = 4
+        map.anisotropy = 2
+        map.generateMipmaps = true
+        map.minFilter = THREE.LinearMipmapLinearFilter
+        map.magFilter = THREE.LinearFilter
         map.needsUpdate = true
         return new THREE.MeshBasicMaterial({ map, toneMapped: false })
       }),
@@ -650,11 +653,12 @@ export default function MuseumCubeCanvas({
       style={{ touchAction: touchOrbit ? 'pan-y' : 'none' }}
     >
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={[1, 1.25]}
         camera={{ position: INITIAL_CAM.toArray() as [number, number, number], fov: 32, near: 0.1, far: 60 }}
         gl={{
           antialias: true,
           alpha: true,
+          powerPreference: 'high-performance',
           toneMapping: THREE.NoToneMapping,
           preserveDrawingBuffer: true,
         }}

@@ -279,6 +279,21 @@ function DesktopCubeShowcase() {
 
   const project = cubeProjects.find((p) => p.id === activeId) ?? cubeProjects[0]
 
+  // Warm the six face JPEGs as early as possible (tiny vs old PNGs).
+  useEffect(() => {
+    const faces = ['front', 'right', 'back', 'left', 'top', 'bottom'] as const
+    const links: HTMLLinkElement[] = []
+    for (const face of faces) {
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'image'
+      link.href = asset(`cube/faces/${face}.jpg`)
+      document.head.appendChild(link)
+      links.push(link)
+    }
+    return () => links.forEach((l) => l.remove())
+  }, [])
+
   const onFaceChange = useCallback((id: CubeStageId) => {
     setActiveId((prev) => {
       if (prev === id) return prev
@@ -317,8 +332,8 @@ function DesktopCubeShowcase() {
 
       <p className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 px-6 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-museum-muted">
         {lang === 'zh'
-          ? '方向键翻滚 · 拖拽转视角 · 点击手写字'
-          : 'Arrows roll · drag to orbit · click the ink'}
+          ? '方向键 / 滚轮翻面 · 拖拽转视角 · 点击手写字'
+          : 'Arrows / wheel roll · drag to orbit · click the ink'}
       </p>
     </div>
   )
