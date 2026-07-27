@@ -5,7 +5,7 @@ import { Github, Menu, X } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import LangToggle from '@/components/LangToggle'
 import SealMark from '@/components/SealMark'
-import { getLenis } from '@/lib/smooth-scroll'
+import { getLenis, resumeSmoothScroll } from '@/lib/smooth-scroll'
 import { cn } from '@/lib/utils'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
@@ -36,11 +36,12 @@ export default function Navbar() {
       lenis?.stop()
     } else {
       document.body.style.overflow = ''
-      lenis?.start()
+      // Don't restart Lenis on `/` where smoothing is intentionally paused.
+      resumeSmoothScroll()
     }
     return () => {
       document.body.style.overflow = ''
-      lenis?.start()
+      resumeSmoothScroll()
     }
   }, [open])
 

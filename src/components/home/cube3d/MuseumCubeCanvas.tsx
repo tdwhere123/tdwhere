@@ -541,7 +541,8 @@ function RollingScene({
         ref={controlsRef}
         makeDefault
         enablePan={false}
-        enableZoom={allowTouchOrbit}
+        // Wheel must scroll the page (semantics B) — never zoom the exhibit.
+        enableZoom={false}
         enableRotate={allowTouchOrbit}
         enableDamping
         dampingFactor={0.08}

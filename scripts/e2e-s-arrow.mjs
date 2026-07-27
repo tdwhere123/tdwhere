@@ -8,7 +8,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const BASE = process.argv[2] || 'http://localhost:3000'
-const OUT = '/opt/cursor/artifacts/e2e-s-arrow'
+const OUT =
+  process.env.E2E_OUT ||
+  (fs.existsSync('/opt/cursor/artifacts')
+    ? '/opt/cursor/artifacts/e2e-s-arrow'
+    : '/tmp/cursor/e2e-s-arrow')
 fs.mkdirSync(OUT, { recursive: true })
 
 const POLAR = 0.22 // product-like near-top view
@@ -55,7 +59,10 @@ async function setOrbit(page, azimuth, polar = POLAR) {
 
 async function main() {
   const browser = await puppeteer.launch({
-    executablePath: '/usr/local/bin/google-chrome',
+    executablePath:
+      process.env.CHROME_PATH ||
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
+      '/usr/local/bin/google-chrome',
     headless: true,
     args: [
       '--no-sandbox',
@@ -64,6 +71,7 @@ async function main() {
       '--use-angle=swiftshader',
       '--enable-webgl',
       '--ignore-gpu-blocklist',
+      '--proxy-server=direct://',
       '--window-size=1280,900',
     ],
     defaultViewport: { width: 1280, height: 900 },
@@ -75,9 +83,10 @@ async function main() {
   page.on('pageerror', (e) => pageErrors.push(String(e)))
 
   try {
-    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 60000 })
-    await page.waitForSelector('canvas', { timeout: 30000 })
-    await wait(2500)
+    const homeUrl = BASE.endsWith('/') ? BASE : `${BASE}/`
+    await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
+    await page.waitForSelector('canvas', { timeout: 45000 })
+    await wait(1500)
 
     const labelSel = '[data-testid="roll-s-label"]'
     await page.waitForSelector(labelSel, { timeout: 15000 })

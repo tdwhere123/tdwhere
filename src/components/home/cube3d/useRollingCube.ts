@@ -291,6 +291,7 @@ export function useRollingCube({
     const target = interactionTargetRef.current
     if (!enabled || !target) return
 
+    // Wheel only scrolls the page (semantics B). Cube rolls via keys / drag-orbit.
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       const tag = (e.target as HTMLElement | null)?.tagName
@@ -312,24 +313,9 @@ export function useRollingCube({
       roll(dir)
     }
 
-    /** Mouse wheel → roll along world ±Z (same as S / W). */
-    const onWheel = (e: WheelEvent) => {
-      if (document.activeElement !== target) return
-      // Ignore tiny trackpad noise; prefer vertical intent.
-      if (Math.abs(e.deltaY) < 8 && Math.abs(e.deltaX) < 8) return
-      e.preventDefault()
-      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
-        roll(e.deltaY > 0 ? 'pz' : 'nz')
-      } else {
-        roll(e.deltaX > 0 ? 'px' : 'nx')
-      }
-    }
-
     target.addEventListener('keydown', onKey)
-    target.addEventListener('wheel', onWheel, { passive: false })
     return () => {
       target.removeEventListener('keydown', onKey)
-      target.removeEventListener('wheel', onWheel)
     }
   }, [enabled, interactionTargetRef, roll])
 

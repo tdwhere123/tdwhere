@@ -49,7 +49,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'Not smarter-looking AI — agents that remember, decide, and finish the work.',
     tags: [],
-    image: asset('cube/home.png'),
+    image: asset('cube/faces/front.jpg'),
     alt: 'Museum alcove with a floating stone cube',
     ctaZh: '方向键翻面',
     ctaEn: 'ROLL WITH ARROWS',
@@ -70,7 +70,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'A local-first, governable, auditable memory plane for CLI coding agents.',
     tags: ['TYPESCRIPT', 'SQLITE', 'MCP', 'LOCAL-FIRST'],
-    image: asset('cube/alaya.png'),
+    image: asset('cube/faces/right.jpg'),
     alt: 'Concentric stone rings around a square portal',
     route: '/alaya',
     github: 'https://github.com/tdwhere123',
@@ -93,7 +93,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'Routing, judgment, review, and verification — installed into coding agents.',
     tags: ['CODEX', 'CLAUDE CODE', 'CURSOR', 'OPENCODE'],
-    image: asset('cube/do-it.png'),
+    image: asset('cube/faces/back.jpg'),
     alt: 'Mechanical stone device with a circular track',
     route: '/do-it',
     github: 'https://github.com/tdwhere123/do-it',
@@ -116,7 +116,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'Model-agnostic Chinese formal writing skills with local corpus, recall, and review.',
     tags: ['PYTHON', 'LOCAL-FIRST', 'AGENT SKILLS'],
-    image: asset('cube/write-right.png'),
+    image: asset('cube/faces/left.jpg'),
     alt: 'Stone sculpture of a writer at a desk',
     route: '/write-right',
     github: 'https://github.com/tdwhere123/write-right',
@@ -139,7 +139,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'A static narrative game driven by AI dialogue, mail, data shards, and inquiry.',
     tags: ['JAVASCRIPT', 'AI DIALOGUE', 'NARRATIVE GAME'],
-    image: asset('cube/sentinel.png'),
+    image: asset('cube/faces/top.jpg'),
     alt: 'Aged CRT terminal in a stone alcove',
     route: '/playground',
     github: 'https://github.com/tdwhere123',
@@ -162,7 +162,7 @@ export const cubeProjects: CubeProject[] = [
     descriptionEn:
       'My first vibe-coding project: a WeChat mini-program centered on vegetarian recipe cards.',
     tags: ['MINI PROGRAM', 'RECIPE CARDS', 'ARCHIVED'],
-    image: asset('cube/vegetarian.png'),
+    image: asset('cube/faces/bottom.jpg'),
     alt: 'Stone recipe-card altar with herbs and vegetables',
     github: 'https://github.com/tdwhere123',
     ctaZh: 'VIEW ON GITHUB',

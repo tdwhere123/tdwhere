@@ -17,7 +17,7 @@ export default function HomeCoda() {
       : 'Every project lives on GitHub.'
 
   return (
-    <section className="relative mx-auto max-w-reading px-5 py-24 text-center md:py-32">
+    <section className="home-coda relative mx-auto max-w-reading px-5 py-20 text-center md:py-28">
       <BrassRule className="mx-auto mb-10 h-2 w-40" />
       <div className="relative mx-auto mb-2 flex w-fit items-center justify-center gap-3">
         <SealMark size={36} className="opacity-80" />

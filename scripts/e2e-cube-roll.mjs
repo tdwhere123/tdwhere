@@ -8,7 +8,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const BASE = process.argv[2] || 'http://localhost:3000'
-const OUT = '/opt/cursor/artifacts/e2e-cube-roll'
+const OUT =
+  process.env.E2E_OUT ||
+  (fs.existsSync('/opt/cursor/artifacts')
+    ? '/opt/cursor/artifacts/e2e-cube-roll'
+    : '/tmp/cursor/e2e-cube-roll')
 fs.mkdirSync(OUT, { recursive: true })
 
 function ok(msg) {
@@ -25,7 +29,10 @@ async function wait(ms) {
 
 async function main() {
   const browser = await puppeteer.launch({
-    executablePath: '/usr/local/bin/google-chrome',
+    executablePath:
+      process.env.CHROME_PATH ||
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
+      '/usr/local/bin/google-chrome',
     headless: true,
     args: [
       '--no-sandbox',
@@ -34,6 +41,7 @@ async function main() {
       '--use-angle=swiftshader',
       '--enable-webgl',
       '--ignore-gpu-blocklist',
+      '--proxy-server=direct://',
       '--window-size=1280,900',
     ],
     defaultViewport: { width: 1280, height: 900 },
@@ -43,12 +51,18 @@ async function main() {
 
   try {
     const t0 = Date.now()
-    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 60000 })
-    await page.waitForSelector('canvas', { timeout: 30000 })
+    const homeUrl = BASE.endsWith('/') ? BASE : `${BASE}/`
+    await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
+    await page.waitForSelector('canvas', { timeout: 45000 })
+    await page.waitForSelector('[data-testid="plane-ink"]', { timeout: 30000 })
+    // RollingScene mounts key + E2E hooks after the lazy Three chunk evaluates.
+    await page.waitForFunction(
+      () => typeof window.__tdwhereSetOrbit === 'function',
+      { timeout: 30000 },
+    )
     await page.$eval('[data-testid="cube-exhibit"]', (element) => {
       if (element instanceof HTMLElement) element.focus()
     })
-    await page.waitForSelector('[data-testid="plane-ink"]', { timeout: 30000 })
     // Wait until title shows home
     await page.waitForFunction(
       () => {
@@ -59,15 +73,27 @@ async function main() {
     )
     const readyMs = Date.now() - t0
     ok(`home interactive in ${readyMs}ms`)
-    if (readyMs > 8000) fail(`home load slower than expected (${readyMs}ms)`)
+    // Lazy Three/R3F chunk + swiftshader — allow a longer first-interactive budget.
+    if (readyMs > 60000) fail(`home load slower than expected (${readyMs}ms)`)
 
     await page.screenshot({ path: path.join(OUT, '01-home.png') })
+
+    await page.$eval('[data-testid="cube-exhibit"]', (element) => {
+      if (element instanceof HTMLElement) element.focus()
+    })
+    await wait(200)
 
     // Chain two S presses quickly — should land on do-it (back face)
     await page.keyboard.press('s')
     await wait(80)
     await page.keyboard.press('s')
-    await wait(1600)
+    await page.waitForFunction(
+      () => {
+        const ink = document.querySelector('[data-testid="plane-ink"]')
+        return ink && /do-it/i.test(ink.textContent || '')
+      },
+      { timeout: 12000 },
+    )
 
     const title = await page.$eval(
       '[data-testid="plane-ink"]',

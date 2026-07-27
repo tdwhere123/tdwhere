@@ -1,4 +1,6 @@
 import {
+	Suspense,
+	lazy,
 	useCallback,
 	useEffect,
 	useRef,
@@ -11,16 +13,12 @@ import { useLang } from "@/context/LangContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cubeProjects, cubeRotations, type CubeStageId } from "./cube-data";
-import MuseumCubeCanvas from "./cube3d/MuseumCubeCanvas";
-import {
-	emptyCubeAnchor,
-	type CubeScreenAnchor,
-} from "./cube3d/cubeScreenAnchor";
-import PlaneInk from "./cube3d/PlaneInk";
 import HallAmbience from "./HallAmbience";
 import { useExploration } from "./useExploration";
 import { asset } from "@/lib/asset";
 import { cn } from "@/lib/utils";
+
+const DesktopCubeShowcase = lazy(() => import("./DesktopCubeShowcase"));
 
 function SwipeHintMark({ className }: { className?: string }) {
 	return (
@@ -57,6 +55,17 @@ function ProjectExternalLink({
 		<a href={href} target="_blank" rel="noreferrer" className={className}>
 			{children}
 		</a>
+	);
+}
+
+function DesktopFallback() {
+	return (
+		<div
+			className="relative flex min-h-[100svh] w-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#ddd4c6_0%,#cfc4b4_55%,#c4b8a6_100%)]"
+			aria-hidden="true"
+		>
+			<div className="h-14 w-14 animate-pulse rounded-sm bg-museum-stone/70 shadow-sm" />
+		</div>
 	);
 }
 
@@ -107,7 +116,6 @@ function MobileCubeShowcase() {
 		});
 	}, []);
 
-	// Dwelling on a slide lights the hall; tapping the art triggers its mechanism.
 	const activeProject = cubeProjects[activeIndex];
 	useEffect(() => {
 		const t = window.setTimeout(() => markSeen(activeProject.id), 900);
@@ -130,6 +138,7 @@ function MobileCubeShowcase() {
 				progress={progress}
 				litCount={litCount}
 			/>
+			{/* X-only scroller: keep overflow-y clipped so vertical pans scroll the page to coda. */}
 			<div
 				ref={scrollerRef}
 				data-lenis-prevent-touch
@@ -203,7 +212,12 @@ function MobileCubeShowcase() {
 													} as CSSProperties
 												}
 											>
-												<img src={project.image} alt={project.alt} />
+												<img
+													src={project.image}
+													alt={project.alt}
+													loading={index === 0 ? "eager" : "lazy"}
+													decoding="async"
+												/>
 											</div>
 											<img
 												src={asset("cube/shell.png")}
@@ -211,6 +225,8 @@ function MobileCubeShowcase() {
 												aria-hidden="true"
 												className="cube-face__shell"
 												style={{ mixBlendMode: "multiply" }}
+												loading={index === 0 ? "eager" : "lazy"}
+												decoding="async"
 											/>
 										</div>
 									</button>
@@ -270,7 +286,7 @@ function MobileCubeShowcase() {
 			</div>
 
 			<div
-				className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-3"
+				className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex flex-col items-center gap-2.5"
 				aria-hidden="true"
 			>
 				<div
@@ -304,162 +320,11 @@ function MobileCubeShowcase() {
 						/>
 					))}
 				</div>
+
+				<span className="font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/55">
+					{lang === "zh" ? "向下继续" : "Scroll for more"}
+				</span>
 			</div>
-		</div>
-	);
-}
-
-function RollDownHint({
-	anchor,
-	lang,
-}: {
-	anchor: CubeScreenAnchor;
-	lang: "zh" | "en";
-}) {
-	// Caption only — tracks the floor mark tip in screen space (world +Z).
-	// The hand-ink arrow itself lives on the museum floor in the canvas.
-	return (
-		<div
-			className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
-			style={{
-				left: `${anchor.rollHintX * 100}%`,
-				top: `${anchor.rollHintY * 100}%`,
-			}}
-			aria-hidden="true"
-			data-testid="roll-s-label"
-		>
-			<span className="font-hand text-[13px] leading-none tracking-[0.04em] text-museum-ink/60">
-				{lang === "zh" ? "S · 此向滚" : "S · this way"}
-			</span>
-		</div>
-	);
-}
-
-function DesktopCubeShowcase() {
-	const { lang } = useLang();
-	const { progress, litCount, markSeen, markMechanism } = useExploration();
-	const [activeId, setActiveId] = useState<CubeStageId>("home");
-	const [writeKey, setWriteKey] = useState(0);
-	const [inkLocked, setInkLocked] = useState(false);
-	const [anchor, setAnchor] = useState<CubeScreenAnchor>(() =>
-		emptyCubeAnchor(),
-	);
-	const [inkAnchor, setInkAnchor] = useState<CubeScreenAnchor>(() =>
-		emptyCubeAnchor(),
-	);
-	const activeIdRef = useRef<CubeStageId>("home");
-	const pendingFaceRef = useRef<CubeStageId | null>(null);
-	const hasInkAnchorRef = useRef(false);
-	const latestAnchorRef = useRef<CubeScreenAnchor>(emptyCubeAnchor());
-
-	const project =
-		cubeProjects.find((p) => p.id === activeId) ?? cubeProjects[0];
-
-	// Warm every catalogued face JPEG as early as possible (tiny vs old PNGs).
-	useEffect(() => {
-		const links: HTMLLinkElement[] = [];
-		for (const { face } of cubeProjects) {
-			const link = document.createElement("link");
-			link.rel = "preload";
-			link.as = "image";
-			link.href = asset(`cube/faces/${face}.jpg`);
-			document.head.appendChild(link);
-			links.push(link);
-		}
-		return () => links.forEach((l) => l.remove());
-	}, []);
-
-	const onFaceChange = useCallback((id: CubeStageId) => {
-		if (id === activeIdRef.current) return;
-		// Wait for the first anchor from the completed face before changing ink.
-		pendingFaceRef.current = id;
-	}, []);
-
-	const onAnchor = useCallback((nextAnchor: CubeScreenAnchor) => {
-		latestAnchorRef.current = nextAnchor;
-		setAnchor(nextAnchor);
-
-		const pendingId = pendingFaceRef.current;
-		if (!hasInkAnchorRef.current || pendingId) {
-			hasInkAnchorRef.current = true;
-			setInkAnchor(nextAnchor);
-		}
-		if (!pendingId) return;
-
-		pendingFaceRef.current = null;
-		activeIdRef.current = pendingId;
-		setActiveId(pendingId);
-		setWriteKey((key) => key + 1);
-	}, []);
-
-	// The canvas reports a live anchor for the orbit hint. Ink stays parked until
-	// a face changes; only a viewport resize may remeasure that parked placement.
-	useEffect(() => {
-		let frame = 0;
-		const syncInkAnchor = () => {
-			window.cancelAnimationFrame(frame);
-			frame = window.requestAnimationFrame(() => {
-				if (hasInkAnchorRef.current) setInkAnchor(latestAnchorRef.current);
-			});
-		};
-		window.addEventListener("resize", syncInkAnchor);
-		return () => {
-			window.cancelAnimationFrame(frame);
-			window.removeEventListener("resize", syncInkAnchor);
-		};
-	}, []);
-
-	const onInkLockChange = useCallback((locked: boolean) => {
-		setInkLocked(locked);
-	}, []);
-
-	// Dwelling on a face lights the hall; expanding its ink triggers the mechanism.
-	useEffect(() => {
-		const t = window.setTimeout(() => markSeen(activeId), 1400);
-		return () => window.clearTimeout(t);
-	}, [activeId, markSeen]);
-
-	const onInkExpand = useCallback(() => {
-		markMechanism(activeId);
-	}, [activeId, markMechanism]);
-
-	return (
-		<div className="relative min-h-[100svh] w-full touch-pan-y">
-			<HallAmbience
-				activeId={activeId}
-				progress={progress}
-				litCount={litCount}
-			/>
-
-			<MuseumCubeCanvas
-				className="absolute inset-0 z-[1] h-[100svh] w-full"
-				enabled
-				locked={inkLocked}
-				ariaLabel={
-					lang === "zh"
-						? "3D 项目立方体。点击后可用方向键或 W、A、S、D 翻面。"
-						: "3D project cube. Click to focus, then use arrow keys or W, A, S, and D to roll it."
-				}
-				onFaceChange={onFaceChange}
-				onAnchor={onAnchor}
-			/>
-
-			<RollDownHint anchor={anchor} lang={lang} />
-
-			<PlaneInk
-				project={project}
-				lang={lang}
-				anchor={inkAnchor}
-				writeKey={`${activeId}-${writeKey}`}
-				onLockChange={onInkLockChange}
-				onExpand={onInkExpand}
-			/>
-
-			<p className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2 px-6 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-museum-muted">
-				{lang === "zh"
-					? "点击立方体后，用方向键 / 滚轮翻面 · 拖拽转视角 · 点击手写字"
-					: "Click cube, then arrows / wheel roll · drag to orbit · click the ink"}
-			</p>
 		</div>
 	);
 }
@@ -470,7 +335,9 @@ export default function CubeShowcase() {
 	return isMobile || isCoarsePointer ? (
 		<MobileCubeShowcase />
 	) : (
-		<DesktopCubeShowcase />
+		<Suspense fallback={<DesktopFallback />}>
+			<DesktopCubeShowcase />
+		</Suspense>
 	);
 }
 

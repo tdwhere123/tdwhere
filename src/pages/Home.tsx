@@ -5,6 +5,7 @@ export default function Home() {
 	return (
 		<div className="cube-home-theme -mt-16">
 			<CubeShowcase />
+			<div className="home-coda-bridge" aria-hidden="true" />
 			<HomeCoda />
 		</div>
 	);

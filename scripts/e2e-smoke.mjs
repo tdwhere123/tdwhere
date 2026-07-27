@@ -30,13 +30,20 @@ async function wait(ms) {
   return new Promise((r) => setTimeout(r, ms))
 }
 
+function resolveUrl(route) {
+  if (route.startsWith('http')) return route
+  const base = BASE.endsWith('/') ? BASE : `${BASE}/`
+  return new URL(route.replace(/^\//, ''), base).href
+}
+
 async function goto(page, route) {
-  const url = route.startsWith('http') ? route : `${BASE}${route}`
-  const res = await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 })
+  const url = resolveUrl(route)
+  // domcontentloaded — avoid networkidle hangs on Google Fonts / analytics.
+  const res = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
   const status = res?.status() ?? 0
   // 304 Not Modified is fine for cached SPA shells
   if (!res || (status >= 400)) throw new Error(`导航失败 ${url} status=${status}`)
-  await wait(400)
+  await wait(600)
 }
 
 async function clickNav(page, label) {
@@ -111,9 +118,17 @@ async function closeModalIfAny(page) {
 
 async function main() {
   const browser = await puppeteer.launch({
-    executablePath: '/usr/local/bin/google-chrome',
+    executablePath:
+      process.env.CHROME_PATH ||
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
+      '/usr/local/bin/google-chrome',
     headless: true,
-    args: ['--no-sandbox', '--disable-gpu', '--window-size=1280,900'],
+    args: [
+      '--no-sandbox',
+      '--disable-gpu',
+      '--proxy-server=direct://',
+      '--window-size=1280,900',
+    ],
     defaultViewport: { width: 1280, height: 900 },
   })
   const page = await browser.newPage()
@@ -126,9 +141,23 @@ async function main() {
   try {
     // —— Home ——
     await goto(page, '/')
+    // Lazy MuseumCubeCanvas — wait briefly for the exhibit or any aria landmark.
+    await page
+      .waitForFunction(
+        () =>
+          !!document.querySelector('canvas') ||
+          !!document.querySelector('[data-testid="cube-exhibit"]') ||
+          !!document.querySelector('[aria-label]'),
+        { timeout: 30000 },
+      )
+      .catch(() => undefined)
     await shot(page, '01-home')
     const hasCube = await page.evaluate(() => {
-      return !!document.querySelector('canvas') || !!document.querySelector('[aria-label]')
+      return (
+        !!document.querySelector('canvas') ||
+        !!document.querySelector('[data-testid="cube-exhibit"]') ||
+        !!document.querySelector('[aria-label]')
+      )
     })
     if (hasCube) ok('home loads')
     else fail('home loads', 'no canvas/aria landmark')
@@ -153,8 +182,19 @@ async function main() {
 
     // —— Do It ——
     await goto(page, '/do-it')
+    await page
+      .waitForFunction(
+        () =>
+          [...document.querySelectorAll('img')].some((i) =>
+            /do-it|illustrations/i.test(i.src || ''),
+          ) ||
+          [...document.querySelectorAll('button')].some((b) =>
+            /路由|Route/i.test(b.textContent || ''),
+          ),
+        { timeout: 20000 },
+      )
+      .catch(() => undefined)
     await shot(page, '02-doit')
-    const doitTitle = await page.title()
     const doitHasIllust = await page.evaluate(() => {
       const imgs = [...document.querySelectorAll('img')]
       return imgs.some((i) => (i.src || '').includes('do-it') || (i.src || '').includes('illustrations'))
@@ -217,6 +257,17 @@ async function main() {
       } catch {}
     })
     await goto(page, '/playground')
+    await page
+      .waitForFunction(
+        () =>
+          !!document.querySelector('.pg-sentinel') ||
+          [...document.querySelectorAll('button')].some((b) => {
+            const t = `${b.getAttribute('aria-label') || ''} ${b.textContent || ''}`.toLowerCase()
+            return t.includes('电源') || t.includes('power') || t.includes('开机')
+          }),
+        { timeout: 20000 },
+      )
+      .catch(() => undefined)
     await shot(page, '06-playground')
     await page.evaluate(() => {
       try {
@@ -315,7 +366,7 @@ async function main() {
     // —— Mobile home swipe ——
     const mobile = await browser.newPage()
     await mobile.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true })
-    await mobile.goto(`${BASE}/`, { waitUntil: 'networkidle2' })
+    await mobile.goto(resolveUrl('/'), { waitUntil: 'domcontentloaded', timeout: 60000 })
     await wait(800)
     await shot(mobile, '10-mobile-home')
     const swipeable = await mobile.evaluate(() => {
@@ -357,7 +408,12 @@ async function main() {
     const toProjects = await clickNav(page, 'PROJECTS') || await clickNav(page, '项目')
     await wait(700)
     const path = new URL(page.url()).pathname
-    if (toProjects && (path === '/' || path.endsWith('/'))) ok('nav PROJECTS → home', path)
+    // Production base `/tdwhere` may appear without a trailing slash.
+    const onHome =
+      path === '/' ||
+      path.endsWith('/') ||
+      /\/tdwhere\/?$/.test(path)
+    if (toProjects && onHome) ok('nav PROJECTS → home', path)
     else fail('nav PROJECTS → home', path)
 
   } catch (e) {
