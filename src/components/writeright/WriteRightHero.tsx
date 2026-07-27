@@ -5,7 +5,7 @@ import { writeRightContent } from '@/content/writeRight'
 import Kicker from '@/components/Kicker'
 import MetaChip from '@/components/MetaChip'
 import Stamp from '@/components/Stamp'
-import GateOpen from '@/components/doit/GateOpen'
+import GateOpen from '@/components/GateOpen'
 import { getLenis } from '@/lib/smooth-scroll'
 
 const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]

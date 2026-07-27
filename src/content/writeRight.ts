@@ -10,7 +10,7 @@ const zh = {
     subtitle: '模型无关的中文正式写作 Agent Skills 包',
     slogan: '「文种 × 场所 × 目标，路由先于动笔。」',
     vertical: '路由先于动笔',
-    stamp: '施工中 · 2026-07 起步',
+    stamp: '进行中 · 2026-07 起',
     chips: ['进行中 WIP', 'Python', '纯开源 · 无宿主 App', '本地优先'],
     hosts: ['Claude Code', 'Codex', 'WorkBuddy（CodeBuddy）'],
     ctaRepo: 'GitHub 仓库 →',
@@ -30,7 +30,7 @@ const zh = {
       '白名单按需联网落盘',
     ],
     doesnt: ['红头排版主路径', '绑死单一模型', '云端记忆'],
-    note: '边界写清楚，比功能写得多更重要。',
+    note: '把边界写清楚，比把功能写得多更重要。',
   },
   plate: {
     kicker: '— 展品 / THE DESK',
@@ -195,7 +195,7 @@ const zh = {
     ],
   },
   next: {
-    title: '大项目逛完了。院角有一处遗址和一只抽屉',
+    title: '三间屋子逛完了。院角还有一处遗址和一只抽屉',
     subtitle: 'playground · SENTINEL 遗址与素菜卡片',
   },
 }
@@ -209,7 +209,7 @@ const en: WriteRightContent = {
     subtitle: 'A model-agnostic Agent Skills pack for formal Chinese writing',
     slogan: '"Genre × setting × goal — route before you write."',
     vertical: '路由先于动笔',
-    stamp: 'WIP · started 2026-07',
+    stamp: 'WIP · since 2026-07',
     chips: ['WIP', 'Python', 'open source · no host app', 'local-first'],
     hosts: ['Claude Code', 'Codex', 'WorkBuddy（CodeBuddy）'],
     ctaRepo: 'GitHub repo →',

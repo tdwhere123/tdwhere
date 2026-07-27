@@ -1,7 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { motion } from 'framer-motion'
-import { Power, Volume2, VolumeX } from 'lucide-react'
+import { Power } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import { playground } from '@/content/playground'
 import {
@@ -47,25 +47,22 @@ export default function SentinelTerminal() {
   const { lang } = useLang()
   const t = playground[lang].sentinel
   const tRef = useRef(t)
-  tRef.current = t
 
   const [phase, setPhase] = useState<Phase>('off')
   const [lines, setLines] = useState<TermLine[]>([])
   const [typing, setTyping] = useState<{ kind: LineKind; text: string } | null>(null)
   const [input, setInput] = useState('')
-  const [sound, setSound] = useState(false)
   const [outBusy, setOutBusy] = useState(false)
   const [eggOpen, setEggOpen] = useState(false)
   const [eggCard, setEggCard] = useState<SentinelCard | null>(null)
+  const [eggCount, setEggCount] = useState(0)
+  const [eggInstance, setEggInstance] = useState(0)
   const [finaleOpen, setFinaleOpen] = useState(false)
-  const eggOpenRef = useRef(false)
-  eggOpenRef.current = eggOpen
-  const finaleOpenRef = useRef(false)
-  finaleOpenRef.current = finaleOpen
-
+  const eggOpenRef = useRef(eggOpen)
+  const finaleOpenRef = useRef(finaleOpen)
   const phaseRef = useRef(phase)
-  phaseRef.current = phase
   const sessionRef = useRef(0)
+  const eggInstanceRef = useRef(0)
   const idRef = useRef(0)
   const timersRef = useRef<number[]>([])
   const pendingFreedomRef = useRef(false)
@@ -73,7 +70,13 @@ export default function SentinelTerminal() {
   const fallbackIdxRef = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const audioRef = useRef<AudioContext | null>(null)
+
+  useLayoutEffect(() => {
+    tRef.current = t
+    eggOpenRef.current = eggOpen
+    finaleOpenRef.current = finaleOpen
+    phaseRef.current = phase
+  }, [eggOpen, finaleOpen, phase, t])
 
   const reduced = useMemo(
     () =>
@@ -109,25 +112,20 @@ export default function SentinelTerminal() {
 
   const typeLine = useCallback(
     async (kind: LineKind, text: string, token: number) => {
+      if (token !== sessionRef.current) return
       if (reduced) {
-        if (token === sessionRef.current) pushLine(kind, text)
+        pushLine(kind, text)
         return
       }
       setTyping({ kind, text: '' })
       let buf = ''
       for (const ch of text) {
-        if (token !== sessionRef.current) {
-          setTyping(null)
-          return
-        }
+        if (token !== sessionRef.current) return
         buf += ch
         setTyping({ kind, text: buf })
         await sleep(CJK.test(ch) ? 55 : 20)
       }
-      if (token !== sessionRef.current) {
-        setTyping(null)
-        return
-      }
+      if (token !== sessionRef.current) return
       setTyping(null)
       pushLine(kind, text)
     },
@@ -152,6 +150,7 @@ export default function SentinelTerminal() {
           }
         })
         .finally(() => {
+          if (token !== sessionRef.current) return
           pendingOutRef.current -= 1
           if (pendingOutRef.current <= 0) setOutBusy(false)
         })
@@ -166,29 +165,9 @@ export default function SentinelTerminal() {
     if (el) el.scrollTop = el.scrollHeight
   }, [lines, typing])
 
-  const playClick = useCallback(() => {
-    if (!sound) return
-    try {
-      audioRef.current ??= new (window.AudioContext ??
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-      const ctx = audioRef.current
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = 'square'
-      osc.frequency.value = 160
-      gain.gain.setValueAtTime(0.035, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05)
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.06)
-    } catch {
-      /* audio unavailable — stay silent */
-    }
-  }, [sound])
-
   const powerOff = useCallback(() => {
     sessionRef.current += 1
+    chainRef.current = Promise.resolve()
     sleepPendingRef.current = false
     pendingOutRef.current = 0
     setOutBusy(false)
@@ -196,6 +175,9 @@ export default function SentinelTerminal() {
     setLines([])
     setInput('')
     pendingFreedomRef.current = false
+    setEggOpen(false)
+    setEggCard(null)
+    setFinaleOpen(false)
     setPhase('off')
   }, [])
 
@@ -217,19 +199,20 @@ export default function SentinelTerminal() {
   }, [say, sleep, typeLine])
 
   const togglePower = useCallback(() => {
-    playClick()
     if (phaseRef.current === 'off') {
       void runBoot()
     } else {
       powerOff()
     }
-  }, [playClick, powerOff, runBoot])
+  }, [powerOff, runBoot])
 
   const runSleep = useCallback(async () => {
     const token = sessionRef.current
     sleepPendingRef.current = true // block further commands while saying goodbye
     await say(tRef.current.sleep.slice(0, 1))
+    if (token !== sessionRef.current) return
     await sleep(1200)
+    if (token !== sessionRef.current) return
     await say(tRef.current.sleep.slice(1))
     if (token !== sessionRef.current) return
     setPhase('sleeping') // screen dims to black over 2s
@@ -243,16 +226,31 @@ export default function SentinelTerminal() {
 
   const revealCard = useCallback((id: CardId, card: SentinelCard) => {
     unlockCard(id)
+    const count = unlockedCount()
+    eggInstanceRef.current += 1
     inputRef.current?.blur()
     setEggCard(card)
+    setEggCount(count)
+    setEggInstance(eggInstanceRef.current)
     setEggOpen(true)
   }, [])
 
   const closeEgg = useCallback(() => {
+    const token = sessionRef.current
     setEggOpen(false)
     window.setTimeout(() => {
-      if (!finaleOpenRef.current) inputRef.current?.focus()
+      if (token === sessionRef.current && !finaleOpenRef.current) inputRef.current?.focus()
     }, 80)
+  }, [])
+
+  const queueFinale = useCallback(() => {
+    const token = sessionRef.current
+    const id = window.setTimeout(() => {
+      if (token !== sessionRef.current || phaseRef.current === 'off') return
+      setFinaleOpen(true)
+      inputRef.current?.blur()
+    }, 280)
+    timersRef.current.push(id)
   }, [])
 
   /** Drop a concept card if the command matches; returns true when handled. */
@@ -260,8 +258,11 @@ export default function SentinelTerminal() {
     (cmd: string, lines: string[], repeat: string[]) => {
       const card = getCardByCommand(cmd)
       if (!card) return false
+      const token = sessionRef.current
       const seen = isCardUnlocked(card.id)
-      void say(seen ? repeat : lines).then(() => revealCard(card.id, card))
+      void say(seen ? repeat : lines).then(() => {
+        if (token === sessionRef.current) revealCard(card.id, card)
+      })
       return true
     },
     [revealCard, say],
@@ -307,6 +308,7 @@ export default function SentinelTerminal() {
         case 'clear': {
           sessionRef.current += 1
           chainRef.current = Promise.resolve()
+          sleepPendingRef.current = false
           pendingOutRef.current = 0
           setOutBusy(false)
           setTyping(null)
@@ -634,7 +636,7 @@ export default function SentinelTerminal() {
               />
             </div>
 
-            {/* bottom panel: power, LED, floppy slot, vents, silk, sound */}
+            {/* bottom panel: power, LED, floppy slot, vents, and silk */}
             <div className="relative mt-4 flex items-center gap-4 px-1 md:mt-5">
               <button
                 type="button"
@@ -680,19 +682,6 @@ export default function SentinelTerminal() {
               >
                 {m.silk}
               </span>
-              <button
-                type="button"
-                onClick={() => setSound((s) => !s)}
-                aria-label={sound ? m.soundOff : m.soundOn}
-                aria-pressed={sound}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-300"
-                style={{
-                  border: '1px solid color-mix(in srgb, var(--museum-brass) 45%, transparent)',
-                  color: 'color-mix(in srgb, var(--museum-ink) 70%, var(--museum-brass))',
-                }}
-              >
-                {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-              </button>
             </div>
 
             {/* status line */}
@@ -725,11 +714,10 @@ export default function SentinelTerminal() {
       <EggModal
         card={eggCard}
         open={eggOpen}
+        count={eggCount}
+        instance={eggInstance}
         onClose={closeEgg}
-        onReadyForFinale={() => {
-          setFinaleOpen(true)
-          inputRef.current?.blur()
-        }}
+        onReadyForFinale={queueFinale}
       />
       <FinaleMask
         open={finaleOpen}

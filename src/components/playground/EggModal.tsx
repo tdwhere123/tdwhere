@@ -4,13 +4,14 @@ import { X } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import {
   type SentinelCard,
-  unlockedCount,
   ALL_CARD_IDS,
 } from '@/lib/sentinel-eggs'
 
 type Props = {
   card: SentinelCard | null
   open: boolean
+  count: number
+  instance: number
   onClose: () => void
   /** Fired after close when this unlock completed the set of five. */
   onReadyForFinale?: () => void
@@ -43,17 +44,39 @@ function CardFallback({ title, lang }: { title: string; lang: 'zh' | 'en' }) {
   )
 }
 
-export default function EggModal({ card, open, onClose, onReadyForFinale }: Props) {
-  const { lang } = useLang()
+function CardImage({
+  card,
+  title,
+  lang,
+}: {
+  card: SentinelCard
+  title: string
+  lang: 'zh' | 'en'
+}) {
   const [imgFailed, setImgFailed] = useState(false)
-  const [count, setCount] = useState(0)
 
-  useEffect(() => {
-    if (open && card) {
-      setImgFailed(false)
-      setCount(unlockedCount())
-    }
-  }, [open, card])
+  if (imgFailed) return <CardFallback title={title} lang={lang} />
+
+  return (
+    <img
+      src={card.image}
+      alt={title}
+      className="aspect-[16/10] w-full rounded-[6px] border object-cover object-top"
+      style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 30%, transparent)' }}
+      onError={() => setImgFailed(true)}
+    />
+  )
+}
+
+export default function EggModal({
+  card,
+  open,
+  count,
+  instance,
+  onClose,
+  onReadyForFinale,
+}: Props) {
+  const { lang } = useLang()
 
   useEffect(() => {
     if (!open) return
@@ -65,13 +88,11 @@ export default function EggModal({ card, open, onClose, onReadyForFinale }: Prop
   }, [open])
 
   const handleClose = useCallback(() => {
-    const complete = unlockedCount() >= ALL_CARD_IDS.length
+    const complete = count >= ALL_CARD_IDS.length
     onClose()
-    // Defer finale so egg modal exit animation doesn't fight the mask.
-    if (complete) {
-      window.setTimeout(() => onReadyForFinale?.(), 280)
-    }
-  }, [onClose, onReadyForFinale])
+    // The terminal owns the delayed finale so it can invalidate a powered-off session.
+    if (complete) onReadyForFinale?.()
+  }, [count, onClose, onReadyForFinale])
 
   const title = card ? card.title[lang] : ''
   const lesson = card ? card.lesson[lang] : ''
@@ -114,17 +135,12 @@ export default function EggModal({ card, open, onClose, onReadyForFinale }: Prop
             </button>
 
             <div className="p-5 md:p-6">
-              {imgFailed ? (
-                <CardFallback title={title} lang={lang} />
-              ) : (
-                <img
-                  src={card.image}
-                  alt={title}
-                  className="aspect-[16/10] w-full rounded-[6px] border object-cover object-top"
-                  style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 30%, transparent)' }}
-                  onError={() => setImgFailed(true)}
-                />
-              )}
+              <CardImage
+                key={instance}
+                card={card}
+                title={title}
+                lang={lang}
+              />
 
               <p
                 id="egg-modal-title"

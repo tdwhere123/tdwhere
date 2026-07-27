@@ -29,6 +29,39 @@ type CarouselContextProps = {
 } & CarouselProps
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null)
+const EMPTY_AVAILABILITY = "false:false"
+
+function useCarouselAvailability(api: CarouselApi) {
+  const subscribe = React.useCallback(
+    (notify: () => void) => {
+      if (!api) return () => undefined
+      const onChange = () => notify()
+      api.on("select", onChange)
+      api.on("reInit", onChange)
+      return () => {
+        api.off("select", onChange)
+        api.off("reInit", onChange)
+      }
+    },
+    [api]
+  )
+
+  const getSnapshot = React.useCallback(() => {
+    if (!api) return EMPTY_AVAILABILITY
+    return `${api.canScrollPrev()}:${api.canScrollNext()}`
+  }, [api])
+
+  const availability = React.useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    () => EMPTY_AVAILABILITY
+  )
+
+  return {
+    canScrollPrev: availability.startsWith("true:"),
+    canScrollNext: availability.endsWith(":true"),
+  }
+}
 
 function useCarousel() {
   const context = React.useContext(CarouselContext)
@@ -56,14 +89,7 @@ function Carousel({
     },
     plugins
   )
-  const [canScrollPrev, setCanScrollPrev] = React.useState(false)
-  const [canScrollNext, setCanScrollNext] = React.useState(false)
-
-  const onSelect = React.useCallback((api: CarouselApi) => {
-    if (!api) return
-    setCanScrollPrev(api.canScrollPrev())
-    setCanScrollNext(api.canScrollNext())
-  }, [])
+  const { canScrollPrev, canScrollNext } = useCarouselAvailability(api)
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev()
@@ -90,17 +116,6 @@ function Carousel({
     if (!api || !setApi) return
     setApi(api)
   }, [api, setApi])
-
-  React.useEffect(() => {
-    if (!api) return
-    onSelect(api)
-    api.on("reInit", onSelect)
-    api.on("select", onSelect)
-
-    return () => {
-      api?.off("select", onSelect)
-    }
-  }, [api, onSelect])
 
   return (
     <CarouselContext.Provider

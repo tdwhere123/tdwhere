@@ -9,7 +9,7 @@ const zh = {
     title: 'do-it',
     subtitle: '可安装的 AI 编码工作流',
     slogan: 'Stop asking AI agents to remember process. Install it.',
-    sloganAlt: '「别再让 AI 记住流程——直接把流程装进去。」',
+    sloganAlt: '「别让 Agent 背流程——把流程装进去。」',
     vertical: '把流程装进去',
     chips: ['v0.14.1', 'MIT', '⭐ 22', 'forks 2', 'Shell', 'CI ✓', 'CodeQL ✓'],
     hosts: ['Codex', 'Claude Code', 'Cursor', 'OpenCode', 'Kimi Code'],
@@ -20,15 +20,15 @@ const zh = {
   why: {
     kicker: '— 缘起 / WHY',
     itchTitle: '痛点 / The itch',
-    itch: '每次都要把『怎么干活』重新讲一遍：先看哪、怎么测、什么叫做完。Agent 很聪明，但流程靠口口相传。',
+    itch: '每次开新会话，都要把『怎么干活』重新讲一遍：先看哪、怎么测、什么算做完。Agent 很聪明，流程却靠口口相传。',
     moveTitle: '做法 / The move',
-    move: '把路由、委派、验证、复盘写成可安装的技能包。装进五个宿主，像装一个认真对待流程的同事。',
+    move: '把路由、委派、验证、复盘写成可安装的技能包，装进五个宿主——像请来一位认真对待流程的同事。',
     note: '建议性路由，不是固定流水线 —— advisory, not a pipeline.',
   },
   plate: {
     kicker: '— 展品 / THE GATE',
     alt: '石灰岩门廊与黄铜闸门：任务从左侧进入，经路由器分流至不同技能桶',
-    caption: '闸门之后是路由——风险定级，再决定装哪些技能桶。流程不是口令，是装进去的门禁。',
+    caption: '闸门之后是路由——先定风险级，再决定装哪些技能桶。流程不是口令，是装进去的门禁。',
   },
   sim: {
     kicker: '— 试试 / TRY IT · THE ROUTER',
@@ -54,13 +54,13 @@ const zh = {
     bucketsLabel: '推荐 buckets',
     delegateNote: '可选专家，按需上桌 —— optional specialists, seated as needed.',
     proveItems: [
-      '测试是刚跑的、绿的新鲜证据',
+      '测试是刚跑的，绿得新鲜',
       '改动与声明一一对应',
       '没有顺手带进来的无关改动',
     ],
     verified: 'VERIFIED',
     notVerified: 'NOT_VERIFIED',
-    notVerifiedNote: '「done」是证据声明，不是心情。',
+    notVerifiedNote: '“done” 是证据，不是心情。',
     learnLabel: '幕 4 · 行为学习 LEARN',
     learnState: '默认关闭',
     learnTip: '默认关闭。本地脱敏记录，/do-it-retrospective 才生成报告。',
@@ -83,7 +83,7 @@ const zh = {
       {
         en: 'Prove the result',
         zh: '证明结果',
-        desc: '「done」必须附新鲜证据，否则 NOT_VERIFIED。',
+        desc: '“done” 必须附新鲜证据，否则 NOT_VERIFIED。',
       },
       {
         en: 'Learn from behavior',
@@ -115,7 +115,7 @@ const zh = {
     creditsNote: '以及 Linux.do 社区的各位。',
   },
   next: {
-    title: '流程有了。那它的记忆呢？',
+    title: '流程装好了。那它的记忆呢？',
     subtitle: 'Do-SOUL-Alaya · 记忆之屋',
   },
 }
@@ -139,16 +139,16 @@ const en: DoItContent = {
   why: {
     kicker: '— WHY / THE ITCH',
     itchTitle: 'The itch / 痛点',
-    itch: "Every session, you re-teach how work gets done — what to read first, how to test, what 'done' means. Smart agent, folklore process.",
+    itch: "Every new session, you re-teach how work gets done — what to read first, how to test, what 'done' means. Smart agents; process passed down by word of mouth.",
     moveTitle: 'The move / 做法',
-    move: 'Route, delegate, verify, retrospect — written as installable skills. Five hosts, one disciplined colleague.',
+    move: 'Route, delegate, verify, retrospect — written as installable skills. Five hosts, one colleague who takes process seriously.',
     note: 'Advisory routing, not a fixed pipeline — 建议性路由，不是固定流水线。',
   },
   plate: {
     kicker: '— THE GATE / 展品',
     alt: 'A limestone gate with a brass shutter: tasks enter from the left and route into skill buckets',
     caption:
-      'Past the gate, routing — risk first, then which skill buckets to load. Process is not folklore; it is an installed threshold.',
+      'Past the gate, routing — risk grade first, then which skill buckets to load. Process is not a password; it is an installed threshold.',
   },
   sim: {
     kicker: '— TRY IT · THE ROUTER',
@@ -174,13 +174,13 @@ const en: DoItContent = {
     bucketsLabel: 'Recommended buckets',
     delegateNote: 'Optional specialists, seated as needed — 可选专家，按需上桌。',
     proveItems: [
-      'fresh green test run, not vibes',
-      'diff matches the claim',
+      'a fresh green test run, not vibes',
+      'the diff matches the claim',
       'no hitchhiker changes',
     ],
     verified: 'VERIFIED',
     notVerified: 'NOT_VERIFIED',
-    notVerifiedNote: '"done" is a claim of evidence, not a mood.',
+    notVerifiedNote: '"done" is evidence, not a mood.',
     learnLabel: 'Act 4 · LEARN from behavior',
     learnState: 'off by default',
     learnTip: 'Off by default. Local, sanitized; /do-it-retrospective reports.',

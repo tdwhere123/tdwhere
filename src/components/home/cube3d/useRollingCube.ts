@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import type { CubeFacePosition, CubeStageId } from '../cube-data'
-import { cubeProjects } from '../cube-data'
+import { cubeStageIdByFace } from '../cube-data'
 
 export const CUBE_SIZE = 1.85
 /** Snappier roll so chained faces (e.g. do-it) feel reachable. */
@@ -34,10 +34,6 @@ const FACE_LOCAL: Record<CubeFacePosition, THREE.Vector3> = {
   front: new THREE.Vector3(0, 0, 1),
   back: new THREE.Vector3(0, 0, -1),
 }
-
-const FACE_TO_ID = Object.fromEntries(
-  cubeProjects.map((p) => [p.face, p.id]),
-) as Record<CubeFacePosition, CubeStageId>
 
 const UP = new THREE.Vector3(0, 1, 0)
 const _pivot = new THREE.Vector3()
@@ -147,17 +143,15 @@ function moveToRollKey(move: THREE.Vector3): RollDir | null {
 
 type Options = {
   groupRef: React.RefObject<THREE.Group | null>
-  cameraRef: React.RefObject<THREE.Camera | null>
+  interactionTargetRef: React.RefObject<HTMLElement | null>
   enabled: boolean
-  locked?: boolean
   onFaceChange: (id: CubeStageId) => void
 }
 
 export function useRollingCube({
   groupRef,
-  cameraRef: _cameraRef,
+  interactionTargetRef,
   enabled,
-  locked: _locked = false,
   onFaceChange,
 }: Options) {
   const [busy, setBusy] = useState(false)
@@ -166,14 +160,17 @@ export function useRollingCube({
   const recenterRef = useRef<gsap.core.Tween | null>(null)
   const queueRef = useRef<RollDir[]>([])
   const onFaceChangeRef = useRef(onFaceChange)
-  onFaceChangeRef.current = onFaceChange
   const rollRef = useRef<(key: RollDir) => boolean>(() => false)
+
+  useLayoutEffect(() => {
+    onFaceChangeRef.current = onFaceChange
+  }, [onFaceChange])
 
   const syncFacing = useCallback(() => {
     const group = groupRef.current
     if (!group) return
     const face = pickUpFace(group.quaternion)
-    const id = FACE_TO_ID[face]
+    const id = cubeStageIdByFace[face]
     queueMicrotask(() => onFaceChangeRef.current(id))
   }, [groupRef])
 
@@ -190,7 +187,7 @@ export function useRollingCube({
   const roll = useCallback(
     (key: RollDir): boolean => {
       if (!enabled) return false
-      // Ink erase no longer blocks rolls — only orbit is gated via `locked` in the canvas.
+      // Ink erase gates orbit in the canvas but leaves queued cube rolls available.
       if (busyRef.current) {
         if (queueRef.current.length < QUEUE_MAX) {
           queueRef.current.push(key)
@@ -277,7 +274,9 @@ export function useRollingCube({
     [dirFromKey, enabled, flushQueue, groupRef, syncFacing],
   )
 
-  rollRef.current = roll
+  useLayoutEffect(() => {
+    rollRef.current = roll
+  }, [roll])
 
   useEffect(() => {
     const group = groupRef.current
@@ -289,7 +288,8 @@ export function useRollingCube({
   }, [groupRef, syncFacing])
 
   useEffect(() => {
-    if (!enabled) return
+    const target = interactionTargetRef.current
+    if (!enabled || !target) return
 
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -314,6 +314,7 @@ export function useRollingCube({
 
     /** Mouse wheel → roll along world ±Z (same as S / W). */
     const onWheel = (e: WheelEvent) => {
+      if (document.activeElement !== target) return
       // Ignore tiny trackpad noise; prefer vertical intent.
       if (Math.abs(e.deltaY) < 8 && Math.abs(e.deltaX) < 8) return
       e.preventDefault()
@@ -324,13 +325,13 @@ export function useRollingCube({
       }
     }
 
-    window.addEventListener('keydown', onKey)
-    window.addEventListener('wheel', onWheel, { passive: false })
+    target.addEventListener('keydown', onKey)
+    target.addEventListener('wheel', onWheel, { passive: false })
     return () => {
-      window.removeEventListener('keydown', onKey)
-      window.removeEventListener('wheel', onWheel)
+      target.removeEventListener('keydown', onKey)
+      target.removeEventListener('wheel', onWheel)
     }
-  }, [enabled, roll])
+  }, [enabled, interactionTargetRef, roll])
 
   useEffect(() => {
     return () => {
@@ -341,5 +342,5 @@ export function useRollingCube({
     }
   }, [])
 
-  return { busy, roll }
+  return { busy, busyRef, roll }
 }

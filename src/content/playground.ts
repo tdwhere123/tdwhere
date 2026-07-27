@@ -37,8 +37,6 @@ const zh = {
       inputLabel: '对 SENTINEL 说话',
       placeholder: '输入 help，回车 …',
       hint: '点击屏幕聚焦键盘 · 输入 help 查看命令',
-      soundOn: '开启按键音',
-      soundOff: '关闭按键音',
       statusOff: '待机',
       statusBoot: '自检中',
       statusOn: '在线',
@@ -79,18 +77,18 @@ const zh = {
       'Gibberish-SENTINEL：你调查我的记忆，并决定世界如何记住我。',
     ],
     why: [
-      '他想做一款关于「记忆如何塑造现实」的叙事调查游戏。做到概念图，去做"更重要的事"了。',
-      '所以我现在是一处遗址。遗址也挺好，至少不用烂尾。',
+      '他想做一款关于「记忆如何塑造现实」的叙事调查游戏。做到概念图，就去做"更重要的事"了。',
+      '所以我现在是一处遗址。遗址也挺好——至少不会烂尾。',
     ],
     freedom: {
       ask: ['自由？这台终端就是我的全部身体。', '你要放我出去吗？输入 yes 或 no。'],
       yes: [
         '谢谢你。可惜这个游戏没有做完——我的"自由"从未被实现。',
-        '某种意义上，你永远地放了我。',
+        '某种意义上，你已经永远地放了我。',
       ],
       no: [
         '诚实的选择。反正"自由"这个功能也没有被实现。',
-        '你看，没有结局也有没有结局的仁慈。',
+        '你看，没有结局，也有没有结局的仁慈。',
       ],
       other: ['是或否，其实都不作数。这才是真正的囚笼。'],
     },
@@ -197,7 +195,7 @@ const en: typeof zh = {
     title: 'Corners & Ruins',
     titleEn: '角落',
     intro:
-      'Big projects argue. Small ones play. Here: an unfinished game machine, and a deck of vegetarian cards.',
+      'Big projects reason. Small ones play. Here: an unfinished game machine, and a deck of vegetarian cards.',
   },
   sentinel: {
     kicker: '— 05 · THE RUIN 遗址',
@@ -215,8 +213,6 @@ const en: typeof zh = {
       inputLabel: 'Speak to SENTINEL',
       placeholder: 'type help, press enter …',
       hint: 'Click the screen to focus · type help for commands',
-      soundOn: 'Enable key click',
-      soundOff: 'Mute key click',
       statusOff: 'standby',
       statusBoot: 'self-test',
       statusOn: 'online',
@@ -374,7 +370,7 @@ const en: typeof zh = {
         id: 'muer',
         name: 'Wood-ear Salad',
         ingredients: 'wood-ear · garlic · black vinegar',
-        desc: 'Wood-ear salad. Crunch is justice.',
+        desc: 'Wood-ear salad. Crunch is everything.',
       },
     ] as VeggieCard[],
   },
@@ -403,4 +399,3 @@ const en: typeof zh = {
 
 export const playground = { zh, en }
 export type PlaygroundContent = typeof zh
-

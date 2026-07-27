@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLang } from '@/context/LangContext'
 import useCopyText from '@/hooks/useCopyText'
@@ -75,29 +74,4 @@ export default function HomeCoda() {
       </div>
     </section>
   )
-}
-
-/** Sets body[data-home-cube] while mounted. */
-export function useHomeCubeBodyFlag() {
-  useEffect(() => {
-    document.body.setAttribute('data-home-cube', '')
-    return () => document.body.removeAttribute('data-home-cube')
-  }, [])
-}
-
-export function useHasScrolledOnce(threshold = 40) {
-  const [scrolled, setScrolled] = useState(false)
-  const done = useRef(false)
-  useEffect(() => {
-    const onScroll = () => {
-      if (done.current) return
-      if (window.scrollY > threshold) {
-        done.current = true
-        setScrolled(true)
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [threshold])
-  return scrolled
 }

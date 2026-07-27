@@ -2,10 +2,13 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { CubeFacePosition, CubeStageId } from '../cube-data'
 import { CUBE_SIZE, useRollingCube, WORLD_ROLL_DIR } from './useRollingCube'
 import { asset } from '@/lib/asset'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import type { CubeScreenAnchor } from './cubeScreenAnchor'
+
+type OrbitControlsImpl = NonNullable<React.ComponentRef<typeof OrbitControls>>
 
 const MATERIAL_FACES: CubeFacePosition[] = [
   'right',
@@ -21,42 +24,7 @@ const FACE_URLS = MATERIAL_FACES.map((face) => asset(`cube/faces/${face}.jpg`))
 /** Near-top view (~80°): cube reads upright on the plane. */
 const INITIAL_CAM = new THREE.Vector3(0, 9.2, 1.65)
 
-/** Floor S-mark: world +Z from cube centre (matches KeyS / ↓). */
-const FLOOR_S_DIR = WORLD_ROLL_DIR.pz
-/** Keep the mark close to the cube so it doesn't crowd footer / ink text. */
-const FLOOR_ARROW_DIST = CUBE_SIZE * 0.68
-const FLOOR_ARROW_SIZE: [number, number] = [0.28, 0.4]
-
-export type CubeScreenRect = {
-  /** Viewport fractions 0–1. */
-  left: number
-  right: number
-  top: number
-  bottom: number
-  cx: number
-  cy: number
-  width: number
-  height: number
-}
-
-export type CubeScreenAnchor = {
-  /** Measured cube silhouette in the viewport (drives ink layout). */
-  cube: CubeScreenRect
-  /**
-   * Convenience park point just outside the free side of `cube`
-   * (normalized 0–1). Kept for caption / legacy callers.
-   */
-  x: number
-  y: number
-  preferRight: boolean
-  /** Tip of the S-roll hint in screen space (normalized 0–1). */
-  rollHintX: number
-  rollHintY: number
-  /** @deprecated kept for API compat */
-  rollAngleDeg: number
-}
-
-const CORNER_SIGNS: ReadonlyArray<readonly [number, number, number]> = [
+const CORNER_SIGNS = [
   [-1, -1, -1],
   [-1, -1, 1],
   [-1, 1, -1],
@@ -65,28 +33,13 @@ const CORNER_SIGNS: ReadonlyArray<readonly [number, number, number]> = [
   [1, -1, 1],
   [1, 1, -1],
   [1, 1, 1],
-]
+] as const
 
-export function emptyCubeAnchor(): CubeScreenAnchor {
-  return {
-    cube: {
-      left: 0.39,
-      right: 0.61,
-      top: 0.3,
-      bottom: 0.64,
-      cx: 0.5,
-      cy: 0.47,
-      width: 0.22,
-      height: 0.34,
-    },
-    x: 0.66,
-    y: 0.52,
-    preferRight: true,
-    rollHintX: 0.5,
-    rollHintY: 0.7,
-    rollAngleDeg: 0,
-  }
-}
+/** Floor S-mark: world +Z from cube centre (matches KeyS / ↓). */
+const FLOOR_S_DIR = WORLD_ROLL_DIR.pz
+/** Keep the mark close to the cube so it doesn't crowd footer / ink text. */
+const FLOOR_ARROW_DIST = CUBE_SIZE * 0.68
+const FLOOR_ARROW_SIZE: [number, number] = [0.28, 0.4]
 
 function CubeMesh({ textures }: { textures: THREE.Texture[] }) {
   const materials = useMemo(
@@ -508,12 +461,14 @@ function FitCubeFraming({
 function RollingScene({
   enabled,
   locked,
+  interactionTargetRef,
   onFaceChange,
   onAnchor,
   allowTouchOrbit = true,
 }: {
   enabled: boolean
   locked: boolean
+  interactionTargetRef: React.RefObject<HTMLDivElement | null>
   onFaceChange: (id: CubeStageId) => void
   onAnchor?: (a: CubeScreenAnchor) => void
   /** When false (coarse pointer), one-finger gestures scroll the page instead of orbiting. */
@@ -522,19 +477,14 @@ function RollingScene({
   const textures = useLoader(THREE.TextureLoader, FACE_URLS)
   const groupRef = useRef<THREE.Group>(null)
   const controlsRef = useRef<OrbitControlsImpl>(null)
-  const cameraRef = useRef<THREE.Camera | null>(null)
   const { camera } = useThree()
-  cameraRef.current = camera
 
-  const { busy } = useRollingCube({
+  const { busy, busyRef } = useRollingCube({
     groupRef,
-    cameraRef,
+    interactionTargetRef,
     enabled,
-    locked,
     onFaceChange,
   })
-  const busyRef = useRef(busy)
-  busyRef.current = busy
 
   useEffect(() => {
     const controls = controlsRef.current
@@ -546,26 +496,25 @@ function RollingScene({
   useEffect(() => {
     window.__tdwhereSetOrbit = (azimuthRad: number, polarRad?: number) => {
       const controls = controlsRef.current
-      const cam = cameraRef.current
-      if (!controls || !cam) return
+      if (!controls) return
       const target = controls.target
       const polar =
         polarRad ??
         THREE.MathUtils.clamp(controls.getPolarAngle(), controls.minPolarAngle, controls.maxPolarAngle)
-      const radius = cam.position.distanceTo(target)
+      const radius = camera.position.distanceTo(target)
       const p = THREE.MathUtils.clamp(polar, controls.minPolarAngle, controls.maxPolarAngle)
-      cam.position.set(
+      camera.position.set(
         target.x + radius * Math.sin(p) * Math.sin(azimuthRad),
         target.y + radius * Math.cos(p),
         target.z + radius * Math.sin(p) * Math.cos(azimuthRad),
       )
-      cam.lookAt(target)
+      camera.lookAt(target)
       controls.update()
     }
     return () => {
       delete window.__tdwhereSetOrbit
     }
-  }, [])
+  }, [camera])
 
   const maps = useMemo(
     () => (Array.isArray(textures) ? textures : [textures]),
@@ -616,6 +565,7 @@ type Props = {
   locked?: boolean
   onFaceChange: (id: CubeStageId) => void
   onAnchor?: (a: CubeScreenAnchor) => void
+  ariaLabel?: string
   className?: string
 }
 
@@ -624,19 +574,20 @@ export default function MuseumCubeCanvas({
   locked = false,
   onFaceChange,
   onAnchor,
+  ariaLabel = '3D project cube. Click to focus, then use arrow keys or W, A, S, and D to roll it.',
   className,
 }: Props) {
   const [ready, setReady] = useState(false)
+  const interactionTargetRef = useRef<HTMLDivElement>(null)
   /** One-finger drag orbits on mouse; on touch, let the page scroll instead. */
-  const [touchOrbit, setTouchOrbit] = useState(false)
+  const isCoarsePointer = useMediaQuery('(pointer: coarse)')
+  const focusExhibit = useCallback(() => {
+    interactionTargetRef.current?.focus({ preventScroll: true })
+  }, [])
 
   useEffect(() => {
-    setReady(true)
-    const coarse = window.matchMedia('(pointer: coarse)')
-    setTouchOrbit(coarse.matches)
-    const onChange = () => setTouchOrbit(coarse.matches)
-    coarse.addEventListener('change', onChange)
-    return () => coarse.removeEventListener('change', onChange)
+    const frame = window.requestAnimationFrame(() => setReady(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   if (!ready) {
@@ -649,8 +600,13 @@ export default function MuseumCubeCanvas({
 
   return (
     <div
+      ref={interactionTargetRef}
       className={className}
-      style={{ touchAction: touchOrbit ? 'pan-y' : 'none' }}
+      data-testid="cube-exhibit"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      onPointerDown={focusExhibit}
+      style={{ touchAction: isCoarsePointer ? 'pan-y' : 'none' }}
     >
       <Canvas
         dpr={[1, 1.25]}
@@ -662,7 +618,7 @@ export default function MuseumCubeCanvas({
           toneMapping: THREE.NoToneMapping,
           preserveDrawingBuffer: true,
         }}
-        style={{ touchAction: touchOrbit ? 'pan-y' : 'none' }}
+        style={{ touchAction: isCoarsePointer ? 'pan-y' : 'none' }}
         onCreated={({ camera, gl }) => {
           camera.lookAt(0, CUBE_SIZE * 0.2, 0)
           gl.setClearColor(0x000000, 0)
@@ -672,9 +628,10 @@ export default function MuseumCubeCanvas({
           <RollingScene
             enabled={enabled}
             locked={locked}
+            interactionTargetRef={interactionTargetRef}
             onFaceChange={onFaceChange}
             onAnchor={onAnchor}
-            allowTouchOrbit={!touchOrbit}
+            allowTouchOrbit={!isCoarsePointer}
           />
         </Suspense>
       </Canvas>

@@ -45,6 +45,9 @@ async function main() {
     const t0 = Date.now()
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 60000 })
     await page.waitForSelector('canvas', { timeout: 30000 })
+    await page.$eval('[data-testid="cube-exhibit"]', (element) => {
+      if (element instanceof HTMLElement) element.focus()
+    })
     await page.waitForSelector('[data-testid="plane-ink"]', { timeout: 30000 })
     // Wait until title shows home
     await page.waitForFunction(

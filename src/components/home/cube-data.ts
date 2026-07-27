@@ -1,14 +1,12 @@
 import { asset } from '@/lib/asset'
 
-export type CubeFacePosition = 'front' | 'right' | 'back' | 'left' | 'top' | 'bottom'
+export const CUBE_FACE_POSITIONS = ['front', 'right', 'back', 'left', 'top', 'bottom'] as const
+export type CubeFacePosition = (typeof CUBE_FACE_POSITIONS)[number]
 
-export type CubeStageId =
-  | 'home'
-  | 'alaya'
-  | 'do-it'
-  | 'write-right'
-  | 'sentinel'
-  | 'vegetarian'
+/** The single source of truth for every exhibit face and exploration stage. */
+export const CUBE_STAGE_IDS = ['home', 'alaya', 'do-it', 'write-right', 'sentinel', 'vegetarian'] as const
+export type CubeStageId = (typeof CUBE_STAGE_IDS)[number]
+export const CUBE_STAGE_COUNT = CUBE_STAGE_IDS.length
 
 /** How the face art fills the shell opening. */
 export type CubeFaceFill = 'rect' | 'circle'
@@ -175,6 +173,28 @@ export const cubeProjects: CubeProject[] = [
     fillScale: 1.22,
   },
 ]
+
+function buildStageIdByFace(projects: readonly CubeProject[]): Record<CubeFacePosition, CubeStageId> {
+  const stageIds = new Set(projects.map((project) => project.id))
+  const faces = new Set(projects.map((project) => project.face))
+
+  if (
+    stageIds.size !== CUBE_STAGE_COUNT ||
+    CUBE_STAGE_IDS.some((id) => !stageIds.has(id)) ||
+    faces.size !== CUBE_FACE_POSITIONS.length ||
+    CUBE_FACE_POSITIONS.some((face) => !faces.has(face))
+  ) {
+    throw new Error('Cube catalog must define every stage and face exactly once')
+  }
+
+  return Object.fromEntries(projects.map((project) => [project.face, project.id])) as Record<
+    CubeFacePosition,
+    CubeStageId
+  >
+}
+
+/** Validated face-to-stage lookup for the Three.js roll controller. */
+export const cubeStageIdByFace = buildStageIdByFace(cubeProjects)
 
 export const cubeRotations: Record<
   CubeStageId,

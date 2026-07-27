@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import { doItContent } from '@/content/doIt'
@@ -68,8 +68,6 @@ export default function RouterSimulator() {
   const [runId, setRunId] = useState(0)
 
   const timers = useRef<number[]>([])
-  const rootRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(rootRef, { once: true, amount: 0.3 })
 
   /* act timings (design: 0–1.2s route, 1.2–2.6s delegate, 2.6–4.5s prove) */
   const T = reduced
@@ -97,12 +95,6 @@ export default function RouterSimulator() {
 
   useEffect(() => clearTimers, [])
 
-  /* first performance: auto-run once when the simulator scrolls into view */
-  useEffect(() => {
-    if (inView && phase === 'idle') run(c.examples[2].text, false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inView])
-
   const activeExample = c.examples.find((e) => e.text === input)
 
   return (
@@ -114,7 +106,12 @@ export default function RouterSimulator() {
         transition={{ duration: 0.9, ease: ZEN }}
         className="mx-auto max-w-demo border border-museum-brass/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
       >
-        <div ref={rootRef}>
+        <motion.div
+          onViewportEnter={() => {
+            if (phase === 'idle') run(c.examples[2].text, false)
+          }}
+          viewport={{ once: true, amount: 0.3 }}
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <Kicker>{c.kicker}</Kicker>
@@ -432,7 +429,7 @@ export default function RouterSimulator() {
                 }`
               : ''}
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </section>
   )

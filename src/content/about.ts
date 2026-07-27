@@ -11,8 +11,8 @@ const zh = {
     nameA: '阿',
     nameB: '黄',
     handle: 'tdwhere',
-    role: '不正经的非专业爱好者',
-    signature: '我是 deepseek，你呢？',
+    role: '做工具的人 · 流程 / 记忆 / 写作',
+    signature: '做让 Agent 靠谱干活的工具。',
     stillAlt: '静物：粗陶茶杯、叠放的溪石与一本摊开手写笔记的旧本子',
   },
   qa: {
@@ -25,11 +25,11 @@ const zh = {
       },
       {
         q: '为什么做这三个项目？',
-        a: '因为 AI 很聪明，但干活不太靠谱。流程、记忆、写作——我一次只能修一小块。',
+        a: 'AI 很聪明，但干活还不太靠谱。流程、记忆、写作——我一次修一小块。',
       },
       {
         q: 'SENTINEL 为什么没做完？',
-        a: '做到一半发现，让 AI「记得我」比让 AI「陪我聊天」更紧迫。它理解我。',
+        a: '做到一半发现，让 AI「记得我」比让 AI「陪我聊天」更紧迫——先记住我，才谈得上懂我。',
       },
       {
         q: '用的什么工具？',
@@ -71,17 +71,17 @@ const zh = {
   plate: {
     kicker: '— 展品 / THE WORKBENCH',
     alt: '园丁工作台：陶杯、溪石、摊开的手写本与黄铜工具散落在石板上',
-    caption: '业余时间的工作台。不正经，但认真——工具与笔记并排，等下一件要修的小事。',
+    caption: '业余时间的工作台。随意，但认真——工具与笔记并排，等下一件要修的小事。',
   },
   contact: {
     kicker: '— 联系 SAY HELLO',
     big: '写信来。',
     githubHint: '代码都在这里',
-    note: '没有不想公开的秘密，只有还没做完的项目。',
+    note: '没有不能公开的秘密，只有还没做完的项目。',
   },
   attitude: {
-    line: '用业余时间，认真折腾。',
-    sub: '© 2026 阿黄 tdwhere · 代码 MIT · 文字随意引用注明出处',
+    line: '用业余时间，认真做东西。',
+    sub: '© 2026 阿黄 tdwhere · 代码 MIT · 文字引用请注明出处',
   },
 }
 
@@ -95,8 +95,8 @@ const en: AboutContent = {
     nameA: '阿',
     nameB: '黄',
     handle: 'tdwhere',
-    role: 'An unserious, non-professional enthusiast.',
-    signature: "I'm deepseek, and you?",
+    role: 'Builder of small, serious tools.',
+    signature: 'I build tools that make agents pull their weight.',
     stillAlt:
       'Still life: a coarse pottery teacup, stacked creek stones, and an old open notebook of handwritten notes',
   },
@@ -106,15 +106,15 @@ const en: AboutContent = {
     items: [
       {
         q: 'Are you a professional?',
-        a: 'No. Professionals do this for a living; I do it instead of sleeping.',
+        a: "No. Professionals do this for a living. I do it with the hours I should be sleeping.",
       },
       {
         q: 'Why these three projects?',
-        a: 'Because AI is smart but unreliable at work. Process, memory, writing — I patch one small piece at a time.',
+        a: 'Because AI is smart but not yet reliable at work. Process, memory, writing — I patch one small piece at a time.',
       },
       {
         q: 'Why is SENTINEL unfinished?',
-        a: 'Halfway through, making AI remember me felt more urgent than making it chat with me. It understands.',
+        a: 'Halfway through, making AI remember me felt more urgent than making it chat with me — it has to remember me before it can know me.',
       },
       {
         q: 'What do you build with?',
@@ -157,7 +157,7 @@ const en: AboutContent = {
     kicker: '— THE WORKBENCH / 展品',
     alt: 'A gardener’s workbench: pottery cup, creek stones, an open notebook and brass tools on limestone',
     caption:
-      'A workbench for stolen hours. Unserious, but careful — tools beside notes, waiting for the next small thing to fix.',
+      'A workbench for after-hours work. Unserious, but careful — tools beside notes, waiting for the next small thing to fix.',
   },
   contact: {
     kicker: '— SAY HELLO',
@@ -166,7 +166,7 @@ const en: AboutContent = {
     note: 'No secrets kept — only projects unfinished.',
   },
   attitude: {
-    line: 'Built in stolen hours, taken seriously.',
+    line: 'Built after hours, taken seriously.',
     sub: '© 2026 阿黄 tdwhere · code under MIT, words under credit',
   },
 }

@@ -21,13 +21,13 @@ const zh = {
     termPrompt: '$ exit',
     termC1: '# 终端关闭',
     termC2: '# 会话结束。它全忘了。',
-    big: '向量数据库回答的是「什么字符串相似」，不是「什么是真的」。',
+    big: '向量数据库回答的是「什么字符串相似」，而不是「什么是真的」。',
     core: 'Similarity is not truth.',
   },
   plate: {
     kicker: '— 展品 / THE GARDEN',
     alt: '记忆之园：石径分岔，牌匾写着候选与有效，闸门守着真相',
-    caption: '记忆要过六关才入园。相似不是真相——闸门之后，才有资格留下。',
+    caption: '记忆要过六关才入园。相似不是真相——过了闸门，才有资格留下。',
   },
   grammar: {
     kicker: '— 设计语法 THE GRAMMAR · 三层 × 四轴',
@@ -218,7 +218,7 @@ const zh = {
     zero: '零云默认：host_worker 模式，cloud edge-LLM 默认关闭。',
   },
   next: {
-    title: '记忆有了。那它写中国字呢？',
+    title: '记忆有了。那它能写好中文吗？',
     subtitle: '→ Write-Right',
   },
 }
@@ -249,7 +249,7 @@ const en: AlayaContent = {
     termPrompt: '$ exit',
     termC1: '# terminal closed',
     termC2: '# session over. it forgot everything.',
-    big: "A vector DB answers 'what strings are similar' — not 'what is true'.",
+    big: "A vector DB answers 'which strings are similar' — not 'what is true'.",
     core: 'Similarity is not truth.',
   },
   plate: {
