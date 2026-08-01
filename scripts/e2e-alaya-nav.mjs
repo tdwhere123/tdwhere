@@ -65,24 +65,18 @@ async function navFrom(browser, fromPath) {
     return true
   })
   if (!clicked) {
-    // Fallback: client navigate via location (still SPA if History API)
-    await page.evaluate((base) => {
-      const root = base.replace(/\/$/, '')
-      const prefix = root.includes('/tdwhere') ? '/tdwhere' : ''
-      history.pushState({}, '', `${prefix}/alaya`)
-      window.dispatchEvent(new PopStateEvent('popstate'))
-    }, BASE)
-    await wait(300)
-    // Prefer a real link click — if none, use window navigation as last resort
-    const hasH1 = await page.evaluate(() => !!document.querySelector('h1'))
-    if (!hasH1) {
-      await page.goto(urlFor('/alaya'), { waitUntil: 'domcontentloaded' })
-      await page.close()
-      throw new Error(`no /alaya link from ${fromPath}`)
-    }
+    await page.close()
+    throw new Error(`no /alaya link from ${fromPath}`)
   }
 
-  await wait(1600)
+  await page.waitForFunction(
+    () => {
+      const h1 = document.querySelector('h1')
+      return h1 && /Do-SOUL-Alaya/.test(h1.textContent || '')
+    },
+    { timeout: 15000 },
+  )
+  await wait(400)
   const state = await probe(page)
   const tag = fromPath.replace(/\//g, '_') || 'home'
   await page.screenshot({ path: `/tmp/cursor/alaya-nav-fix-${tag}.png` })
