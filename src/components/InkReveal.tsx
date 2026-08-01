@@ -4,8 +4,8 @@ import { ZEN } from '@/lib/motion'
 
 
 /**
- * 墨显 Ink Reveal — y 40→0, blur 8→0, opacity 0→1, 0.9s ease-zen, triggered at 20% viewport.
- * Shared entrance primitive for section titles and text blocks.
+ * 墨显 Ink Reveal — y + opacity only (no filter blur: cheaper paint, same ink feel).
+ * Triggered at `amount` viewport. Shared entrance for section titles / blocks.
  */
 export default function InkReveal({
   children,
@@ -25,10 +25,10 @@ export default function InkReveal({
   return (
     <motion.div
       className={className}
-      initial={{ y, opacity: 0, filter: 'blur(8px)' }}
-      whileInView={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-      viewport={{ once, amount }}
-      transition={{ duration: 0.9, ease: ZEN, delay }}
+      initial={{ y, opacity: 0 }}
+      whileInView={{ y: 0, opacity: 1 }}
+      viewport={{ once, amount, margin: '0px 0px -8% 0px' }}
+      transition={{ duration: 0.75, ease: ZEN, delay }}
     >
       {children}
     </motion.div>

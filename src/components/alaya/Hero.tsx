@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { useRef } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { useLang } from '@/context/LangContext'
@@ -9,36 +9,32 @@ import { getLenis } from '@/lib/smooth-scroll'
 
 gsap.registerPlugin(useGSAP)
 
-/** Soft cobalt-cool museum wash (~4% effective), GSAP slow drift (isolated + memoized). */
-const MossGlow = memo(function MossGlow() {
-  const ref = useRef<HTMLDivElement>(null)
-  useGSAP(
-    () => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      gsap.to(ref.current, {
-        x: 56,
-        y: -36,
-        duration: 10,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-      })
-    },
-    { scope: ref },
-  )
+/** Soft moss/cobalt wash — CSS drift (no GSAP ticker on the hero wash). */
+function MossGlow() {
   return (
-    <div
-      ref={ref}
-      aria-hidden="true"
-      className="pointer-events-none absolute -right-24 top-1/4 h-[600px] w-[600px]"
-      style={{
-        background:
-          'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 52%, var(--cobalt)) 7%, transparent) 0%, transparent 72%)',
-        opacity: 0.42,
-      }}
-    />
+    <>
+      <style>{`
+        @keyframes alaya-moss-drift {
+          from { transform: translate(0, 0); }
+          to { transform: translate(56px, -36px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .alaya-moss-glow { animation: none !important; }
+        }
+      `}</style>
+      <div
+        aria-hidden="true"
+        className="alaya-moss-glow pointer-events-none absolute -right-24 top-1/4 h-[600px] w-[600px]"
+        style={{
+          background:
+            'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 52%, var(--cobalt)) 7%, transparent) 0%, transparent 72%)',
+          opacity: 0.42,
+          animation: 'alaya-moss-drift 10s ease-in-out infinite alternate',
+        }}
+      />
+    </>
   )
-})
+}
 
 /** Quiet thin ring + orbit dots — museum accent, not UI chrome. */
 function HeroOrbitMark() {
@@ -91,21 +87,32 @@ export default function Hero() {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
       if (reduced) {
-        gsap.set([chars, blocks], { y: 0, opacity: 1, filter: 'blur(0px)' })
         gsap.set([gateLRef.current, gateRRef.current], { opacity: 0 })
         return
       }
 
-      gsap.set(chars, { y: 40, opacity: 0, filter: 'blur(8px)' })
-      gsap.set(blocks, { y: 40, opacity: 0, filter: 'blur(8px)' })
-
+      /* Gate Open — two vertical lines slide apart (scaleX 1→0, stagger 0.07s) */
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-      /* Gate Open — two vertical lines slide apart (scaleX 1→0, stagger 0.08s) */
-      tl.to(gateLRef.current, { scaleX: 0, duration: 0.7, ease: 'power2.inOut' }, 0.15)
-      tl.to(gateRRef.current, { scaleX: 0, duration: 0.7, ease: 'power2.inOut' }, 0.23)
-      /* title chars, then content blocks */
-      tl.to(chars, { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.04 }, 0.6)
-      tl.to(blocks, { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.1 }, 1.0)
+      tl.to(gateLRef.current, { scaleX: 0, duration: 0.55, ease: 'power2.inOut' }, 0.05)
+      tl.to(gateRRef.current, { scaleX: 0, duration: 0.55, ease: 'power2.inOut' }, 0.12)
+      /* from(): title/blocks start hidden for the gate beat; safety below
+         recovers if the timeline is killed mid-tween (SPA leave). */
+      tl.from(
+        chars,
+        { y: 36, opacity: 0, duration: 0.65, stagger: 0.03, immediateRender: true },
+        0.28,
+      )
+      tl.from(
+        blocks,
+        { y: 28, opacity: 0, duration: 0.6, stagger: 0.07, immediateRender: true },
+        0.5,
+      )
+
+      /* hard safety: hero fully visible by 1.2s even if GSAP is interrupted */
+      const safety = window.setTimeout(() => {
+        gsap.set([chars, blocks], { y: 0, opacity: 1 })
+      }, 1200)
+      return () => window.clearTimeout(safety)
     },
     { scope: rootRef },
   )
