@@ -4,10 +4,10 @@ import { useLang } from '@/context/LangContext'
 import { doItContent } from '@/content/doIt'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
-import BrassAccent from '@/components/doit/BrassAccent'
+import CobaltAccent from '@/components/doit/CobaltAccent'
 import SiteClue from '@/components/eggs/SiteClue'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S6 · 规格与致谢 — buckets chips + standing-on-shoulders links. */
 export default function SpecsCredits() {
@@ -23,12 +23,12 @@ export default function SpecsCredits() {
       <div className="mt-10 grid gap-12 md:grid-cols-2">
         {/* buckets */}
         <div>
-          <h3 className="font-serif text-h3 font-semibold text-museum-ink">{c.bucketsTitle}</h3>
+          <h3 className="font-display text-h3 font-semibold text-museum-ink">{c.bucketsTitle}</h3>
           <div className="mt-5 flex flex-wrap gap-2">
             {c.buckets.map((b, i) => (
               <motion.span
                 key={b}
-                className="rounded-[4px] border border-museum-brass/35 bg-museum-stone/70 px-3 py-1 font-mono text-xs text-ink-2"
+                className="rounded-[4px] border border-cobalt/35 bg-museum-stone/70 px-3 py-1 font-mono text-xs text-ink-2"
                 initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
@@ -38,7 +38,7 @@ export default function SpecsCredits() {
               </motion.span>
             ))}
             <motion.span
-              className="rounded-[4px] border border-dashed border-museum-brass/30 px-3 py-1 font-mono text-xs text-ink-3"
+              className="rounded-[4px] border border-dashed border-cobalt/30 px-3 py-1 font-mono text-xs text-ink-3"
               initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
@@ -51,7 +51,7 @@ export default function SpecsCredits() {
 
         {/* credits */}
         <div>
-          <h3 className="font-serif text-h3 font-semibold text-museum-ink">{c.creditsTitle}</h3>
+          <h3 className="font-display text-h3 font-semibold text-museum-ink">{c.creditsTitle}</h3>
           <ul className="mt-5 space-y-3">
             {c.credits.map((repo, i) => (
               <motion.li
@@ -86,7 +86,7 @@ export default function SpecsCredits() {
 
       <InkReveal delay={0.2}>
         <div className="relative mx-auto mt-14 flex w-fit flex-col items-center gap-2">
-          <BrassAccent className="h-2 w-36" />
+          <CobaltAccent className="h-2 w-36" />
           <SiteClue
             variant="marginalia"
             className="mt-1"

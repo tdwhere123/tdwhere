@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
 import { useLang } from '@/context/LangContext'
 import { aboutContent } from '@/content/about'
-import BrassRule from '@/components/about/BrassRule'
+import CobaltRule from '@/components/about/CobaltRule'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
- * S5 · 态度 The Attitude — closing line between brass rules.
+ * S5 · 态度 The Attitude — closing line between cobalt rules.
  * Word-level ink reveal (stagger 0.1s); mono colophon underneath.
  */
 export default function Attitude() {
@@ -18,9 +18,9 @@ export default function Attitude() {
 
   return (
     <section aria-label={c.line} className="mx-auto max-w-shell px-5 md:px-10">
-      <BrassRule className="mx-auto h-2 w-40 text-museum-brass" />
+      <CobaltRule className="mx-auto h-2 w-40 text-cobalt" />
       <div className="py-[clamp(72px,12vh,128px)] text-center">
-        <p className="mx-auto max-w-3xl font-serif text-[clamp(30px,4.5vw,48px)] font-bold leading-snug text-museum-ink">
+        <p className="mx-auto max-w-3xl font-display text-[clamp(30px,4.5vw,48px)] font-bold leading-snug text-museum-ink">
           {units.map((u, i) => (
             <motion.span
               key={`${lang}-${u}`}
@@ -45,7 +45,7 @@ export default function Attitude() {
           {c.sub}
         </motion.p>
       </div>
-      <BrassRule className="mx-auto mb-8 h-2 w-40 text-museum-brass" />
+      <CobaltRule className="mx-auto mb-8 h-2 w-40 text-cobalt" />
     </section>
   )
 }

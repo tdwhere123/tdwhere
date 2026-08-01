@@ -7,7 +7,7 @@ const OPTIONS: { value: Lang; label: string }[] = [
   { value: 'en', label: 'EN' },
 ]
 
-/** mono 中 | EN — active: ink text + 2px seal underline; inactive: faint. */
+/** mono 中 | EN · active: ink text + 2px cobalt underline; inactive: faint. */
 export default function LangToggle({ className }: { className?: string }) {
   const { lang, setLang } = useLang()
   return (
@@ -32,7 +32,7 @@ export default function LangToggle({ className }: { className?: string }) {
             <span
               aria-hidden="true"
               className={cn(
-                'absolute left-1/2 -translate-x-1/2 -bottom-[1px] h-[2px] bg-seal transition-all duration-300 ease-zen',
+                'absolute left-1/2 -translate-x-1/2 -bottom-[1px] h-[2px] bg-cobalt transition-all duration-300 ease-zen',
                 lang === opt.value ? 'w-4' : 'w-0',
               )}
             />

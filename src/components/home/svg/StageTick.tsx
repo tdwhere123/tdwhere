@@ -19,9 +19,9 @@ export default function StageTick({
         cx="7"
         cy="7"
         r={active ? 5 : 3.5}
-        stroke="var(--museum-brass)"
+        stroke="var(--cobalt)"
         strokeWidth="1"
-        fill={active ? 'var(--museum-brass)' : 'transparent'}
+        fill={active ? 'var(--cobalt)' : 'transparent'}
         opacity={active ? 1 : 0.45}
       />
     </svg>

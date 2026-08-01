@@ -15,7 +15,7 @@ const MuseumCubeCanvas = lazy(() => import("./cube3d/MuseumCubeCanvas"));
 function CubeCanvasPlaceholder({ className }: { className?: string }) {
 	return (
 		<div
-			className={`${className ?? ""} flex items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#ddd4c6_0%,#cfc4b4_55%,#c4b8a6_100%)]`}
+			className={`${className ?? ""} flex items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f4f4f2_0%,#ececea_55%,#e2e2de_100%)]`}
 			aria-hidden="true"
 		>
 			<div className="h-14 w-14 animate-pulse rounded-sm bg-museum-stone/70 shadow-sm" />
@@ -23,14 +23,18 @@ function CubeCanvasPlaceholder({ className }: { className?: string }) {
 	);
 }
 
-function RollDownHint({
+/**
+ * Caption glued to the floor S-mark tip (screen-projected, world +Z).
+ * NOTE: scripts/e2e-s-arrow.mjs hard-depends on data-testid="roll-s-label"
+ * existing and tracking the tip. Keep the testid and the "S" text.
+ */
+function RollWayCaption({
 	anchor,
 	lang,
 }: {
 	anchor: CubeScreenAnchor;
 	lang: "zh" | "en";
 }) {
-	// Caption only — tracks the floor mark tip in screen space (world +Z).
 	return (
 		<div
 			className="pointer-events-none absolute z-[5] -translate-x-1/2 -translate-y-1/2"
@@ -53,7 +57,6 @@ export default function DesktopCubeShowcase() {
 	const { progress, litCount, markSeen, markMechanism } = useExploration();
 	const [activeId, setActiveId] = useState<CubeStageId>("home");
 	const [writeKey, setWriteKey] = useState(0);
-	const [inkLocked, setInkLocked] = useState(false);
 	const [anchor, setAnchor] = useState<CubeScreenAnchor>(() =>
 		emptyCubeAnchor(),
 	);
@@ -119,65 +122,56 @@ export default function DesktopCubeShowcase() {
 		};
 	}, []);
 
-	const onInkLockChange = useCallback((locked: boolean) => {
-		setInkLocked(locked);
-	}, []);
+		useEffect(() => {
+			const t = window.setTimeout(() => markSeen(activeId), 1400);
+			return () => window.clearTimeout(t);
+		}, [activeId, markSeen]);
 
-	useEffect(() => {
-		const t = window.setTimeout(() => markSeen(activeId), 1400);
-		return () => window.clearTimeout(t);
-	}, [activeId, markSeen]);
+		const onInkExpand = useCallback(() => {
+			markMechanism(activeId);
+		}, [activeId, markMechanism]);
 
-	const onInkExpand = useCallback(() => {
-		markMechanism(activeId);
-	}, [activeId, markMechanism]);
-
-	return (
-		<div className="relative min-h-[100svh] w-full touch-pan-y">
-			<HallAmbience
-				activeId={activeId}
-				progress={progress}
-				litCount={litCount}
-			/>
-
-			<Suspense
-				fallback={
-					<CubeCanvasPlaceholder className="absolute inset-0 z-[1] h-[100svh] w-full" />
-				}
-			>
-				<MuseumCubeCanvas
-					className="absolute inset-0 z-[1] h-[100svh] w-full"
-					enabled
-					locked={inkLocked}
-					ariaLabel={
-						lang === "zh"
-							? "3D 项目立方体。点击后可用方向键或 W、A、S、D 翻面。"
-							: "3D project cube. Click to focus, then use arrow keys or W, A, S, and D to roll it."
-					}
-					onFaceChange={onFaceChange}
-					onAnchor={onAnchor}
+		return (
+			<div className="relative min-h-[100svh] w-full touch-pan-y">
+				<HallAmbience
+					activeId={activeId}
+					progress={progress}
+					litCount={litCount}
 				/>
-			</Suspense>
 
-			<RollDownHint anchor={anchor} lang={lang} />
+				<Suspense
+					fallback={
+						<CubeCanvasPlaceholder className="absolute inset-0 z-[1] h-[100svh] w-full" />
+					}
+				>
+					<MuseumCubeCanvas
+						className="absolute inset-0 z-[1] h-[100svh] w-full"
+						enabled
+						ariaLabel={
+							lang === "zh"
+								? "3D 项目立方体。点击后可用方向键或 W、A、S、D 翻面。"
+								: "3D project cube. Click to focus, then use arrow keys or W, A, S, and D to roll it."
+						}
+						onFaceChange={onFaceChange}
+						onAnchor={onAnchor}
+					/>
+				</Suspense>
 
-			<PlaneInk
-				project={project}
-				lang={lang}
-				anchor={inkAnchor}
-				writeKey={`${activeId}-${writeKey}`}
-				onLockChange={onInkLockChange}
-				onExpand={onInkExpand}
-			/>
+				<RollWayCaption anchor={anchor} lang={lang} />
+
+				<PlaneInk
+					project={project}
+					lang={lang}
+					anchor={inkAnchor}
+					writeKey={`${activeId}-${writeKey}`}
+					onExpand={onInkExpand}
+				/>
 
 			<div className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex flex-col items-center gap-2 px-6 text-center">
 				<p className="font-mono text-[10px] uppercase tracking-[0.16em] text-museum-muted">
 					{lang === "zh"
 						? "点击聚焦 · 方向键翻面 · 拖拽转视角 · 点击手写字"
 						: "Click to focus · arrows roll · drag to orbit · click the ink"}
-				</p>
-				<p className="font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/55">
-					{lang === "zh" ? "向下继续" : "Scroll for more"}
 				</p>
 			</div>
 		</div>

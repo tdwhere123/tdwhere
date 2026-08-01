@@ -23,13 +23,13 @@ export type SentinelCard = {
 
 /**
  * Five concept-art cards ≈ five PRD pillars.
- * Image files: public/easter/sentinel/card-0N.png (user uploads).
+ * Image files: public/easter/sentinel/card-0N.webp (user uploads).
  */
 export const SENTINEL_CARDS: Record<CardId, SentinelCard> = {
   '01': {
     id: '01',
     commands: ['interrogate', '审讯', 'ask'],
-    image: asset('easter/sentinel/card-01.png'),
+    image: asset('easter/sentinel/card-01.webp'),
     title: { zh: '卡片 I · 审讯终端', en: 'Card I · Interrogation' },
     mechanic: { zh: '与 SENTINEL 对话', en: 'Talk to SENTINEL' },
     lesson: {
@@ -40,7 +40,7 @@ export const SENTINEL_CARDS: Record<CardId, SentinelCard> = {
   '02': {
     id: '02',
     commands: ['leads', '线索', 'investigate'],
-    image: asset('easter/sentinel/card-02.png'),
+    image: asset('easter/sentinel/card-02.webp'),
     title: { zh: '卡片 II · 可用线索', en: 'Card II · Available Leads' },
     mechanic: { zh: '主动调查行动', en: 'Active investigation' },
     lesson: {
@@ -51,7 +51,7 @@ export const SENTINEL_CARDS: Record<CardId, SentinelCard> = {
   '03': {
     id: '03',
     commands: ['materials', '材料', 'archive', '档案'],
-    image: asset('easter/sentinel/card-03.png'),
+    image: asset('easter/sentinel/card-03.webp'),
     title: { zh: '卡片 III · 五选三', en: 'Card III · Five Choose Three' },
     mechanic: { zh: '候选材料', en: 'Candidate materials' },
     lesson: {
@@ -62,7 +62,7 @@ export const SENTINEL_CARDS: Record<CardId, SentinelCard> = {
   '04': {
     id: '04',
     commands: ['ledger', '账本', 'notebook'],
-    image: asset('easter/sentinel/card-04.png'),
+    image: asset('easter/sentinel/card-04.webp'),
     title: { zh: '卡片 IV · 纸质账本', en: 'Card IV · Paper Ledger' },
     mechanic: { zh: '书写正式记录', en: 'Write the record' },
     lesson: {
@@ -73,7 +73,7 @@ export const SENTINEL_CARDS: Record<CardId, SentinelCard> = {
   '05': {
     id: '05',
     commands: ['publish', '发布', 'history', '历史'],
-    image: asset('easter/sentinel/card-05.png'),
+    image: asset('easter/sentinel/card-05.webp'),
     title: { zh: '卡片 V · 历史回流', en: 'Card V · History Recurs' },
     mechanic: { zh: '记录改变世界', en: 'Records reshape the world' },
     lesson: {

@@ -28,11 +28,11 @@ export default function DecisionLadder() {
   const dotY = useTransform(scrollYProgress, [0, 1], ['6%', '88%'])
 
   return (
-    <section className="border-y border-museum-brass/20 bg-museum-stone/55">
+    <section className="border-y border-cobalt/20 bg-museum-stone/55">
       <div className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,128px)] md:px-10">
         <InkReveal>
           <Kicker>{c.kicker}</Kicker>
-          <h2 className="mt-4 font-serif text-h2 font-semibold text-museum-ink">{c.title}</h2>
+          <h2 className="mt-4 font-display text-h2 font-semibold text-museum-ink">{c.title}</h2>
         </InkReveal>
 
         <div ref={ref} className="relative mt-14">
@@ -52,7 +52,7 @@ export default function DecisionLadder() {
                   key={step}
                   className={cn(
                     'border-t pt-4 transition-colors duration-500',
-                    lit ? 'border-clay' : 'border-museum-brass/30',
+                    lit ? 'border-clay' : 'border-cobalt/30',
                   )}
                   style={{ marginTop: `${i * 12}px` }}
                 >
@@ -91,7 +91,7 @@ export default function DecisionLadder() {
                   key={step}
                   className={cn(
                     'flex items-baseline gap-4 border-t px-1 py-3.5 transition-colors duration-500',
-                    lit ? 'border-clay' : 'border-museum-brass/30',
+                    lit ? 'border-clay' : 'border-cobalt/30',
                   )}
                 >
                   <span

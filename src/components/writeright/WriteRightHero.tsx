@@ -7,8 +7,9 @@ import MetaChip from '@/components/MetaChip'
 import Stamp from '@/components/Stamp'
 import GateOpen from '@/components/GateOpen'
 import { getLenis } from '@/lib/smooth-scroll'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
+
 const BACK = [0.34, 1.56, 0.64, 1] as [number, number, number, number]
 
 /* cool slate metal grid — dai identity on museum wall */
@@ -60,7 +61,7 @@ export default function WriteRightHero() {
               </motion.div>
 
               <motion.h1
-                className="mt-6 font-serif font-semibold leading-[1.08] text-ink"
+                className="mt-6 font-display font-semibold leading-[1.08] text-ink"
                 style={{ fontSize: 'clamp(44px, 7vw, 76px)' }}
                 initial={{ y: 40, opacity: 0, filter: 'blur(8px)' }}
                 animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
@@ -79,7 +80,7 @@ export default function WriteRightHero() {
               </motion.p>
 
               <motion.p
-                className="mt-8 font-serif font-semibold text-ink-2"
+                className="mt-8 font-display font-semibold text-ink-2"
                 style={{ fontSize: 'clamp(20px, 2.6vw, 28px)', lineHeight: 1.5 }}
                 initial={{ y: 32, opacity: 0, filter: 'blur(6px)' }}
                 animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
@@ -103,7 +104,7 @@ export default function WriteRightHero() {
                 {c.hosts.map((host, i) => (
                   <motion.span
                     key={host}
-                    className="inline-flex items-center rounded-[4px] border border-museum-brass/30 bg-museum-stone/60 px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-3"
+                    className="inline-flex items-center rounded-[4px] border border-cobalt/30 bg-museum-stone/60 px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-3"
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.45, ease: BACK, delay: 1.15 + i * 0.06 }}
@@ -136,7 +137,7 @@ export default function WriteRightHero() {
                   {c.ctaTry}
                   <span
                     aria-hidden="true"
-                    className="absolute -bottom-0.5 left-0 h-px w-0 bg-museum-brass transition-all duration-300 ease-zen group-hover:w-full"
+                    className="absolute -bottom-0.5 left-0 h-px w-0 bg-cobalt transition-all duration-300 ease-zen group-hover:w-full"
                   />
                 </a>
               </motion.div>
@@ -147,7 +148,7 @@ export default function WriteRightHero() {
               <Stamp text={c.stamp} className="mt-2" />
               <motion.span
                 aria-hidden="true"
-                className="vertical-rl select-none font-serif text-lg text-faint"
+                className="vertical-rl select-none font-display text-lg text-faint"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1.2, ease: ZEN, delay: 1.4 }}

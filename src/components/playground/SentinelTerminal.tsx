@@ -17,6 +17,7 @@ import InkReveal from '@/components/InkReveal'
 import Stamp from '@/components/Stamp'
 import EggModal from '@/components/playground/EggModal'
 import FinaleMask from '@/components/playground/FinaleMask'
+import './playground.css'
 
 type Phase = 'off' | 'booting' | 'awake' | 'chatting' | 'sleeping'
 type LineKind = 'bios' | 'sentinel' | 'user' | 'note'
@@ -70,13 +71,17 @@ export default function SentinelTerminal() {
   const fallbackIdxRef = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const rootRef = useRef<HTMLElement>(null)
 
-  useLayoutEffect(() => {
-    tRef.current = t
-    eggOpenRef.current = eggOpen
-    finaleOpenRef.current = finaleOpen
-    phaseRef.current = phase
-  }, [eggOpen, finaleOpen, phase, t])
+  // —— atmosphere: one-shot wake when the machine scrolls into view ——
+  const [inView, setInView] = useState(false)
+  const [woken, setWoken] = useState(false)
+  const [wakeFlash, setWakeFlash] = useState(false)
+  // —— hidden delight: long-press power → ghost pulse (session-only) ——
+  const [ghostPulse, setGhostPulse] = useState(false)
+  const pressTimerRef = useRef<number | null>(null)
+  const longPressRef = useRef(false)
+  const wokenRef = useRef(false)
 
   const reduced = useMemo(
     () =>
@@ -84,6 +89,43 @@ export default function SentinelTerminal() {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     [],
   )
+
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setInView(true)
+      setWoken(true)
+      return
+    }
+    let wakeTimer = 0
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        setInView(entry.isIntersecting)
+        if (entry.isIntersecting && !wokenRef.current) {
+          wokenRef.current = true
+          setWoken(true)
+          if (!reduced) {
+            setWakeFlash(true)
+            wakeTimer = window.setTimeout(() => setWakeFlash(false), 1300)
+          }
+        }
+      },
+      { threshold: 0.2 },
+    )
+    io.observe(el)
+    return () => {
+      io.disconnect()
+      window.clearTimeout(wakeTimer)
+    }
+  }, [reduced])
+
+  useLayoutEffect(() => {
+    tRef.current = t
+    eggOpenRef.current = eggOpen
+    finaleOpenRef.current = finaleOpen
+    phaseRef.current = phase
+  }, [eggOpen, finaleOpen, phase, t])
 
   const sleep = useCallback(
     (ms: number) =>
@@ -95,14 +137,22 @@ export default function SentinelTerminal() {
     [reduced],
   )
 
-  // cancel everything on unmount
-  useEffect(() => {
-    const timers = timersRef.current
-    return () => {
-      sessionRef.current += 1
-      timers.forEach((id) => window.clearTimeout(id))
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach((id) => window.clearTimeout(id))
+    timersRef.current = []
+    if (pressTimerRef.current !== null) {
+      window.clearTimeout(pressTimerRef.current)
+      pressTimerRef.current = null
     }
   }, [])
+
+  // cancel everything on unmount
+  useEffect(() => {
+    return () => {
+      sessionRef.current += 1
+      clearAllTimers()
+    }
+  }, [clearAllTimers])
 
   const pushLine = useCallback((kind: LineKind, text: string) => {
     idRef.current += 1
@@ -167,6 +217,7 @@ export default function SentinelTerminal() {
 
   const powerOff = useCallback(() => {
     sessionRef.current += 1
+    clearAllTimers()
     chainRef.current = Promise.resolve()
     sleepPendingRef.current = false
     pendingOutRef.current = 0
@@ -179,7 +230,7 @@ export default function SentinelTerminal() {
     setEggCard(null)
     setFinaleOpen(false)
     setPhase('off')
-  }, [])
+  }, [clearAllTimers])
 
   const runBoot = useCallback(async () => {
     const token = sessionRef.current
@@ -205,6 +256,32 @@ export default function SentinelTerminal() {
       powerOff()
     }
   }, [powerOff, runBoot])
+
+  /** Long-press (>=850ms) wakes a ghost pulse instead of toggling power. */
+  const onPowerPressStart = useCallback(() => {
+    longPressRef.current = false
+    pressTimerRef.current = window.setTimeout(() => {
+      longPressRef.current = true
+      setGhostPulse(true)
+      const id = window.setTimeout(() => setGhostPulse(false), 1600)
+      timersRef.current.push(id)
+    }, 850)
+  }, [])
+
+  const onPowerPressEnd = useCallback(() => {
+    if (pressTimerRef.current !== null) {
+      window.clearTimeout(pressTimerRef.current)
+      pressTimerRef.current = null
+    }
+  }, [])
+
+  const onPowerClick = useCallback(() => {
+    if (longPressRef.current) {
+      longPressRef.current = false
+      return
+    }
+    togglePower()
+  }, [togglePower])
 
   const runSleep = useCallback(async () => {
     const token = sessionRef.current
@@ -238,9 +315,10 @@ export default function SentinelTerminal() {
   const closeEgg = useCallback(() => {
     const token = sessionRef.current
     setEggOpen(false)
-    window.setTimeout(() => {
+    const id = window.setTimeout(() => {
       if (token === sessionRef.current && !finaleOpenRef.current) inputRef.current?.focus()
     }, 80)
+    timersRef.current.push(id)
   }, [])
 
   const queueFinale = useCallback(() => {
@@ -424,19 +502,23 @@ export default function SentinelTerminal() {
           : m.statusOn
 
   return (
-    <section aria-label={t.title} className="pg-sentinel relative overflow-hidden rounded-[24px]">
+    <section
+      ref={rootRef}
+      aria-label={t.title}
+      className={`pg-sentinel relative overflow-hidden rounded-[24px]${woken ? ' pg-woken' : ''}${wakeFlash ? ' pg-waking' : ''}${inView ? '' : ' pg-paused'}`}
+    >
       <style>{`
         .pg-sentinel {
-          --pg-chassis-hi: color-mix(in srgb, var(--museum-stone) 58%, var(--museum-brass));
-          --pg-chassis-lo: color-mix(in srgb, var(--museum-brass) 62%, var(--museum-dark));
+          --pg-chassis-hi: color-mix(in srgb, var(--museum-stone) 58%, var(--cobalt));
+          --pg-chassis-lo: color-mix(in srgb, var(--cobalt) 62%, var(--museum-dark));
           --pg-crt: color-mix(in srgb, var(--night-2) 72%, var(--museum-dark));
-          --pg-phosphor: color-mix(in srgb, var(--amber) 48%, var(--museum-brass));
-          --pg-phosphor-hi: color-mix(in srgb, var(--amber) 62%, var(--museum-stone));
-          --pg-glow: color-mix(in srgb, var(--museum-brass) 42%, transparent);
+          --pg-phosphor: color-mix(in srgb, var(--amber) 70%, var(--museum-stone) 30%);
+          --pg-phosphor-hi: color-mix(in srgb, var(--amber) 45%, var(--museum-stone));
+          --pg-glow: color-mix(in srgb, var(--cobalt) 42%, transparent);
           --pg-glow-soft: color-mix(in srgb, var(--amber) 14%, transparent);
           --pg-seal-muted: color-mix(in srgb, var(--seal) 48%, var(--museum-dark));
-          --pg-metal-ink: color-mix(in srgb, var(--museum-ink) 70%, var(--museum-brass));
-          --pg-case-edge: color-mix(in srgb, var(--museum-brass) 55%, transparent);
+          --pg-metal-ink: color-mix(in srgb, var(--museum-ink) 70%, var(--cobalt));
+          --pg-case-edge: color-mix(in srgb, var(--cobalt) 55%, transparent);
           --pg-blurb: var(--museum-muted);
         }
         @keyframes pg-led-breath { 0%,100% { opacity:.3 } 50% { opacity:1 } }
@@ -451,7 +533,7 @@ export default function SentinelTerminal() {
         {/* gallery-wall header */}
         <InkReveal>
           <Kicker>{t.kicker}</Kicker>
-          <h2 className="mt-6 font-serif text-h2 font-semibold text-museum-ink">{t.title}</h2>
+          <h2 className="mt-6 font-display text-h2 font-semibold text-museum-ink">{t.title}</h2>
           <p className="mt-5 max-w-reading text-[15px] leading-[1.85]" style={{ color: 'var(--pg-blurb)' }}>
             {t.blurb}
           </p>
@@ -471,9 +553,18 @@ export default function SentinelTerminal() {
               borderColor: 'var(--pg-case-edge)',
               background: 'linear-gradient(160deg, var(--pg-chassis-hi) 0%, var(--pg-chassis-lo) 100%)',
               boxShadow:
-                '0 0 56px color-mix(in srgb, var(--museum-brass) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--museum-stone) 35%, transparent)',
+                '0 0 56px color-mix(in srgb, var(--cobalt) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--museum-stone) 35%, transparent)',
             }}
           >
+            {/* case glow — rises once when the machine wakes into view */}
+            <div
+              aria-hidden="true"
+              className="pg-halo pointer-events-none absolute -inset-10 rounded-[36px]"
+              style={{
+                background:
+                  'radial-gradient(ellipse 62% 55% at 50% 42%, color-mix(in srgb, var(--cobalt) 13%, transparent), transparent 70%)',
+              }}
+            />
             {/* plastic grain */}
             <div
               aria-hidden="true"
@@ -483,7 +574,7 @@ export default function SentinelTerminal() {
 
             {/* CRT bezel */}
             <div
-              className="relative aspect-[4/3] cursor-text overflow-hidden rounded-[28px]"
+              className="pg-crt-bezel relative aspect-[4/3] cursor-text overflow-hidden rounded-[28px]"
               style={{
                 background: 'var(--pg-crt)',
                 boxShadow:
@@ -493,16 +584,54 @@ export default function SentinelTerminal() {
                 if (phaseRef.current === 'chatting') inputRef.current?.focus()
               }}
             >
-              {/* brass-warm phosphor bloom — not game neon */}
+              {/* cobalt phosphor bloom, not game neon */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-1000"
+                className={`pointer-events-none absolute inset-0 z-0 transition-opacity duration-1000${screenOn ? ' pg-breathe' : ''}`}
                 style={{
                   opacity: screenOn ? 1 : 0,
                   background:
                     'radial-gradient(ellipse 70% 60% at 50% 45%, var(--pg-glow-soft), transparent 70%)',
                 }}
               />
+
+              {/* standby afterglow — once woken, the sleeping screen keeps a faint ember */}
+              {!screenOn && (
+                <div
+                  aria-hidden="true"
+                  className="pg-standby pointer-events-none absolute inset-0 z-10"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse 46% 36% at 50% 52%, color-mix(in srgb, var(--amber) 7%, transparent), transparent 72%)',
+                  }}
+                />
+              )}
+
+              {/* one-shot wake flash — the screen blinks from dark to standby */}
+              {wakeFlash && (
+                <div
+                  aria-hidden="true"
+                  className="pg-wake-flash pointer-events-none absolute inset-0 z-20"
+                  style={{
+                    opacity: 0,
+                    background:
+                      'radial-gradient(ellipse 62% 50% at 50% 48%, color-mix(in srgb, var(--amber) 34%, transparent), transparent 74%)',
+                  }}
+                />
+              )}
+
+              {/* hidden delight — long-press power: a ghost crosses the glass */}
+              {ghostPulse && (
+                <div
+                  aria-hidden="true"
+                  className="pg-ghost-flash pointer-events-none absolute inset-0 z-20"
+                  style={{
+                    opacity: 0,
+                    background:
+                      'radial-gradient(ellipse 55% 44% at 50% 50%, color-mix(in srgb, var(--seal) 30%, var(--amber) 12%), transparent 70%)',
+                  }}
+                />
+              )}
 
               {/* screen content — expands from a bright line on boot, collapses on power-off */}
               <div
@@ -521,7 +650,7 @@ export default function SentinelTerminal() {
                   className="flex-1 overflow-y-auto px-5 pt-5 md:px-7 md:pt-6"
                   style={{
                     scrollbarWidth: 'thin',
-                    scrollbarColor: 'color-mix(in srgb, var(--museum-brass) 36%, transparent) transparent',
+                    scrollbarColor: 'color-mix(in srgb, var(--cobalt) 36%, transparent) transparent',
                   }}
                 >
                   <div
@@ -604,7 +733,7 @@ export default function SentinelTerminal() {
                     style={{
                       color: 'var(--pg-phosphor-hi)',
                       caretColor: 'var(--pg-phosphor)',
-                      textShadow: '0 0 7px color-mix(in srgb, var(--museum-brass) 32%, transparent)',
+                      textShadow: '0 0 7px color-mix(in srgb, var(--cobalt) 32%, transparent)',
                       opacity: inputAccepting ? 1 : 0.55,
                     }}
                   />
@@ -620,11 +749,11 @@ export default function SentinelTerminal() {
                   style={{
                     opacity: screenOn ? 0.18 : 0,
                     background:
-                      'linear-gradient(180deg, transparent, color-mix(in srgb, var(--museum-brass) 48%, transparent) 50%, transparent)',
+                      'linear-gradient(180deg, transparent, color-mix(in srgb, var(--cobalt) 48%, transparent) 50%, transparent)',
                   }}
                 />
               </div>
-              <FlickerOverlay active={screenOn && phase !== 'sleeping'} />
+              <FlickerOverlay active={screenOn && phase !== 'sleeping' && inView} />
               {/* sleep dim */}
               <div
                 aria-hidden="true"
@@ -640,13 +769,17 @@ export default function SentinelTerminal() {
             <div className="relative mt-4 flex items-center gap-4 px-1 md:mt-5">
               <button
                 type="button"
-                onClick={togglePower}
+                onClick={onPowerClick}
+                onPointerDown={onPowerPressStart}
+                onPointerUp={onPowerPressEnd}
+                onPointerLeave={onPowerPressEnd}
+                onPointerCancel={onPowerPressEnd}
                 aria-label={`${m.powerLabel} · ${screenOn ? m.powerOff : m.powerOn}`}
                 aria-pressed={screenOn}
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-full border transition-transform duration-100 active:translate-y-px"
                 style={{
-                  borderColor: 'color-mix(in srgb, var(--museum-brass) 55%, var(--museum-dark))',
-                  background: 'color-mix(in srgb, var(--museum-stone) 52%, var(--museum-brass))',
+                  borderColor: 'color-mix(in srgb, var(--cobalt) 55%, var(--museum-dark))',
+                  background: 'color-mix(in srgb, var(--museum-stone) 52%, var(--cobalt))',
                   color: 'var(--pg-metal-ink)',
                   boxShadow: 'inset 0 -2px 3px color-mix(in srgb, var(--museum-dark) 28%, transparent)',
                 }}
@@ -655,18 +788,18 @@ export default function SentinelTerminal() {
               </button>
               <span
                 aria-hidden="true"
-                className={`h-2 w-2 shrink-0 rounded-full ${screenOn ? '' : 'pg-led'}`}
+                className={`h-2 w-2 shrink-0 rounded-full ${screenOn ? '' : 'pg-led'}${ghostPulse ? ' pg-ghost-led' : ''}`}
                 style={{
                   background: screenOn ? 'var(--pg-phosphor)' : 'var(--pg-seal-muted)',
                   boxShadow: screenOn
-                    ? '0 0 8px color-mix(in srgb, var(--museum-brass) 55%, transparent)'
+                    ? '0 0 8px color-mix(in srgb, var(--cobalt) 55%, transparent)'
                     : '0 0 6px color-mix(in srgb, var(--pg-seal-muted) 50%, transparent)',
                 }}
               />
               <span
                 aria-hidden="true"
                 className="hidden h-px w-16 sm:block"
-                style={{ background: 'color-mix(in srgb, var(--museum-brass) 40%, transparent)' }}
+                style={{ background: 'color-mix(in srgb, var(--cobalt) 40%, transparent)' }}
               />
               <div
                 aria-hidden="true"
@@ -678,7 +811,7 @@ export default function SentinelTerminal() {
               />
               <span
                 className="font-mono text-[10px] uppercase tracking-[0.2em]"
-                style={{ color: 'color-mix(in srgb, var(--museum-ink) 75%, var(--museum-brass))' }}
+                style={{ color: 'color-mix(in srgb, var(--museum-ink) 75%, var(--cobalt))' }}
               >
                 {m.silk}
               </span>
@@ -687,7 +820,7 @@ export default function SentinelTerminal() {
             {/* status line */}
             <p
               className="relative mt-3 px-1 font-mono text-[10px] uppercase tracking-[0.18em]"
-              style={{ color: 'color-mix(in srgb, var(--museum-ink) 55%, var(--museum-brass))' }}
+              style={{ color: 'color-mix(in srgb, var(--museum-ink) 55%, var(--cobalt))' }}
             >
               status · {statusText}
               <span className="ml-3 normal-case tracking-normal">{m.hint}</span>
@@ -698,8 +831,8 @@ export default function SentinelTerminal() {
           <div
             className="mx-auto mt-8 flex w-fit max-w-full flex-col items-center gap-3 rounded-[10px] border bg-museum-stone px-6 py-4 text-center"
             style={{
-              borderColor: 'color-mix(in srgb, var(--museum-brass) 35%, transparent)',
-              boxShadow: '0 0 28px color-mix(in srgb, var(--museum-brass) 14%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--cobalt) 35%, transparent)',
+              boxShadow: '0 0 28px color-mix(in srgb, var(--cobalt) 14%, transparent)',
             }}
           >
             <div className="flex flex-wrap items-center justify-center gap-3">

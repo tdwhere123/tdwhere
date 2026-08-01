@@ -187,7 +187,7 @@ export function useRollingCube({
   const roll = useCallback(
     (key: RollDir): boolean => {
       if (!enabled) return false
-      // Ink erase gates orbit in the canvas but leaves queued cube rolls available.
+      // Queue further rolls while a roll / recenter is in flight.
       if (busyRef.current) {
         if (queueRef.current.length < QUEUE_MAX) {
           queueRef.current.push(key)

@@ -10,11 +10,10 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "@/context/LangContext";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { cubeProjects, cubeRotations, type CubeStageId } from "./cube-data";
 import HallAmbience from "./HallAmbience";
 import { useExploration } from "./useExploration";
+import { useHomeCubeMobile } from "./useHomeCubeMobile";
 import { asset } from "@/lib/asset";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +31,7 @@ function SwipeHintMark({ className }: { className?: string }) {
 		>
 			<path
 				d="M2 8h18M5 5l-3 3 3 3M26 8H8M23 5l3 3-3 3"
-				stroke="var(--museum-brass)"
+				stroke="var(--cobalt)"
 				strokeWidth="1"
 				strokeLinecap="round"
 				strokeLinejoin="round"
@@ -61,7 +60,7 @@ function ProjectExternalLink({
 function DesktopFallback() {
 	return (
 		<div
-			className="relative flex min-h-[100svh] w-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#ddd4c6_0%,#cfc4b4_55%,#c4b8a6_100%)]"
+			className="relative flex min-h-[100svh] w-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f4f4f2_0%,#ececea_55%,#e2e2de_100%)]"
 			aria-hidden="true"
 		>
 			<div className="h-14 w-14 animate-pulse rounded-sm bg-museum-stone/70 shadow-sm" />
@@ -173,7 +172,7 @@ function MobileCubeShowcase() {
 								<p className="font-mono text-[11px] uppercase tracking-[0.16em] text-museum-muted">
 									{project.shortName} · {category}
 								</p>
-								<h2 className="mt-2 font-serif text-[26px] font-semibold leading-[1.15] text-museum-ink">
+								<h2 className="mt-2 font-display text-[26px] font-semibold leading-[1.15] text-museum-ink">
 									{project.title}
 								</h2>
 
@@ -195,7 +194,7 @@ function MobileCubeShowcase() {
 											transform: `perspective(900px) rotateY(${index === activeIndex ? rot.rotateY * 0.05 : 8}deg)`,
 										}}
 									>
-										<div className="relative aspect-square overflow-hidden bg-[#d6cdc0]">
+										<div className="relative aspect-square overflow-hidden bg-museum-stone">
 											<div
 												className={cn(
 													"cube-face__content",
@@ -232,7 +231,7 @@ function MobileCubeShowcase() {
 									</button>
 								</div>
 
-								<p className="mt-5 font-serif text-[17px] leading-snug text-ink-2">
+								<p className="mt-5 font-display text-[17px] leading-snug text-ink-2">
 									{statement}
 								</p>
 								<p className="mt-3 text-[14px] leading-relaxed text-museum-muted">
@@ -240,7 +239,7 @@ function MobileCubeShowcase() {
 								</p>
 
 								{project.tags.length > 0 && (
-									<p className="mt-4 font-mono text-[11px] uppercase tracking-[0.12em] text-museum-brass">
+									<p className="mt-4 font-mono text-[11px] uppercase tracking-[0.12em] text-cobalt">
 										{project.tags.join(" · ")}
 									</p>
 								)}
@@ -312,27 +311,22 @@ function MobileCubeShowcase() {
 							className={cn(
 								"h-2 rounded-full transition-all duration-300 ease-zen",
 								index === activeIndex
-									? "w-5 bg-museum-brass"
+									? "w-5 bg-cobalt"
 									: isLit(project.id)
-										? "w-2 bg-museum-brass/50 hover:bg-museum-brass"
+										? "w-2 bg-cobalt/50 hover:bg-cobalt"
 										: "w-2 bg-museum-line hover:bg-museum-muted",
 							)}
 						/>
 					))}
 				</div>
-
-				<span className="font-mono text-[10px] uppercase tracking-[0.14em] text-museum-muted/55">
-					{lang === "zh" ? "向下继续" : "Scroll for more"}
-				</span>
 			</div>
 		</div>
 	);
 }
 
 export default function CubeShowcase() {
-	const isMobile = useIsMobile();
-	const isCoarsePointer = useMediaQuery("(pointer: coarse)");
-	return isMobile || isCoarsePointer ? (
+	const isCubeMobile = useHomeCubeMobile();
+	return isCubeMobile ? (
 		<MobileCubeShowcase />
 	) : (
 		<Suspense fallback={<DesktopFallback />}>

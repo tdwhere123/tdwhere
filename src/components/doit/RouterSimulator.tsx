@@ -8,8 +8,8 @@ import Stamp from '@/components/Stamp'
 import { ALL_AGENTS, classifyTask } from '@/components/doit/routerLogic'
 import type { RiskLevel, RouteResult } from '@/components/doit/routerLogic'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 type Phase = 'idle' | 'route' | 'delegate' | 'prove' | 'done'
 const ORDER: Phase[] = ['idle', 'route', 'delegate', 'prove', 'done']
@@ -93,7 +93,7 @@ export default function RouterSimulator() {
     ]
   }
 
-  useEffect(() => clearTimers, [])
+  useEffect(() => () => clearTimers(), [])
 
   const activeExample = c.examples.find((e) => e.text === input)
 
@@ -104,7 +104,7 @@ export default function RouterSimulator() {
         whileInView={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.9, ease: ZEN }}
-        className="mx-auto max-w-demo border border-museum-brass/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
+        className="mx-auto max-w-demo border border-cobalt/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
       >
         <motion.div
           onViewportEnter={() => {
@@ -115,13 +115,13 @@ export default function RouterSimulator() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <Kicker>{c.kicker}</Kicker>
-              <h2 className="mt-4 font-serif text-h2 font-semibold text-museum-ink">{c.title}</h2>
+              <h2 className="mt-4 font-display text-h2 font-semibold text-museum-ink">{c.title}</h2>
             </div>
             {phase !== 'idle' && (
               <button
                 type="button"
                 onClick={() => run(input, failProve)}
-                className="inline-flex items-center gap-2 rounded-md border border-museum-brass/35 bg-museum-bg px-3.5 py-2 font-mono text-xs text-ink-3 transition-colors duration-300 hover:border-clay hover:text-clay"
+                className="inline-flex items-center gap-2 rounded-md border border-cobalt/35 bg-museum-bg px-3.5 py-2 font-mono text-xs text-ink-3 transition-colors duration-300 hover:border-clay hover:text-clay"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 {c.replay}
@@ -148,7 +148,7 @@ export default function RouterSimulator() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={c.placeholder}
                 autoComplete="off"
-                className="min-w-0 flex-1 rounded-md border border-museum-brass/30 bg-museum-bg px-4 py-3.5 font-mono text-[15px] text-museum-ink placeholder:text-ink-3 focus:border-clay focus:outline-none focus:ring-[3px] focus:ring-clay/10"
+                className="min-w-0 flex-1 rounded-md border border-cobalt/30 bg-museum-bg px-4 py-3.5 font-mono text-[15px] text-museum-ink placeholder:text-ink-3 focus:border-clay focus:outline-none focus:ring-[3px] focus:ring-clay/10"
               />
               <motion.button
                 type="submit"
@@ -171,7 +171,7 @@ export default function RouterSimulator() {
                   'rounded-[4px] border px-3 py-1.5 text-left font-mono text-xs transition-colors duration-300',
                   input === ex.text
                     ? 'border-clay bg-clay/10 text-museum-ink'
-                    : 'border-museum-brass/30 bg-museum-bg text-ink-3 hover:border-clay hover:text-museum-ink',
+                    : 'border-cobalt/30 bg-museum-bg text-ink-3 hover:border-clay hover:text-museum-ink',
                 )}
               >
                 {ex.text}
@@ -205,7 +205,7 @@ export default function RouterSimulator() {
                         ▼
                       </span>
                     </motion.div>
-                    <div className="flex overflow-hidden border border-museum-brass/30">
+                    <div className="flex overflow-hidden border border-cobalt/30">
                       {c.levels.map((lv) => {
                         const active = lv === result.level
                         return (
@@ -303,7 +303,7 @@ export default function RouterSimulator() {
                                 'border px-2.5 py-2 font-mono text-[11px] leading-tight',
                                 seated
                                   ? 'border-clay bg-clay/10 text-museum-ink'
-                                  : 'border-museum-brass/25 bg-museum-bg text-ink-3',
+                                  : 'border-cobalt/25 bg-museum-bg text-ink-3',
                               )}
                             >
                               {agent}
@@ -385,7 +385,7 @@ export default function RouterSimulator() {
                           </motion.div>
                           {failProve && (
                             <motion.p
-                              className="max-w-xs font-serif text-sm text-ink-2"
+                              className="max-w-xs font-display text-sm text-ink-2"
                               initial={{ opacity: 0, y: 8 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.5, ease: ZEN, delay: 0.35 }}
@@ -403,13 +403,13 @@ export default function RouterSimulator() {
           </div>
 
           {/* ——— act 4 · LEARN (off by default, disabled) ——— */}
-          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-museum-brass/25 pt-6">
+          <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-cobalt/25 pt-6">
             <button
               type="button"
               disabled
               aria-disabled="true"
               title={c.learnTip}
-              className="relative h-5 w-10 shrink-0 cursor-not-allowed rounded-full bg-museum-brass/25 opacity-60"
+              className="relative h-5 w-10 shrink-0 cursor-not-allowed rounded-full bg-cobalt/25 opacity-60"
             >
               <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-museum-bg shadow-xs" />
             </button>

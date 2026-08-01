@@ -5,10 +5,11 @@ import { Github, Menu, X } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import LangToggle from '@/components/LangToggle'
 import SealMark from '@/components/SealMark'
+import NavScramble from '@/components/NavScramble'
 import { getLenis, resumeSmoothScroll } from '@/lib/smooth-scroll'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 export default function Navbar() {
   const { t } = useLang()
@@ -49,23 +50,25 @@ export default function Navbar() {
     <>
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-zen',
-          scrolled ? 'h-14 border-b border-hairline' : 'h-16 border-b border-transparent',
+          'fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ease-zen',
+          scrolled ? 'h-14 border-hairline' : 'h-16 border-transparent',
         )}
         style={{
           background: scrolled
-            ? 'color-mix(in srgb, var(--museum-bg) 88%, transparent)'
+            ? 'color-mix(in srgb, var(--paper) 88%, transparent)'
             : onHome
               ? 'transparent'
-              : 'color-mix(in srgb, var(--museum-bg) 72%, transparent)',
+              : 'color-mix(in srgb, var(--paper) 78%, transparent)',
           backdropFilter: scrolled ? 'blur(16px)' : onHome ? 'none' : 'blur(10px)',
           WebkitBackdropFilter: scrolled ? 'blur(16px)' : onHome ? 'none' : 'blur(10px)',
         }}
       >
         <div className="mx-auto flex h-full max-w-shell items-center justify-between px-5 md:px-10">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="阿黄 tdwhere — home">
+          <Link to="/" className="group flex items-center gap-2.5" aria-label="阿黄 tdwhere · home">
             <SealMark size={28} className="shrink-0" />
-            <span className="font-serif text-lg font-semibold leading-none text-ink">阿黄</span>
+            <span className="font-display text-lg font-semibold leading-none text-ink transition-colors duration-300 group-hover:text-cobalt">
+              阿黄
+            </span>
             <span className="mt-0.5 font-mono text-xs leading-none text-faint">tdwhere</span>
           </Link>
 
@@ -75,20 +78,21 @@ export default function Navbar() {
                 key={l.to}
                 to={l.to}
                 end={l.end}
+                aria-label={l.label}
                 className={({ isActive }) =>
                   cn(
                     'group relative font-mono text-xs uppercase tracking-[0.14em] transition-colors duration-300',
-                    isActive ? 'text-ink' : 'text-ink-3 hover:text-ink',
+                    isActive ? 'text-cobalt' : 'text-ink-3 hover:text-cobalt',
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    {l.label}
+                    <NavScramble text={l.label} />
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'absolute -bottom-1.5 left-0 h-px bg-museum-brass transition-all duration-300 ease-zen',
+                        'absolute -bottom-1.5 left-0 h-px bg-cobalt transition-all duration-300 ease-zen',
                         isActive ? 'w-full' : 'w-0 group-hover:w-full',
                       )}
                     />
@@ -100,12 +104,13 @@ export default function Navbar() {
               href={t.meta.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="group relative font-mono text-xs uppercase tracking-[0.14em] text-ink-3 transition-colors duration-300 hover:text-ink"
+              aria-label={t.nav.github}
+              className="group relative font-mono text-xs uppercase tracking-[0.14em] text-ink-3 transition-colors duration-300 hover:text-cobalt"
             >
-              {t.nav.github}
+              <NavScramble text={t.nav.github} />
               <span
                 aria-hidden="true"
-                className="absolute -bottom-1.5 left-0 h-px w-0 bg-museum-brass transition-all duration-300 ease-zen group-hover:w-full"
+                className="absolute -bottom-1.5 left-0 h-px w-0 bg-cobalt transition-all duration-300 ease-zen group-hover:w-full"
               />
             </a>
             <LangToggle />
@@ -131,7 +136,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.2 } }}
             transition={{ duration: 0.3, ease: ZEN }}
-            className="fixed inset-0 z-40 flex flex-col bg-museum-bg lg:hidden"
+            className="fixed inset-0 z-40 flex flex-col bg-paper lg:hidden"
           >
             <nav
               className="flex flex-1 flex-col justify-center gap-2 px-8 pt-16"
@@ -151,9 +156,9 @@ export default function Navbar() {
                         target="_blank"
                         rel="noreferrer"
                         onClick={() => setOpen(false)}
-                        className="flex items-baseline gap-4 border-b border-hairline py-4 font-serif text-4xl font-semibold text-ink-3"
+                        className="flex items-baseline gap-4 border-b border-hairline py-4 font-display text-4xl font-semibold text-ink-3"
                       >
-                        <span className="font-mono text-xs text-faint">0{i + 1}</span>
+                        <span className="font-mono text-xs text-cobalt">0{i + 1}</span>
                         {l.label}
                       </a>
                     ) : (
@@ -163,12 +168,12 @@ export default function Navbar() {
                         onClick={() => setOpen(false)}
                         className={({ isActive }) =>
                           cn(
-                            'flex items-baseline gap-4 border-b border-hairline py-4 font-serif text-4xl font-semibold',
-                            isActive ? 'text-ink' : 'text-ink-3',
+                            'flex items-baseline gap-4 border-b border-hairline py-4 font-display text-4xl font-semibold',
+                            isActive ? 'text-cobalt' : 'text-ink-3',
                           )
                         }
                       >
-                        <span className="font-mono text-xs text-faint">0{i + 1}</span>
+                        <span className="font-mono text-xs text-cobalt">0{i + 1}</span>
                         {l.label}
                       </NavLink>
                     )}
@@ -181,15 +186,15 @@ export default function Navbar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45, duration: 0.4 }}
-              className="flex items-center justify-between px-8 pb-10"
+              className="flex items-center justify-between border-t border-hairline px-8 py-8"
             >
               <LangToggle />
               <a
                 href={t.meta.githubUrl}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="GitHub — tdwhere123"
-                className="text-ink-3 transition-colors duration-300 hover:text-seal"
+                aria-label="GitHub · tdwhere123"
+                className="text-ink-3 transition-colors duration-300 hover:text-cobalt"
               >
                 <Github className="h-5 w-5" />
               </a>

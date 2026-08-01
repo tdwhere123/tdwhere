@@ -5,12 +5,12 @@ import { aboutContent } from '@/content/about'
 import CopyEmail from '@/components/CopyEmail'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
-import BrassRule from '@/components/about/BrassRule'
+import CobaltRule from '@/components/about/CobaltRule'
 import SiteClue from '@/components/eggs/SiteClue'
 
 /**
  * S4 · 联系 Say Hello — stone panel: 「写信来。」+ copy-email pill
- * (stamp feedback) + GitHub link + quiet footnote. Brass accents only.
+ * (stamp feedback) + GitHub link + quiet footnote. Cobalt accents only.
  */
 export default function Contact() {
   const { t, lang } = useLang()
@@ -21,14 +21,14 @@ export default function Contact() {
       aria-labelledby="contact-title"
       className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,140px)] md:px-10"
     >
-      <BrassRule className="mx-auto mb-12 h-2 w-36 text-museum-brass" />
+      <CobaltRule className="mx-auto mb-12 h-2 w-36 text-cobalt" />
       <InkReveal amount={0.25}>
-        <div className="mx-auto max-w-3xl border border-museum-brass/20 bg-museum-stone px-6 py-12 text-center md:p-16">
+        <div className="mx-auto max-w-3xl border border-cobalt/20 bg-museum-stone px-6 py-12 text-center md:p-16">
           <Kicker className="justify-center">{c.kicker}</Kicker>
 
           <h2
             id="contact-title"
-            className="mt-6 font-serif text-[clamp(26px,4vw,40px)] font-semibold leading-snug text-museum-ink"
+            className="mt-6 font-display text-[clamp(26px,4vw,40px)] font-semibold leading-snug text-museum-ink"
           >
             {c.big}
           </h2>
@@ -38,7 +38,7 @@ export default function Contact() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-10 inline-flex max-w-full rounded-full border border-museum-brass/40 bg-museum-bg px-6 py-3.5 transition-colors duration-300 hover:border-museum-brass md:px-8"
+            className="mt-10 inline-flex max-w-full rounded-full border border-cobalt/40 bg-museum-bg px-6 py-3.5 transition-colors duration-300 hover:border-cobalt md:px-8"
           >
             <CopyEmail textClassName="text-sm md:text-xl" showHint={false} />
           </motion.div>
@@ -49,11 +49,11 @@ export default function Contact() {
               href={t.meta.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="group inline-flex items-center gap-3 border border-museum-brass/30 bg-museum-bg px-6 py-4 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-museum-brass/60"
+              className="group inline-flex items-center gap-3 border border-cobalt/30 bg-museum-bg px-6 py-4 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-cobalt/60"
             >
               <Github
                 aria-hidden="true"
-                className="h-5 w-5 text-museum-muted transition-colors duration-300 group-hover:text-museum-brass"
+                className="h-5 w-5 text-museum-muted transition-colors duration-300 group-hover:text-cobalt"
               />
               <span className="text-left">
                 <span className="block font-mono text-sm text-museum-ink">{t.meta.github}</span>

@@ -4,8 +4,8 @@ import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
 import SiteClue from '@/components/eggs/SiteClue'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S7 · An Honest Footnote — R@5 → 90% NOT yet claimed. No stamps, plain face. */
 export default function Footnote() {

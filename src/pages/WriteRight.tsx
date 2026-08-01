@@ -8,7 +8,7 @@ import GenreRouter from '@/components/writeright/GenreRouter'
 import RepoTree from '@/components/writeright/RepoTree'
 import DailyPath from '@/components/writeright/DailyPath'
 import PrivacySection from '@/components/writeright/PrivacySection'
-import BrassRule from '@/components/writeright/BrassRule'
+import CobaltRule from '@/components/writeright/CobaltRule'
 import IllustrationPlate from '@/components/IllustrationPlate'
 
 /**
@@ -30,7 +30,7 @@ export default function WriteRight() {
       <ScopeSection />
 
       <IllustrationPlate
-        src="illustrations/write-right-desk.png"
+        src="illustrations/write-right-desk.webp"
         alt={c.plate.alt}
         kicker={c.plate.kicker}
         caption={c.plate.caption}
@@ -38,25 +38,25 @@ export default function WriteRight() {
       />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
-        <BrassRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
+        <CobaltRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
       </div>
 
       <GenreRouter />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
-        <BrassRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
+        <CobaltRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
       </div>
 
       <RepoTree />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
-        <BrassRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
+        <CobaltRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
       </div>
 
       <DailyPath />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
-        <BrassRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
+        <CobaltRule className="mx-auto h-2 w-full max-w-xs opacity-90" />
       </div>
 
       <PrivacySection />

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
  * 墨显 Ink Reveal — y 40→0, blur 8→0, opacity 0→1, 0.9s ease-zen, triggered at 20% viewport.

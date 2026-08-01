@@ -38,3 +38,6 @@ npm-install-debug.txt
 # Test / coverage
 coverage/
 *.tsbuildinfo
+
+# do-it local agent sediment (handbook, worklog, plans — not shipped)
+.do-it/

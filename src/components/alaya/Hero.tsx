@@ -9,7 +9,7 @@ import { getLenis } from '@/lib/smooth-scroll'
 
 gsap.registerPlugin(useGSAP)
 
-/** Soft brass-warm museum wash (~4% effective), GSAP slow drift (isolated + memoized). */
+/** Soft cobalt-cool museum wash (~4% effective), GSAP slow drift (isolated + memoized). */
 const MossGlow = memo(function MossGlow() {
   const ref = useRef<HTMLDivElement>(null)
   useGSAP(
@@ -33,7 +33,7 @@ const MossGlow = memo(function MossGlow() {
       className="pointer-events-none absolute -right-24 top-1/4 h-[600px] w-[600px]"
       style={{
         background:
-          'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 52%, var(--museum-brass)) 7%, transparent) 0%, transparent 72%)',
+          'radial-gradient(circle, color-mix(in srgb, color-mix(in srgb, var(--moss) 52%, var(--cobalt)) 7%, transparent) 0%, transparent 72%)',
         opacity: 0.42,
       }}
     />
@@ -53,7 +53,7 @@ function HeroOrbitMark() {
         cy="60"
         r="48"
         fill="none"
-        stroke="var(--museum-brass)"
+        stroke="var(--cobalt)"
         strokeWidth="0.75"
         opacity="0.45"
       />
@@ -143,7 +143,7 @@ export default function Hero() {
       <p
         aria-hidden="true"
         data-block
-        className="vertical-rl absolute right-5 top-1/2 hidden -translate-y-1/2 select-none font-serif text-sm tracking-[0.3em] text-faint md:right-10 lg:block"
+        className="vertical-rl absolute right-5 top-1/2 hidden -translate-y-1/2 select-none font-display text-sm tracking-[0.3em] text-faint md:right-10 lg:block"
       >
         {a.vertical}
       </p>
@@ -154,7 +154,7 @@ export default function Hero() {
         </div>
 
         <h1
-          className="mt-8 font-serif font-semibold text-ink"
+          className="mt-8 font-display font-semibold text-ink"
           style={{ fontSize: 'clamp(40px, 7vw, 72px)', lineHeight: 1.05 }}
         >
           {Array.from(a.title).map((ch, i) => (
@@ -167,7 +167,7 @@ export default function Hero() {
         <p data-block className="mt-5 text-lg text-ink-2 md:text-xl">
           {a.subtitle}
         </p>
-        <p data-block className="mt-3 font-serif text-xl italic text-ink-3 md:text-2xl">
+        <p data-block className="mt-3 font-display text-xl italic text-ink-3 md:text-2xl">
           {a.slogan}
         </p>
 
@@ -182,7 +182,7 @@ export default function Hero() {
             href={t.meta.githubUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center rounded-full border border-museum-brass/70 px-6 py-3 font-mono text-sm text-ink transition-colors duration-300 hover:border-seal/75 hover:bg-seal/[0.04]"
+            className="inline-flex items-center rounded-full border border-cobalt/70 px-6 py-3 font-mono text-sm text-ink transition-colors duration-300 hover:border-seal/75 hover:bg-seal/[0.04]"
           >
             {a.ctaGithub}
           </a>

@@ -4,14 +4,13 @@ import { useLang } from '@/context/LangContext'
 import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import { ZEN } from '@/lib/motion'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 function ToolList({ items }: { items: string[] }) {
   return (
@@ -47,7 +46,7 @@ export default function Toolbox() {
           <AccordionItem value="mcp" className="rounded-[10px] border border-hairline bg-museum-bg px-5">
             <AccordionTrigger className="py-5 hover:no-underline">
               <span className="flex flex-col items-start gap-1 text-left">
-                <span className="font-serif text-lg font-semibold text-ink">{a.mcpTitle}</span>
+                <span className="font-display text-lg font-semibold text-ink">{a.mcpTitle}</span>
                 <span className="font-mono text-[11px] font-normal text-faint">{a.mcpNote}</span>
               </span>
             </AccordionTrigger>
@@ -61,7 +60,7 @@ export default function Toolbox() {
             className="mt-3 rounded-[10px] border border-hairline bg-museum-bg px-5"
           >
             <AccordionTrigger className="py-5 hover:no-underline">
-              <span className="font-serif text-lg font-semibold text-ink">{a.cliTitle}</span>
+              <span className="font-display text-lg font-semibold text-ink">{a.cliTitle}</span>
             </AccordionTrigger>
             <AccordionContent className="pb-6">
               <ToolList items={a.cliVerbs} />

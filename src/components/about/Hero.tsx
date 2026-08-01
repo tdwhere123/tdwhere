@@ -117,7 +117,7 @@ export default function Hero() {
             <Kicker>{c.kicker}</Kicker>
           </div>
 
-          <h1 className="relative mt-8 font-serif text-[clamp(64px,10vw,120px)] font-bold leading-[1.05] tracking-[0.02em] text-museum-ink">
+          <h1 className="relative mt-8 font-display text-[clamp(64px,10vw,120px)] font-bold leading-[1.05] tracking-[0.02em] text-museum-ink">
             <span ref={nameARef} className="inline-block will-change-transform">
               {c.nameA}
             </span>
@@ -127,8 +127,8 @@ export default function Hero() {
           </h1>
 
           <div ref={rowsRef}>
-            <p className="mt-4 font-mono text-lg text-museum-brass">{c.handle}</p>
-            <p className="mt-5 font-serif text-2xl font-semibold text-museum-ink">{c.role}</p>
+            <p className="mt-4 font-mono text-lg text-cobalt">{c.handle}</p>
+            <p className="mt-5 font-display text-2xl font-semibold text-museum-ink">{c.role}</p>
             <p className="mt-4 flex min-h-[3.5rem] flex-wrap items-center gap-4 font-mono text-[15px] text-museum-muted">
               <span>
                 <span className="sr-only">{c.signature}</span>
@@ -136,7 +136,7 @@ export default function Hero() {
                   &gt;&nbsp;
                 </span>
                 <span aria-hidden="true">{typed}</span>
-                <span aria-hidden="true" className="animate-caret-blink text-museum-brass [animation-duration:1.06s]">
+                <span aria-hidden="true" className="animate-caret-blink text-cobalt [animation-duration:1.06s]">
                   ▌
                 </span>
               </span>
@@ -154,7 +154,7 @@ export default function Hero() {
         <div className="relative">
           <div
             ref={stillRef}
-            className="overflow-hidden border border-museum-brass/25 bg-museum-stone p-3 md:p-4"
+            className="overflow-hidden border border-cobalt/25 bg-museum-stone p-3 md:p-4"
           >
             <img
               src={asset('about-still.png')}

@@ -4,6 +4,7 @@ import GateDivider from '@/components/GateDivider'
 import NextProject from '@/components/NextProject'
 import Hero from '@/components/alaya/Hero'
 import Itch from '@/components/alaya/Itch'
+import Similarity from '@/components/alaya/Similarity'
 import Grammar from '@/components/alaya/Grammar'
 import Lifecycle from '@/components/alaya/Lifecycle'
 import Recall from '@/components/alaya/Recall'
@@ -14,7 +15,7 @@ import IllustrationPlate from '@/components/IllustrationPlate'
 
 /**
  * /alaya — Do-SOUL-Alaya 「记忆之屋」.
- * S1 Hero · S2 The Itch · plate · S3 Grammar · S4 Lifecycle · S5 Recall
+ * S1 Hero · S2 The Itch · S2.5 Similarity demo · plate · S3 Grammar · S4 Lifecycle · S5 Recall
  * · S6 Gardeners · S7 Footnote · S8 Toolbox · S9 Next.
  */
 export default function Alaya() {
@@ -24,9 +25,10 @@ export default function Alaya() {
     <>
       <Hero />
       <Itch />
+      <Similarity />
 
       <IllustrationPlate
-        src="illustrations/alaya-memory-garden.png"
+        src="illustrations/alaya-memory-garden.webp"
         alt={a.plate.alt}
         kicker={a.plate.kicker}
         caption={a.plate.caption}

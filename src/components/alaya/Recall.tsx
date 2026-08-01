@@ -31,8 +31,8 @@ export default function Recall() {
       const boxes = gsap.utils.toArray<HTMLElement>('[data-stage]', track)
       if (boxes.length === 0) return
 
-      /* brass-moss lit — gallery warmth, not neon sage */
-      const litAccent = 'color-mix(in srgb, var(--moss) 62%, var(--museum-brass))'
+      /* cobalt-moss lit — gallery warmth, not neon sage */
+      const litAccent = 'color-mix(in srgb, var(--moss) 62%, var(--cobalt))'
       const lit = {
         borderColor: litAccent,
         backgroundColor: `color-mix(in srgb, ${litAccent} 6%, var(--museum-bg))`,
@@ -113,7 +113,7 @@ export default function Recall() {
         <Kicker>{a.kicker}</Kicker>
       </InkReveal>
       <InkReveal amount={0.4} delay={0.08}>
-        <h2 className="mt-6 font-serif text-h2 font-semibold text-ink">{a.title}</h2>
+        <h2 className="mt-6 font-display text-h2 font-semibold text-ink">{a.title}</h2>
       </InkReveal>
 
       <InkReveal amount={0.2} className="mt-14">

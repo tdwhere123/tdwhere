@@ -7,10 +7,10 @@ import { useLang } from '@/context/LangContext'
 import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import { ZEN } from '@/lib/motion'
+
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
-
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S2 · The Itch — terminal typewriter + 「Similarity is not truth.」letter pulse. */
 export default function Itch() {
@@ -115,7 +115,7 @@ export default function Itch() {
       {/* big statement */}
       <InkReveal amount={0.3} className="mt-14">
         <p
-          className="font-serif font-semibold text-ink"
+          className="font-display font-semibold text-ink"
           style={{ fontSize: 'clamp(26px, 4.4vw, 40px)', lineHeight: 1.3 }}
         >
           {a.big}

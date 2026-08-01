@@ -5,12 +5,12 @@ import { useLang } from '@/context/LangContext'
 import { aboutContent } from '@/content/about'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
  * S2 · 自问自答 Asking Myself — radix accordion, first item open by default.
- * Question hover draws a 2px brass dash on the left; answers open in 0.35s.
+ * Question hover draws a 2px cobalt dash on the left; answers open in 0.35s.
  * Stone band keeps the gallery rhythm without a paper-brown wash.
  */
 export default function QaSection() {
@@ -20,13 +20,13 @@ export default function QaSection() {
   return (
     <section
       aria-labelledby="qa-title"
-      className="border-y border-museum-brass/20 bg-museum-stone/55"
+      className="border-y border-cobalt/20 bg-museum-stone/55"
     >
       <div className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,140px)] md:px-10">
         <div className="mx-auto max-w-reading">
           <InkReveal>
             <Kicker>{c.kicker}</Kicker>
-            <h2 id="qa-title" className="mt-6 font-serif text-h2 font-semibold text-museum-ink">
+            <h2 id="qa-title" className="mt-6 font-display text-h2 font-semibold text-museum-ink">
               {c.title}
             </h2>
           </InkReveal>
@@ -35,7 +35,7 @@ export default function QaSection() {
             type="single"
             collapsible
             defaultValue="q0"
-            className="mt-10 border-t border-museum-brass/25"
+            className="mt-10 border-t border-cobalt/25"
           >
             {c.items.map((item, i) => (
               <motion.div
@@ -45,17 +45,17 @@ export default function QaSection() {
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, ease: ZEN, delay: i * 0.08 }}
               >
-                <AccordionPrimitive.Item value={`q${i}`} className="border-b border-museum-brass/25">
+                <AccordionPrimitive.Item value={`q${i}`} className="border-b border-cobalt/25">
                   <AccordionPrimitive.Header className="flex">
                     <AccordionPrimitive.Trigger className="group relative flex flex-1 items-start justify-between gap-4 py-5 pl-5 text-left font-mono text-sm text-museum-muted transition-colors duration-300 hover:text-museum-ink md:text-[15px]">
                       <span
                         aria-hidden="true"
-                        className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 scale-y-0 bg-museum-brass transition-transform ease-zen [transition-duration:250ms] group-hover:scale-y-100"
+                        className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 scale-y-0 bg-cobalt transition-transform ease-zen [transition-duration:250ms] group-hover:scale-y-100"
                       />
                       <span>{item.q}</span>
                       <Plus
                         aria-hidden="true"
-                        className="mt-0.5 h-4 w-4 shrink-0 text-museum-muted/60 transition-transform duration-300 ease-zen group-data-[state=open]:rotate-45 group-data-[state=open]:text-museum-brass"
+                        className="mt-0.5 h-4 w-4 shrink-0 text-museum-muted/60 transition-transform duration-300 ease-zen group-data-[state=open]:rotate-45 group-data-[state=open]:text-cobalt"
                       />
                     </AccordionPrimitive.Trigger>
                   </AccordionPrimitive.Header>

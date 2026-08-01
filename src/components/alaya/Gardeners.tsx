@@ -5,8 +5,9 @@ import { useLang } from '@/context/LangContext'
 import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
+
 const ICONS: LucideIcon[] = [ScanSearch, Eraser, LibraryBig, CalendarClock]
 
 /**
@@ -24,7 +25,7 @@ export default function Gardeners() {
         <Kicker>{a.kicker}</Kicker>
       </InkReveal>
       <InkReveal amount={0.4} delay={0.08}>
-        <h2 className="mt-6 font-serif text-h2 font-semibold text-ink">{a.title}</h2>
+        <h2 className="mt-6 font-display text-h2 font-semibold text-ink">{a.title}</h2>
       </InkReveal>
 
       <div className="mt-14 grid grid-cols-2 gap-4 pt-6 lg:grid-cols-4">
@@ -45,8 +46,8 @@ export default function Gardeners() {
                 aria-hidden="true"
                 className="absolute -top-6 left-1/2 h-6 w-px origin-bottom scale-y-0 bg-moss transition-transform [transition-duration:400ms] ease-zen group-hover:scale-y-100"
               />
-              <Icon className="h-5 w-5 text-museum-brass" aria-hidden="true" />
-              <h3 className="mt-4 font-serif text-lg font-semibold text-ink">{role.name}</h3>
+              <Icon className="h-5 w-5 text-cobalt" aria-hidden="true" />
+              <h3 className="mt-4 font-display text-lg font-semibold text-ink">{role.name}</h3>
               <p className="font-mono text-[11px] text-faint">{role.zh}</p>
               <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-3">{role.duty}</p>
               <p className="mt-4 border-t border-hairline pt-3 font-mono text-[11px] text-seal/75">

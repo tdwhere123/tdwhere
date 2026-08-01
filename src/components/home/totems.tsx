@@ -153,7 +153,7 @@ export const WriteRightTotem = memo(function WriteRightTotem(props: TotemProps) 
       {GENRES.map((g, i) => (
         <span
           key={g}
-          className="animate-type-press grid h-14 place-items-center rounded-md border border-hairline bg-paper-deep/70 font-serif text-base text-ink-2"
+          className="animate-type-press grid h-14 place-items-center rounded-md border border-hairline bg-paper-deep/70 font-display text-base text-ink-2"
           style={{
             animationDelay: `${((i * 7) % 12) * 0.31}s`,
             ...playProps(2.6 + (i % 3) * 0.4, props),

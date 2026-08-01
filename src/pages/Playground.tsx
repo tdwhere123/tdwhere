@@ -20,15 +20,15 @@ function QuoteLine({ text, delay }: { text: string; delay: number }) {
     transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   }
   return (
-    <blockquote className="font-serif text-h3 font-semibold leading-relaxed text-ink-2">
-      <motion.span {...bracketAnim} className="inline-block text-museum-brass">
+    <blockquote className="font-display text-h3 font-semibold leading-relaxed text-ink-2">
+      <motion.span {...bracketAnim} className="inline-block text-cobalt">
         「
       </motion.span>
       {text}
       <motion.span
         {...bracketAnim}
         transition={{ ...bracketAnim.transition, delay: delay + 0.08 }}
-        className="inline-block text-museum-brass"
+        className="inline-block text-cobalt"
       >
         」
       </motion.span>
@@ -47,7 +47,7 @@ export default function Playground() {
         <style>{`
           .pg-gallery {
             --pg-muted: color-mix(in srgb, var(--museum-muted) 88%, var(--museum-ink));
-            --pg-line: color-mix(in srgb, var(--museum-brass) 32%, var(--museum-line));
+            --pg-line: color-mix(in srgb, var(--cobalt) 32%, var(--museum-line));
             color: var(--museum-ink);
             background-color: var(--museum-bg);
             background-image:
@@ -58,7 +58,7 @@ export default function Playground() {
               ),
               radial-gradient(
                 ellipse 42% 36% at 82% 70%,
-                color-mix(in srgb, var(--museum-brass) 8%, transparent),
+                color-mix(in srgb, var(--cobalt) 8%, transparent),
                 transparent 70%
               ),
               repeating-linear-gradient(
@@ -87,7 +87,7 @@ export default function Playground() {
             <Kicker>{t.header.kicker}</Kicker>
           </InkReveal>
           <InkReveal delay={0.1}>
-            <h1 className="mt-6 font-serif text-h1 font-bold text-museum-ink">
+            <h1 className="mt-6 font-display text-h1 font-bold text-museum-ink">
               {t.header.title}
               <span className="ml-4 align-middle font-mono text-sm font-normal uppercase tracking-[0.14em] text-museum-muted">
                 {t.header.titleEn}
@@ -113,7 +113,7 @@ export default function Playground() {
         </motion.div>
 
         <IllustrationPlate
-          src="illustrations/playground-ruins.png"
+          src="illustrations/playground-ruins.webp"
           alt={t.plateRuins.alt}
           kicker={t.plateRuins.kicker}
           caption={t.plateRuins.caption}
@@ -127,7 +127,7 @@ export default function Playground() {
         <VegetarianCards />
 
         <IllustrationPlate
-          src="illustrations/playground-veggie-still.png"
+          src="illustrations/playground-veggie-still.webp"
           alt={t.plateVeggie.alt}
           kicker={t.plateVeggie.kicker}
           caption={t.plateVeggie.caption}
@@ -143,7 +143,7 @@ export default function Playground() {
             <div
               className="mt-8 space-y-8 rounded-[4px] border px-7 py-10 md:px-10"
               style={{
-                borderColor: 'color-mix(in srgb, var(--museum-brass) 36%, transparent)',
+                borderColor: 'color-mix(in srgb, var(--cobalt) 36%, transparent)',
                 background:
                   'linear-gradient(165deg, color-mix(in srgb, var(--museum-stone) 70%, white) 0%, var(--museum-stone) 100%)',
                 boxShadow:

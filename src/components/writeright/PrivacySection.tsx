@@ -4,8 +4,8 @@ import { writeRightContent } from '@/content/writeRight'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
 import SiteClue from '@/components/eggs/SiteClue'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S6 · 隐私与边界 — narrow reading band, dai edge grows in. */
 export default function PrivacySection() {
@@ -30,7 +30,7 @@ export default function PrivacySection() {
           />
           <div className="space-y-4">
             {c.lines.map((line) => (
-              <p key={line} className="font-serif text-lg leading-relaxed text-ink-2">
+              <p key={line} className="font-display text-lg leading-relaxed text-ink-2">
                 {line}
               </p>
             ))}

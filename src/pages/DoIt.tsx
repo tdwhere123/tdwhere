@@ -1,10 +1,11 @@
 import { useLang } from '@/context/LangContext'
 import { doItContent } from '@/content/doIt'
 import NextProject from '@/components/NextProject'
-import BrassRule from '@/components/doit/BrassRule'
+import CobaltRule from '@/components/doit/CobaltRule'
 import DoItHero from '@/components/doit/DoItHero'
 import WhySection from '@/components/doit/WhySection'
 import RouterSimulator from '@/components/doit/RouterSimulator'
+import PipelineJourney from '@/components/doit/PipelineJourney'
 import FourMoves from '@/components/doit/FourMoves'
 import DecisionLadder from '@/components/doit/DecisionLadder'
 import SpecsCredits from '@/components/doit/SpecsCredits'
@@ -24,19 +25,20 @@ export default function DoIt() {
       <DoItHero />
 
       <div aria-hidden="true" className="mx-auto max-w-shell px-5 md:px-10">
-        <BrassRule className="mx-auto h-2 w-40" />
+        <CobaltRule className="mx-auto h-2 w-40" />
       </div>
 
       <WhySection />
 
       <IllustrationPlate
-        src="illustrations/do-it-gate-router.png"
+        src="illustrations/do-it-gate-router.webp"
         alt={c.plate.alt}
         kicker={c.plate.kicker}
         caption={c.plate.caption}
         variant="bleed"
       />
 
+      <PipelineJourney />
       <RouterSimulator />
       <FourMoves />
       <DecisionLadder />

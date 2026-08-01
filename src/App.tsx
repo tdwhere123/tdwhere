@@ -5,7 +5,9 @@ import { LangProvider } from "@/context/LangProvider";
 import { ExplorationProvider } from "@/components/home/exploration";
 import Layout from "@/components/Layout";
 import Cursor from "@/components/Cursor";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Home from "@/pages/Home";
+import NotFound from "@/pages/NotFound";
 import {
 	initSmoothScroll,
 	scrollToTop,
@@ -22,7 +24,7 @@ function PageFallback() {
 	return (
 		<div className="flex min-h-[60vh] items-center justify-center">
 			<span
-				className="h-2 w-2 animate-pulse rounded-full bg-tea"
+				className="h-2 w-2 animate-pulse rounded-full bg-cobalt"
 				aria-hidden="true"
 			/>
 			<span className="sr-only">Loading…</span>
@@ -85,19 +87,21 @@ export default function App() {
 				>
 					<ScrollManager />
 					<Cursor />
-					<Suspense fallback={<PageFallback />}>
-						<Routes>
-							<Route element={<Layout />}>
-								<Route index element={<Home />} />
-								<Route path="do-it" element={<DoIt />} />
-								<Route path="alaya" element={<Alaya />} />
-								<Route path="write-right" element={<WriteRight />} />
-								<Route path="playground" element={<Playground />} />
-								<Route path="about" element={<About />} />
-								<Route path="*" element={<Home />} />
-							</Route>
-						</Routes>
-					</Suspense>
+					<ErrorBoundary>
+						<Suspense fallback={<PageFallback />}>
+							<Routes>
+								<Route element={<Layout />}>
+									<Route index element={<Home />} />
+									<Route path="do-it" element={<DoIt />} />
+									<Route path="alaya" element={<Alaya />} />
+									<Route path="write-right" element={<WriteRight />} />
+									<Route path="playground" element={<Playground />} />
+									<Route path="about" element={<About />} />
+									<Route path="*" element={<NotFound />} />
+								</Route>
+							</Routes>
+						</Suspense>
+					</ErrorBoundary>
 				</BrowserRouter>
 			</ExplorationProvider>
 		</LangProvider>
