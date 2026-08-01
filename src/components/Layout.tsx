@@ -1,13 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Suspense, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import RoomAtmosphere from '@/components/RoomAtmosphere'
 import type { RoomId } from '@/lib/rooms'
 import { useLang } from '@/context/LangContext'
-import { ZEN } from '@/lib/motion'
-
 
 /**
  * Path → gallery room. Home keeps its own hall; about stays in the shared
@@ -21,22 +18,36 @@ function roomForPath(pathname: string): RoomId | null {
   return null
 }
 
+function PageFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <span
+        className="h-2 w-2 animate-pulse rounded-full bg-cobalt"
+        aria-hidden="true"
+      />
+      <span className="sr-only">Loading…</span>
+    </div>
+  )
+}
+
 /**
  * Shared frame: fixed Navbar + routed content + Footer.
  * The navbar is `fixed top-0 z-50` (h-16), so the content slot owns the 64px
  * offset — pages start below the nav. Full-bleed heroes opt out inside the
  * page with `-mt-16`, never by removing this padding.
  *
- * Route changes play a short gallery curtain: the outgoing page dims, the
- * incoming one is revealed as a vertical wipe — one continuous museum, not a
- * stack of cards. Reduced-motion visitors get a plain cross-fade.
+ * invariant: never wrap <Outlet /> in an opacity→0 route curtain.
+ * AnimatePresence + Outlet reuses the exiting wrapper with the *new* route
+ * content, so the exit fade paints the incoming page to opacity 0 and the
+ * enter pass never recovers — blank until hard refresh. Page heroes own
+ * entrance motion; this shell stays paint-stable across SPA navigations.
+ * Suspense sits inside the shell so Navbar/Footer survive lazy chunk loads.
  */
 export default function Layout() {
   const { lang } = useLang()
   const { pathname } = useLocation()
   const onHome = pathname === '/'
   const room = roomForPath(pathname)
-  const reduced = useReducedMotion()
 
   useEffect(() => {
     if (onHome) document.body.setAttribute('data-home-cube', '')
@@ -49,25 +60,9 @@ export default function Layout() {
       {room && <RoomAtmosphere room={room} />}
       <Navbar />
       <main key={lang} className="animate-lang-fade relative z-[1] flex-1 pt-16">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={pathname}
-            initial={
-              reduced ? { opacity: 0 } : { opacity: 0, clipPath: 'inset(0 0 100% 0)' }
-            }
-            animate={
-              reduced ? { opacity: 1 } : { opacity: 1, clipPath: 'inset(0 0 0% 0)' }
-            }
-            exit={{ opacity: 0, transition: { duration: 0.18 } }}
-            transition={
-              reduced
-                ? { duration: 0.2 }
-                : { duration: 0.65, ease: ZEN, clipPath: { duration: 0.75, ease: ZEN } }
-            }
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
       <div className="relative z-[1]">
         <Footer />
