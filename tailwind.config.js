@@ -56,8 +56,8 @@ module.exports = {
         "ink-2": "var(--ink-2)",
         "ink-3": "var(--ink-3)",
         faint: "var(--faint)",
-        tea: "var(--tea)",
-        "tea-deep": "var(--tea-deep)",
+        cobalt: "var(--cobalt)",
+        "cobalt-deep": "var(--cobalt-deep)",
         clay: "var(--clay)",
         moss: "var(--moss)",
         dai: "var(--dai)",
@@ -72,15 +72,14 @@ module.exports = {
         "museum-ink": "var(--museum-ink)",
         "museum-muted": "var(--museum-muted)",
         "museum-stone": "var(--museum-stone)",
-        "museum-brass": "var(--museum-brass)",
         "museum-dark": "var(--museum-dark)",
         "museum-line": "var(--museum-line)",
       },
       fontFamily: {
-        serif: ["Fraunces", '"Noto Serif SC"', "serif"],
-        sans: ["Inter", '"Noto Sans SC"', "sans-serif"],
+        display: ['"Space Grotesk"', '"Noto Sans SC"', "sans-serif"],
+        sans: ['"Noto Sans SC"', "system-ui", "sans-serif"],
         mono: ['"IBM Plex Mono"', "monospace"],
-        hand: ['"Ma Shan Zheng"', '"ZCOOL XiaoWei"', "cursive"],
+        hand: ['"Ma Shan Zheng"', "cursive"],
       },
       fontSize: {
         hero: ["clamp(88px, 18vw, 208px)", { lineHeight: "1.05", letterSpacing: "0.02em" }],
@@ -105,8 +104,8 @@ module.exports = {
         xs: "calc(var(--radius) - 6px)",
       },
       boxShadow: {
-        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        card: "0 1px 0 rgba(32, 40, 39, 0.05)",
+        xs: "0 1px 2px 0 rgb(23 24 28 / 0.05)",
+        card: "0 1px 0 rgba(23, 24, 28, 0.05)",
       },
       keyframes: {
         "accordion-down": {
@@ -125,10 +124,6 @@ module.exports = {
           "0%": { transform: "translateY(0)", opacity: "1" },
           "80%": { opacity: "0.15" },
           "100%": { transform: "translateY(24px)", opacity: "0" },
-        },
-        "quote-drift": {
-          from: { transform: "translateX(0)" },
-          to: { transform: "translateX(-50%)" },
         },
         scanlines: {
           from: { backgroundPosition: "0 0" },
@@ -156,7 +151,6 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
         "cue-drop": "cue-drop 2.2s ease-in infinite",
-        "quote-drift": "quote-drift 24s linear infinite",
         scanlines: "scanlines 12s linear infinite",
         "gate-breath": "gate-breath 4.8s ease-in-out infinite",
         "ring-rotate": "ring-rotate 60s linear infinite",

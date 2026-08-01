@@ -6,8 +6,9 @@ import Kicker from '@/components/Kicker'
 import MetaChip from '@/components/MetaChip'
 import GateOpen from '@/components/GateOpen'
 import { getLenis } from '@/lib/smooth-scroll'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
+
 const BACK = [0.34, 1.56, 0.64, 1] as [number, number, number, number]
 
 /** S1 · do-it project hero — gate open + char-level ink reveal for the title. */
@@ -26,7 +27,7 @@ export default function DoItHero() {
 
   return (
     <section className="relative mx-auto max-w-shell px-5 pb-20 pt-14 md:px-10 md:pb-28 md:pt-20">
-      <GateOpen lineClassName="bg-museum-brass/40">
+      <GateOpen lineClassName="bg-cobalt/40">
         <div className="flex items-start justify-between gap-8">
           <div className="max-w-reading">
             <motion.div
@@ -39,7 +40,7 @@ export default function DoItHero() {
 
             {/* title — char-level ink reveal (5 chars, stagger 0.03s) */}
             <h1
-              className="mt-6 font-serif font-semibold lowercase leading-[1.05] text-museum-ink"
+              className="mt-6 font-display font-semibold lowercase leading-[1.05] text-museum-ink"
               style={{ fontSize: 'clamp(48px, 8vw, 84px)' }}
               aria-label={c.title}
             >
@@ -73,12 +74,12 @@ export default function DoItHero() {
               transition={{ duration: 0.8, ease: ZEN, delay: 0.9 }}
             >
               <p
-                className="font-serif italic text-ink-2"
+                className="font-display italic text-ink-2"
                 style={{ fontSize: 'clamp(20px, 2.6vw, 28px)', lineHeight: 1.4 }}
               >
                 {c.slogan}
               </p>
-              <p className="mt-3 font-serif text-ink-3">{c.sloganAlt}</p>
+              <p className="mt-3 font-display text-ink-3">{c.sloganAlt}</p>
             </motion.blockquote>
 
             <motion.div
@@ -97,7 +98,7 @@ export default function DoItHero() {
               {c.hosts.map((host, i) => (
                 <motion.span
                   key={host}
-                  className="inline-flex items-center rounded-[4px] border border-museum-brass/35 bg-museum-stone px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-2"
+                  className="inline-flex items-center rounded-[4px] border border-cobalt/35 bg-museum-stone px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-2"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.45, ease: BACK, delay: 1.15 + i * 0.06 }}
@@ -139,7 +140,7 @@ export default function DoItHero() {
           {/* vertical decoration */}
           <motion.span
             aria-hidden="true"
-            className="vertical-rl hidden shrink-0 select-none font-serif text-lg text-museum-brass/45 md:block"
+            className="vertical-rl hidden shrink-0 select-none font-display text-lg text-cobalt/45 md:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, ease: ZEN, delay: 1.4 }}

@@ -3,8 +3,8 @@ import { useLang } from '@/context/LangContext'
 import { writeRightContent } from '@/content/writeRight'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S2 · 做与不做 — honest scope: DOES (dai edge) vs. DOESN'T (faint edge, growing strikethrough). */
 export default function ScopeSection() {

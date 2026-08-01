@@ -1,4 +1,4 @@
-/** Thin brass chevron for scroll hint. */
+/** Thin cobalt chevron for scroll hint. */
 export default function ScrollHintMark({ className }: { className?: string }) {
   return (
     <svg
@@ -11,7 +11,7 @@ export default function ScrollHintMark({ className }: { className?: string }) {
     >
       <path
         d="M8 2v18M3 15l5 7 5-7"
-        stroke="var(--museum-brass)"
+        stroke="var(--cobalt)"
         strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"

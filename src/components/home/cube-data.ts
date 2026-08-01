@@ -47,7 +47,7 @@ export const cubeProjects: CubeProject[] = [
     statementEn: 'Side projects, taken seriously.',
     descriptionZh: '我关心的不是让 AI 看起来更聪明，而是让 Agent 真正记得、判断并完成工作。',
     descriptionEn:
-      'Not smarter-looking AI — agents that remember, decide, and finish the work.',
+      'Not smarter-looking AI, but agents that remember, decide, and finish the work.',
     tags: [],
     image: asset('cube/faces/front.jpg'),
     alt: 'Museum alcove with a floating stone cube',
@@ -91,7 +91,7 @@ export const cubeProjects: CubeProject[] = [
     statementEn: 'Stop asking AI agents to remember process. Install it.',
     descriptionZh: '把路由、判断、审查和验证，做成可以安装到不同编码 Agent 中的工作方式。',
     descriptionEn:
-      'Routing, judgment, review, and verification — installed into coding agents.',
+      'Routing, judgment, review, and verification, installed into coding agents.',
     tags: ['CODEX', 'CLAUDE CODE', 'CURSOR', 'OPENCODE'],
     image: asset('cube/faces/back.jpg'),
     alt: 'Mechanical stone device with a circular track',
@@ -111,7 +111,7 @@ export const cubeProjects: CubeProject[] = [
     categoryEn: 'WRITING',
     title: 'Write-Right',
     statementZh: '文种 × 场所 × 目标，路由先于动笔。',
-    statementEn: 'Genre × place × goal — route before writing.',
+    statementEn: 'Genre × place × goal. Route before writing.',
     descriptionZh: '模型无关的中文正式写作技能包，包含本地素材、偏好学习、召回与审校流程。',
     descriptionEn:
       'Model-agnostic Chinese formal writing skills with local corpus, recall, and review.',

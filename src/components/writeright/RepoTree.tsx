@@ -5,8 +5,8 @@ import { writeRightContent } from '@/content/writeRight'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
  * S4 · 仓库形状 — interactive file tree. Desktop: tree left / note panel right.
@@ -23,7 +23,7 @@ export default function RepoTree() {
       <div className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,128px)] md:px-10">
         <InkReveal>
           <Kicker>{c.kicker}</Kicker>
-          <h2 className="mt-4 font-serif text-h2 font-semibold text-ink">{c.title}</h2>
+          <h2 className="mt-4 font-display text-h2 font-semibold text-ink">{c.title}</h2>
         </InkReveal>
 
         {/* ——— desktop: tree + note panel ——— */}
@@ -84,7 +84,7 @@ export default function RepoTree() {
                   transition={{ duration: 0.3, ease: ZEN }}
                 >
                   <p className="font-mono text-sm text-dai">{activeNode.label}</p>
-                  <p className="mt-4 font-serif text-xl leading-relaxed text-ink">
+                  <p className="mt-4 font-display text-xl leading-relaxed text-ink">
                     {activeNode.note}
                   </p>
                 </motion.div>

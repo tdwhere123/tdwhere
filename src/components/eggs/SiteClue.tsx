@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLang } from '@/context/LangContext'
 import { cn } from '@/lib/utils'
@@ -33,16 +33,26 @@ export default function SiteClue({ variant, label, hint, command, className }: P
   const { lang } = useLang()
   const [toast, setToast] = useState(false)
   const [copied, setCopied] = useState(false)
+  const toastTimerRef = useRef<number | null>(null)
+
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current)
+    },
+    [],
+  )
 
   const reveal = useCallback(async () => {
+    if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current)
     setToast(true)
     if (command) {
       const ok = await copyText(command)
       setCopied(ok)
     }
-    window.setTimeout(() => {
+    toastTimerRef.current = window.setTimeout(() => {
       setToast(false)
       setCopied(false)
+      toastTimerRef.current = null
     }, 2800)
   }, [command])
 
@@ -61,22 +71,22 @@ export default function SiteClue({ variant, label, hint, command, className }: P
           variant === 'timestamp' && 'font-mono text-[10px] tracking-[0.18em]',
           variant === 'stamp' && 'font-mono text-[9px] uppercase tracking-[0.24em]',
           variant === 'seal' && 'font-mono text-[9px] uppercase tracking-[0.2em]',
-          variant === 'marginalia' && 'font-serif text-[11px] italic',
+          variant === 'marginalia' && 'font-display text-[11px] italic',
         )}
-        style={{ color: 'color-mix(in srgb, var(--museum-brass) 72%, var(--museum-ink))' }}
+        style={{ color: 'color-mix(in srgb, var(--cobalt) 72%, var(--museum-ink))' }}
       >
         {variant === 'seal' ? (
           <span
             className="inline-flex h-7 w-7 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-105"
             style={{
-              borderColor: 'color-mix(in srgb, var(--museum-brass) 55%, transparent)',
-              background: 'color-mix(in srgb, var(--museum-brass) 8%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--cobalt) 55%, transparent)',
+              background: 'color-mix(in srgb, var(--cobalt) 8%, transparent)',
             }}
           >
             {labelText}
           </span>
         ) : (
-          <span className="underline decoration-dotted decoration-museum-brass/40 underline-offset-[3px]">
+          <span className="underline decoration-dotted decoration-cobalt/40 underline-offset-[3px]">
             {labelText}
           </span>
         )}
@@ -93,7 +103,7 @@ export default function SiteClue({ variant, label, hint, command, className }: P
             transition={{ duration: 0.22 }}
             className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-50 w-max max-w-[min(240px,70vw)] -translate-x-1/2 rounded-[6px] border px-3 py-2 text-center text-[11px] leading-snug shadow-md"
             style={{
-              borderColor: 'color-mix(in srgb, var(--museum-brass) 40%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--cobalt) 40%, transparent)',
               background: 'color-mix(in srgb, var(--museum-stone) 92%, white)',
               color: 'var(--museum-ink)',
             }}

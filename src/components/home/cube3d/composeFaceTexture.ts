@@ -53,7 +53,7 @@ function sampleDiscColor(
   return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) }
 }
 
-/** Sample shell rim stone (not brass highlights, not white knockout). */
+/** Sample shell rim stone (not cobalt highlights, not white knockout). */
 function sampleShellStone(
   ctx: CanvasRenderingContext2D,
   size: number,

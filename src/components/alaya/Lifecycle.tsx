@@ -20,7 +20,7 @@ export default function Lifecycle() {
           <Kicker>{a.kicker}</Kicker>
         </InkReveal>
         <InkReveal amount={0.4} delay={0.08}>
-          <h2 className="mt-6 font-serif text-h2 font-semibold text-ink">{a.title}</h2>
+          <h2 className="mt-6 font-display text-h2 font-semibold text-ink">{a.title}</h2>
           <p className="mt-3 max-w-reading text-ink-3">{a.sub}</p>
         </InkReveal>
         <div className="mt-12">

@@ -7,8 +7,8 @@ import { alayaContent } from '@/content/alaya'
 import Stamp from '@/components/Stamp'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 type Phase = 'waiting' | 'admitted' | 'landed' | 'rejected' | 'leaving'
 type Verdict = 'admit' | 'reject'
@@ -124,7 +124,7 @@ export default function GateDemo() {
     <div className="mt-14">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="font-serif text-h3 font-semibold text-ink">{g.title}</h3>
+          <h3 className="font-display text-h3 font-semibold text-ink">{g.title}</h3>
           <p className="mt-1 text-sm text-ink-3">{g.sub}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -310,7 +310,7 @@ export default function GateDemo() {
 
       {/* core sentence */}
       <div className="mt-10 text-center">
-        <p className="font-serif text-[22px] italic text-ink-2">
+        <p className="font-display text-[22px] italic text-ink-2">
           {lang === 'zh' ? g.coreZh : g.core}
         </p>
         <p className="mt-2 font-mono text-xs text-faint">{lang === 'zh' ? g.core : g.coreZh}</p>

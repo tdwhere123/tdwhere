@@ -4,8 +4,9 @@ import { Pause, Play } from 'lucide-react'
 import { useLang } from '@/context/LangContext'
 import { alayaContent } from '@/content/alaya'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
+
 const SIZE = 560
 const CENTER = SIZE / 2
 const RADIUS = 228
@@ -69,7 +70,7 @@ export default function LifecycleRing() {
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
           {a.stageLabel} 0{active + 1} / 0{stages.length}
         </p>
-        <h3 className="mt-2 font-serif text-h3 font-semibold text-ink">
+        <h3 className="mt-2 font-display text-h3 font-semibold text-ink">
           {stage.name}{' '}
           <span className="font-mono text-sm font-normal normal-case tracking-[0.08em] text-faint">
             {stage.en}
@@ -116,13 +117,13 @@ export default function LifecycleRing() {
             className="absolute inset-0 h-full w-full"
             aria-hidden="true"
           >
-            {/* quiet brass guide ring — museum accent behind the stage path */}
+            {/* quiet cobalt guide ring — museum accent behind the stage path */}
             <circle
               cx={CENTER}
               cy={CENTER}
               r={RADIUS + 18}
               fill="none"
-              stroke="var(--museum-brass)"
+              stroke="var(--cobalt)"
               strokeWidth={0.75}
               opacity={0.28}
             />

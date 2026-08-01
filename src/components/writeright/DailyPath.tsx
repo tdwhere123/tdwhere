@@ -30,7 +30,7 @@ const TypeLine = memo(function TypeLine({ text, active }: { text: string; active
   const done = shown.length >= text.length
 
   return (
-    <span className="block max-w-full break-all font-mono text-[10px] leading-snug text-museum-brass sm:text-[11px]">
+    <span className="block max-w-full break-all font-mono text-[10px] leading-snug text-cobalt sm:text-[11px]">
       {shown}
       {active && !done && (
         <span aria-hidden="true" className="animate-caret-blink">
@@ -65,7 +65,7 @@ export default function DailyPath() {
     <section className="mx-auto max-w-shell px-5 py-[clamp(72px,12vh,128px)] md:px-10">
       <InkReveal>
         <Kicker>{c.kicker}</Kicker>
-        <h2 className="mt-4 font-serif text-h2 font-semibold text-ink">{c.title}</h2>
+        <h2 className="mt-4 font-display text-h2 font-semibold text-ink">{c.title}</h2>
       </InkReveal>
 
       <div ref={ref} className="mt-14">

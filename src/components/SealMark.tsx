@@ -1,6 +1,6 @@
 /**
  * Inline 阿黄 white-character seal (mirrors /seal-ahuang.svg).
- * Inlined so the characters use the loaded Noto Serif SC webfont.
+ * Inlined so the characters use system serif fallbacks (Songti SC / SimSun).
  */
 export default function SealMark({
   size = 64,
@@ -44,7 +44,7 @@ export default function SealMark({
             <path
               d="M 84 88 Q 200 80 316 86 Q 322 200 318 314 Q 200 322 82 316 Q 78 200 84 88 Z"
               fill="none"
-              stroke="#E9E4D9"
+              stroke="#F4F4F2"
               strokeWidth="5"
               opacity="0.85"
             />
@@ -52,10 +52,10 @@ export default function SealMark({
               x="200"
               y="196"
               textAnchor="middle"
-              fontFamily="'Noto Serif SC','Songti SC',serif"
+              fontFamily='"Songti SC","SimSun",serif'
               fontWeight="700"
               fontSize="112"
-              fill="#E9E4D9"
+              fill="#F4F4F2"
             >
               阿
             </text>
@@ -63,10 +63,10 @@ export default function SealMark({
               x="200"
               y="308"
               textAnchor="middle"
-              fontFamily="'Noto Serif SC','Songti SC',serif"
+              fontFamily='"Songti SC","SimSun",serif'
               fontWeight="700"
               fontSize="112"
-              fill="#E9E4D9"
+              fill="#F4F4F2"
             >
               黄
             </text>

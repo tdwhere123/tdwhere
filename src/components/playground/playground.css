@@ -1,0 +1,101 @@
+/*
+ * Playground page atmosphere — scoped to .pg-sentinel / .pg-gallery.
+ * Wake-up flicker, idle CRT breathe, offscreen pause, reduced-motion fallbacks.
+ * Animates transform / opacity / filter only.
+ */
+
+/* —— one-shot wake: case glow rises —— */
+.pg-halo {
+  opacity: 0;
+  transition: opacity 1800ms ease;
+}
+.pg-woken .pg-halo {
+  opacity: 1;
+}
+
+/* —— one-shot wake: screen flickers once from dark to standby —— */
+@keyframes pg-wake-bezel {
+  0% { filter: brightness(0.55) }
+  12% { filter: brightness(1.18) }
+  24% { filter: brightness(0.7) }
+  42% { filter: brightness(1.08) }
+  100% { filter: brightness(1) }
+}
+.pg-waking .pg-crt-bezel {
+  animation: pg-wake-bezel 1100ms ease-out 1;
+}
+@keyframes pg-wake-flash {
+  0% { opacity: 0 }
+  10% { opacity: 0.5 }
+  22% { opacity: 0.04 }
+  38% { opacity: 0.3 }
+  100% { opacity: 0 }
+}
+.pg-wake-flash {
+  animation: pg-wake-flash 1100ms ease-out 1 forwards;
+}
+
+/* —— standby afterglow: once woken, the off screen is asleep, not dead —— */
+.pg-standby {
+  opacity: 0;
+  transition: opacity 1400ms ease;
+}
+.pg-woken .pg-standby {
+  opacity: 1;
+}
+
+/* —— idle life: very slow phosphor breathe (only while screen is on) —— */
+@keyframes pg-crt-breathe {
+  0%, 100% { opacity: 0.78 }
+  50% { opacity: 1 }
+}
+.pg-breathe {
+  animation: pg-crt-breathe 9s ease-in-out infinite;
+}
+
+/* —— hidden delight: long-press power — a ghost pulse + LED shiver —— */
+@keyframes pg-ghost-pulse {
+  0% { opacity: 0 }
+  18% { opacity: 0.42 }
+  34% { opacity: 0.08 }
+  52% { opacity: 0.28 }
+  100% { opacity: 0 }
+}
+.pg-ghost-flash {
+  animation: pg-ghost-pulse 1400ms ease-out 1 forwards;
+}
+@keyframes pg-ghost-led {
+  0%, 100% { opacity: 1 }
+  20% { opacity: 0.15 }
+  40% { opacity: 1 }
+  60% { opacity: 0.15 }
+  80% { opacity: 1 }
+}
+.pg-ghost-led {
+  animation: pg-ghost-led 700ms ease-in-out 2;
+}
+
+/* —— perf: pause every infinite ambient loop while the section is offscreen —— */
+.pg-paused .pg-band,
+.pg-paused .pg-led,
+.pg-paused .pg-breathe,
+.pg-paused .pg-caret {
+  animation-play-state: paused;
+}
+
+/* —— reduced motion: everything degrades to static —— */
+@media (prefers-reduced-motion: reduce) {
+  .pg-waking .pg-crt-bezel,
+  .pg-wake-flash,
+  .pg-breathe,
+  .pg-ghost-flash,
+  .pg-ghost-led,
+  .pg-sentinel .pg-band,
+  .pg-sentinel .pg-led {
+    animation: none;
+  }
+  .pg-halo,
+  .pg-standby {
+    transition: none;
+  }
+}

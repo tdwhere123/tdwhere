@@ -20,7 +20,7 @@ export default function About() {
       <Hero />
       <QaSection />
       <IllustrationPlate
-        src="illustrations/about-garden-workbench.png"
+        src="illustrations/about-garden-workbench.webp"
         alt={plate.alt}
         kicker={plate.kicker}
         caption={plate.caption}

@@ -15,7 +15,7 @@ export default function MuseumPlinth({ className }: { className?: string }) {
         cy="46"
         rx="148"
         ry="12"
-        stroke="var(--museum-brass)"
+        stroke="var(--cobalt)"
         strokeWidth="0.9"
         opacity="0.42"
       />
@@ -24,7 +24,7 @@ export default function MuseumPlinth({ className }: { className?: string }) {
         cy="46"
         rx="118"
         ry="7"
-        stroke="var(--museum-brass)"
+        stroke="var(--cobalt)"
         strokeWidth="0.5"
         opacity="0.22"
       />

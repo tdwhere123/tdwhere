@@ -134,6 +134,15 @@ async function main() {
   const page = await browser.newPage()
   page.setDefaultTimeout(45000)
 
+  /* Google Fonts can stall for ~45s+ and block domcontentloaded; abort them,
+     the suite only needs layout + behavior, not the exact webfont. */
+  await page.setRequestInterception(true)
+  page.on('request', (req) => {
+    const u = req.url()
+    if (u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com')) req.abort()
+    else req.continue()
+  })
+
   // Capture page errors
   const pageErrors = []
   page.on('pageerror', (e) => pageErrors.push(String(e)))

@@ -4,21 +4,16 @@ import useCopyText from '@/hooks/useCopyText'
 import Stamp from '@/components/Stamp'
 import SealMark from '@/components/SealMark'
 import SiteClue from '@/components/eggs/SiteClue'
-import BrassRule from './svg/BrassRule'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 export default function HomeCoda() {
-  const { t, lang } = useLang()
+  const { t } = useLang()
   const { copied, copy } = useCopyText(t.meta.email)
-  const line =
-    lang === 'zh'
-      ? '所有项目都在 GitHub 上。'
-      : 'Every project lives on GitHub.'
 
   return (
-    <section className="home-coda relative mx-auto max-w-reading px-5 py-20 text-center md:py-28">
-      <BrassRule className="mx-auto mb-10 h-2 w-40" />
+    <section className="home-coda relative mx-auto max-w-reading border-t border-hairline px-5 py-20 text-center md:py-28">
+      <div aria-hidden="true" className="mx-auto mb-10 h-px w-24 bg-ink/20" />
       <div className="relative mx-auto mb-2 flex w-fit items-center justify-center gap-3">
         <SealMark size={36} className="opacity-80" />
         <SiteClue
@@ -32,8 +27,8 @@ export default function HomeCoda() {
         />
       </div>
 
-      <p className="font-serif text-[24px] font-semibold leading-snug text-museum-ink md:text-[28px]">
-        {line}
+      <p className="font-display text-[24px] font-semibold leading-snug text-museum-ink md:text-[28px]">
+        {t.coda.line}
       </p>
 
       <div className="mt-8 flex flex-col items-center gap-3">
@@ -41,7 +36,7 @@ export default function HomeCoda() {
           href={t.meta.githubUrl}
           target="_blank"
           rel="noreferrer"
-          className="font-mono text-sm text-museum-muted transition-colors hover:text-museum-ink"
+          className="font-mono text-sm text-museum-muted transition-colors hover:text-cobalt"
         >
           {t.meta.github}
         </a>
@@ -53,7 +48,7 @@ export default function HomeCoda() {
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.25, ease: ZEN }}
             aria-label={`${t.common.copy}: ${t.meta.email}`}
-            className="rounded-full border border-museum-brass/40 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-museum-brass hover:bg-museum-stone/40"
+            className="rounded-none border border-ink/25 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-cobalt hover:text-cobalt"
           >
             {t.meta.email}
           </motion.button>

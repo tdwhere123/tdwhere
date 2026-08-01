@@ -12,10 +12,11 @@ type Props = {
  * 展厅环境光 · Hall ambience.
  *
  * Purely environmental feedback for the exploration state — no counters, no
- * dashboard. Each face owns a soft glow at the hall's edge; exploring a face
- * brings its glow up (dim when seen, full when its mechanism was triggered).
- * A vignette dims the hall at first and lifts as more faces are lit. On
- * mount, a dark veil lifts once — the hall lights on as you walk in.
+ * dashboard. The space is a bright gallery: each face owns a soft cobalt /
+ * neutral glow at the edge; exploring a face brings its glow up (dim when
+ * seen, full when its mechanism was triggered). A cool vignette rests on the
+ * room at first and lifts as more faces are lit. On mount, a bright veil
+ * lifts once — the gallery opens as you walk in.
  *
  * Decorative only: aria-hidden, pointer-events none. Reduced motion is
  * handled globally (transitions collapse); state remains visible statically.

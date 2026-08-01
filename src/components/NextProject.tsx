@@ -33,7 +33,7 @@ export default function NextProject({
           <p className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
             {t.common.nextRoom} →
           </p>
-          <p className="relative mt-3 font-serif text-h2 font-semibold text-ink">
+          <p className="relative mt-3 font-display text-h2 font-semibold text-ink">
             {title}
             <span
               aria-hidden="true"

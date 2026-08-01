@@ -4,7 +4,7 @@ import { asset } from '@/lib/asset'
 import { cn } from '@/lib/utils'
 
 type IllustrationPlateProps = {
-  /** Path under `public/`, e.g. `illustrations/do-it-gate-router.png` */
+  /** Path under `public/`, e.g. `illustrations/do-it-gate-router.webp` */
   src: string
   alt: string
   /** Optional mono section label */
@@ -18,8 +18,8 @@ type IllustrationPlateProps = {
   priority?: boolean
 }
 
-/** Inline brass corner — avoids external SVG MIME/parse failures on Pages. */
-function BrassCorner({ className }: { className?: string }) {
+/** Inline cobalt corner — avoids external SVG MIME/parse failures on Pages. */
+function CobaltCorner({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -47,7 +47,7 @@ function BrassCorner({ className }: { className?: string }) {
   )
 }
 
-function BrassLozenge({ className }: { className?: string }) {
+function CobaltLozenge({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -75,7 +75,7 @@ function BrassLozenge({ className }: { className?: string }) {
 
 /**
  * Museum illustration plate — one dominant image per section.
- * Stone matte + thin brass edge; not a card, not a hero overlay.
+ * Stone matte + thin cobalt edge; not a card, not a hero overlay.
  */
 export default function IllustrationPlate({
   src,
@@ -107,12 +107,12 @@ export default function IllustrationPlate({
       <InkReveal delay={kicker ? 0.08 : 0} className={cn(kicker && 'mt-8')}>
         <div
           className={cn(
-            'relative overflow-hidden border border-museum-brass/25 bg-museum-stone',
+            'relative overflow-hidden border border-cobalt/25 bg-museum-stone',
             bleed ? 'border-x-0' : '',
           )}
         >
-          <BrassCorner className="pointer-events-none absolute left-3 top-3 z-[1] h-7 w-7 text-museum-brass opacity-70 md:left-4 md:top-4 md:h-8 md:w-8" />
-          <BrassCorner className="pointer-events-none absolute bottom-3 right-3 z-[1] h-7 w-7 rotate-180 text-museum-brass opacity-70 md:bottom-4 md:right-4 md:h-8 md:w-8" />
+          <CobaltCorner className="pointer-events-none absolute left-3 top-3 z-[1] h-7 w-7 text-cobalt opacity-70 md:left-4 md:top-4 md:h-8 md:w-8" />
+          <CobaltCorner className="pointer-events-none absolute bottom-3 right-3 z-[1] h-7 w-7 rotate-180 text-cobalt opacity-70 md:bottom-4 md:right-4 md:h-8 md:w-8" />
 
           <img
             src={asset(src)}
@@ -132,7 +132,7 @@ export default function IllustrationPlate({
       {caption ? (
         <InkReveal delay={0.16} className={cn(bleed && 'mx-auto max-w-shell px-5 md:px-10')}>
           <figcaption className="mt-5 flex items-start gap-3 font-mono text-xs leading-relaxed text-museum-muted md:text-[13px]">
-            <BrassLozenge className="mt-0.5 h-3.5 w-3.5 shrink-0 text-museum-brass opacity-80" />
+            <CobaltLozenge className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cobalt opacity-80" />
             <span className="min-w-0 flex-1 break-words">{caption}</span>
           </figcaption>
         </InkReveal>

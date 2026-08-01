@@ -23,7 +23,7 @@ function CardFallback({ title, lang }: { title: string; lang: 'zh' | 'en' }) {
     <div
       className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-3 rounded-[6px] border px-6 text-center"
       style={{
-        borderColor: 'color-mix(in srgb, var(--museum-brass) 38%, transparent)',
+        borderColor: 'color-mix(in srgb, var(--cobalt) 38%, transparent)',
         background:
           'linear-gradient(165deg, color-mix(in srgb, var(--museum-stone) 82%, white) 0%, var(--museum-stone) 100%)',
         boxShadow: 'inset 0 1px 0 color-mix(in srgb, white 28%, transparent)',
@@ -32,11 +32,11 @@ function CardFallback({ title, lang }: { title: string; lang: 'zh' | 'en' }) {
       <span
         aria-hidden="true"
         className="font-mono text-[10px] uppercase tracking-[0.28em]"
-        style={{ color: 'color-mix(in srgb, var(--museum-brass) 70%, var(--museum-ink))' }}
+        style={{ color: 'color-mix(in srgb, var(--cobalt) 70%, var(--museum-ink))' }}
       >
         CONCEPT · PENDING
       </span>
-      <p className="font-serif text-lg font-semibold text-museum-ink">{title}</p>
+      <p className="font-display text-lg font-semibold text-museum-ink">{title}</p>
       <p className="max-w-xs text-[13px] leading-relaxed text-museum-muted">
         {lang === 'zh' ? '概念图待上架 — 玩法说明仍可读。' : 'Artwork pending — the lesson still stands.'}
       </p>
@@ -62,7 +62,7 @@ function CardImage({
       src={card.image}
       alt={title}
       className="aspect-[16/10] w-full rounded-[6px] border object-cover object-top"
-      style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 30%, transparent)' }}
+      style={{ borderColor: 'color-mix(in srgb, var(--cobalt) 30%, transparent)' }}
       onError={() => setImgFailed(true)}
     />
   )
@@ -121,7 +121,7 @@ export default function EggModal({
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[12px] border bg-museum-bg shadow-2xl"
-            style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 42%, transparent)' }}
+            style={{ borderColor: 'color-mix(in srgb, var(--cobalt) 42%, transparent)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -129,7 +129,7 @@ export default function EggModal({
               onClick={handleClose}
               aria-label={lang === 'zh' ? '关闭' : 'Close'}
               className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border transition-colors hover:bg-museum-stone/60"
-              style={{ borderColor: 'color-mix(in srgb, var(--museum-brass) 35%, transparent)' }}
+              style={{ borderColor: 'color-mix(in srgb, var(--cobalt) 35%, transparent)' }}
             >
               <X className="h-4 w-4 text-museum-ink" />
             </button>
@@ -148,10 +148,10 @@ export default function EggModal({
               >
                 Gibberish-SENTINEL · {card.id}/05 · {count}/5
               </p>
-              <h3 className="mt-2 font-serif text-xl font-semibold text-museum-ink">{title}</h3>
+              <h3 className="mt-2 font-display text-xl font-semibold text-museum-ink">{title}</h3>
               <p
                 className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em]"
-                style={{ color: 'color-mix(in srgb, var(--museum-brass) 85%, var(--museum-ink))' }}
+                style={{ color: 'color-mix(in srgb, var(--cobalt) 85%, var(--museum-ink))' }}
               >
                 {mechanic}
               </p>

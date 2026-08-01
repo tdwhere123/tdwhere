@@ -5,8 +5,8 @@ import { alayaContent } from '@/content/alaya'
 import InkReveal from '@/components/InkReveal'
 import Kicker from '@/components/Kicker'
 import { cn } from '@/lib/utils'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 type Sel = { r: number; c: number } | null
 
@@ -37,7 +37,7 @@ export default function Grammar() {
         <Kicker>{a.kicker}</Kicker>
       </InkReveal>
       <InkReveal amount={0.4} delay={0.08}>
-        <h2 className="mt-6 font-serif text-h2 font-semibold text-ink">{a.title}</h2>
+        <h2 className="mt-6 font-display text-h2 font-semibold text-ink">{a.title}</h2>
       </InkReveal>
 
       {/* —— desktop matrix (md+) —— */}
@@ -64,7 +64,7 @@ export default function Grammar() {
               <span className="font-mono text-xs uppercase tracking-[0.12em] text-ink-3">
                 {layer.en}
               </span>
-              <span className="font-serif text-sm font-semibold text-ink-2">{layer.zh}</span>
+              <span className="font-display text-sm font-semibold text-ink-2">{layer.zh}</span>
             </div>
             {a.cells[r].map((cell, c) => (
               <motion.button
@@ -95,7 +95,7 @@ export default function Grammar() {
         {a.layers.map((layer, r) => (
           <div key={layer.en}>
             <p className="font-mono text-xs uppercase tracking-[0.12em] text-ink-3">
-              {layer.en} <span className="font-serif text-sm normal-case text-ink-2">{layer.zh}</span>
+              {layer.en} <span className="font-display text-sm normal-case text-ink-2">{layer.zh}</span>
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {a.cells[r].map((cell, c) => (

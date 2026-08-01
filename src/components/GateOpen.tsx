@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ZEN } from "@/lib/motion";
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 /**
  * 门开 Gate Open — two vertical lines slide apart (0.7s, stagger 0.08s)
  * over the entering block; children should ink-reveal right after.
- * Shared by do-it and Write-Right heroes; do-it passes brass lineClassName.
+ * Shared by do-it and Write-Right heroes; do-it passes cobalt lineClassName.
  */
 export default function GateOpen({
 	children,

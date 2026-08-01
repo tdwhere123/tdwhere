@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { ContactShadows, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { CubeFacePosition, CubeStageId } from '../cube-data'
 import { CUBE_SIZE, useRollingCube, WORLD_ROLL_DIR } from './useRollingCube'
@@ -105,8 +105,8 @@ function FollowControls({
     const g = targetRef.current
     const controls = controlsRef.current
     if (!g || !controls) return
-    // Don't fight the user mid-drag; only chase the cube while rolling / idle.
-    if (orbiting.current && !busyRef.current) return
+    // Don't fight the user mid-drag; only chase the cube while idle.
+    if (orbiting.current) return
     // World position — during a roll the cube is parented under a pivot.
     g.getWorldPosition(desired.current)
     desired.current.y = CUBE_SIZE * 0.2
@@ -119,6 +119,8 @@ function FollowControls({
 
 declare global {
   interface Window {
+    /** Set by E2E harness to enable cube test hooks in production builds. */
+    __E2E__?: boolean
     /** Live floor S-arrow tip for E2E (world-fixed direction, follows cube XZ). */
     __tdwhereRollArrow?: {
       wx: number
@@ -135,8 +137,20 @@ declare global {
   }
 }
 
+function e2eHooksEnabled() {
+  return (
+    import.meta.env.DEV ||
+    (typeof window !== 'undefined' && Boolean(window.__E2E__))
+  )
+}
+
+function clearE2eHooks() {
+  delete window.__tdwhereSetOrbit
+  delete window.__tdwhereRollArrow
+}
+
 /**
- * Hand-ink S-roll mark painted on the museum floor.
+ * Hand-ink S-roll mark painted on the gallery floor.
  * World-fixed: always points +Z (KeyS / ↓). Camera orbit does not rotate it —
  * only the cube’s XZ position is followed so the mark stays beside the cube.
  */
@@ -153,10 +167,11 @@ function FloorRollArrow({ targetRef }: { targetRef: React.RefObject<THREE.Group 
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('2D canvas unavailable')
     ctx.clearRect(0, 0, w, h)
 
-    const ink = (a: number) => `rgba(44, 40, 34, ${a})`
+    const ink = (a: number) => `rgba(23, 24, 28, ${a})`
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
@@ -211,6 +226,11 @@ function FloorRollArrow({ targetRef }: { targetRef: React.RefObject<THREE.Group 
 
   useEffect(() => () => texture.dispose(), [texture])
 
+  useEffect(() => {
+    if (!e2eHooksEnabled()) return
+    return () => clearE2eHooks()
+  }, [])
+
   useFrame(() => {
     const cube = targetRef.current
     const g = groupRef.current
@@ -232,6 +252,7 @@ function FloorRollArrow({ targetRef }: { targetRef: React.RefObject<THREE.Group 
       0.04,
       g.position.z + FLOOR_S_DIR.z * FLOOR_ARROW_SIZE[1] * 0.42,
     )
+    if (!e2eHooksEnabled()) return
     ndc.current.copy(tipWorld.current).project(camera)
     window.__tdwhereRollArrow = {
       wx: tipWorld.current.x,
@@ -287,7 +308,7 @@ function ScreenAnchorReporter({
 
     const cubeObj = targetRef.current
     cubeObj.getWorldPosition(center.current)
-    // Include a little padding for brass trim beyond the mesh half-extent
+    // Include a little padding for accent trim beyond the mesh half-extent
     const half = CUBE_SIZE * 0.52
 
     let minX = 1
@@ -460,14 +481,12 @@ function FitCubeFraming({
 
 function RollingScene({
   enabled,
-  locked,
   interactionTargetRef,
   onFaceChange,
   onAnchor,
   allowTouchOrbit = true,
 }: {
   enabled: boolean
-  locked: boolean
   interactionTargetRef: React.RefObject<HTMLDivElement | null>
   onFaceChange: (id: CubeStageId) => void
   onAnchor?: (a: CubeScreenAnchor) => void
@@ -479,21 +498,23 @@ function RollingScene({
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const { camera } = useThree()
 
-  const { busy, busyRef } = useRollingCube({
+  const { busyRef } = useRollingCube({
     groupRef,
     interactionTargetRef,
     enabled,
     onFaceChange,
   })
 
+  // Free drag-rotate: the cube is a toy — never gate orbiting on rolls or ink.
   useEffect(() => {
     const controls = controlsRef.current
     if (!controls) return
-    controls.enableRotate = allowTouchOrbit && !busy && !locked
-  }, [busy, locked, allowTouchOrbit])
+    controls.enableRotate = allowTouchOrbit
+  }, [allowTouchOrbit])
 
   // E2E hook: set camera azimuth/polar around the cube without relying on mouse drag
   useEffect(() => {
+    if (!e2eHooksEnabled()) return
     window.__tdwhereSetOrbit = (azimuthRad: number, polarRad?: number) => {
       const controls = controlsRef.current
       if (!controls) return
@@ -511,9 +532,7 @@ function RollingScene({
       camera.lookAt(target)
       controls.update()
     }
-    return () => {
-      delete window.__tdwhereSetOrbit
-    }
+    return () => clearE2eHooks()
   }, [camera])
 
   const maps = useMemo(
@@ -529,10 +548,22 @@ function RollingScene({
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
+      {/* Soft neutral shadow pooling under the toy cube on the bright floor. */}
+      <ContactShadows
+        position={[0, 0.001, 0]}
+        scale={9}
+        far={3.2}
+        blur={2.6}
+        opacity={0.32}
+        resolution={512}
+        color="#17181c"
+        frames={1}
+      />
+
       <group ref={groupRef}>
         <mesh>
           <boxGeometry args={[CUBE_SIZE * 0.985, CUBE_SIZE * 0.985, CUBE_SIZE * 0.985]} />
-          <meshBasicMaterial color="#1e1a16" />
+          <meshBasicMaterial color="#17181c" />
         </mesh>
         <CubeMesh textures={maps} />
       </group>
@@ -563,7 +594,6 @@ function RollingScene({
 
 type Props = {
   enabled?: boolean
-  locked?: boolean
   onFaceChange: (id: CubeStageId) => void
   onAnchor?: (a: CubeScreenAnchor) => void
   ariaLabel?: string
@@ -572,7 +602,6 @@ type Props = {
 
 export default function MuseumCubeCanvas({
   enabled = true,
-  locked = false,
   onFaceChange,
   onAnchor,
   ariaLabel = '3D project cube. Click to focus, then use arrow keys or W, A, S, and D to roll it.',
@@ -617,7 +646,7 @@ export default function MuseumCubeCanvas({
           alpha: true,
           powerPreference: 'high-performance',
           toneMapping: THREE.NoToneMapping,
-          preserveDrawingBuffer: true,
+          preserveDrawingBuffer: e2eHooksEnabled(),
         }}
         style={{ touchAction: isCoarsePointer ? 'pan-y' : 'none' }}
         onCreated={({ camera, gl }) => {
@@ -628,7 +657,6 @@ export default function MuseumCubeCanvas({
         <Suspense fallback={null}>
           <RollingScene
             enabled={enabled}
-            locked={locked}
             interactionTargetRef={interactionTargetRef}
             onFaceChange={onFaceChange}
             onAnchor={onAnchor}

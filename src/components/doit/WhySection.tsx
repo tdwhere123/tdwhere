@@ -3,8 +3,8 @@ import { useLang } from '@/context/LangContext'
 import { doItContent } from '@/content/doIt'
 import Kicker from '@/components/Kicker'
 import InkReveal from '@/components/InkReveal'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /** S2 · 缘起 / Why — itch panel (museum stone, clay edge) vs. the move. */
 export default function WhySection() {
@@ -38,11 +38,11 @@ export default function WhySection() {
 
         {/* the move — solution text */}
         <InkReveal delay={0.2}>
-          <div className="flex h-full flex-col justify-center border-t border-museum-brass/30 p-1 pt-6 md:border-t-0 md:p-4 md:pt-4">
+          <div className="flex h-full flex-col justify-center border-t border-cobalt/30 p-1 pt-6 md:border-t-0 md:p-4 md:pt-4">
             <h3 className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-ink-3">
               {c.moveTitle}
             </h3>
-            <p className="mt-4 font-serif text-h3 leading-relaxed text-museum-ink">{c.move}</p>
+            <p className="mt-4 font-display text-h3 leading-relaxed text-museum-ink">{c.move}</p>
           </div>
         </InkReveal>
       </div>

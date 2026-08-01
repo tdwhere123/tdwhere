@@ -5,20 +5,20 @@ import type { Lang } from "@/context/LangContext";
 import type { CubeProject } from "../cube-data";
 import type { CubeScreenAnchor, CubeScreenRect } from "./cubeScreenAnchor";
 import { cn } from "@/lib/utils";
+import { ZEN } from "@/lib/motion";
+
 
 type Phase = "title" | "erasing" | "body";
 
-type Props = {
-	project: CubeProject;
-	lang: Lang;
-	anchor: CubeScreenAnchor;
-	writeKey: string;
-	onLockChange?: (locked: boolean) => void;
-	/** Fired when the visitor triggers the face's mechanism (ink title → exhibit note). */
-	onExpand?: () => void;
-};
+	type Props = {
+		project: CubeProject;
+		lang: Lang;
+		anchor: CubeScreenAnchor;
+		writeKey: string;
+		/** Fired when the visitor triggers the face's mechanism (ink title → exhibit note). */
+		onExpand?: () => void;
+	};
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const ERASE_MS = 420;
 
 /** Viewport edge padding as a fraction of width/height. */
@@ -29,7 +29,7 @@ function clamp(n: number, min: number, max: number) {
 }
 
 /**
- * Measured AABB pads brass / perspective; light inset so gap is vs visible mass.
+ * Measured AABB pads cobalt / perspective; light inset so gap is vs visible mass.
  */
 function layoutCube(cube: CubeScreenRect, insetFrac = 0.06): CubeScreenRect {
 	const dx = cube.width * insetFrac;
@@ -86,51 +86,48 @@ export default function PlaneInk(props: Props) {
 	return <PlaneInkPanel key={props.writeKey} {...props} />;
 }
 
-function PlaneInkPanel({
-	project,
-	lang,
-	anchor,
-	writeKey,
-	onLockChange,
-	onExpand,
-}: Props) {
-	const navigate = useNavigate();
-	const [phase, setPhase] = useState<Phase>("title");
+	function PlaneInkPanel({
+		project,
+		lang,
+		anchor,
+		writeKey,
+		onExpand,
+	}: Props) {
+		const navigate = useNavigate();
+		const [phase, setPhase] = useState<Phase>("title");
 
-	const statement = lang === "zh" ? project.statementZh : project.statementEn;
-	const description =
-		lang === "zh" ? project.descriptionZh : project.descriptionEn;
+		const statement = lang === "zh" ? project.statementZh : project.statementEn;
+		const description =
+			lang === "zh" ? project.descriptionZh : project.descriptionEn;
 
-	const hint =
-		lang === "zh"
-			? phase === "title"
-				? "点击名称 · 展开介绍"
-				: phase === "erasing"
-					? "墨迹擦除中…"
-					: project.route
-						? "再点一次 · 进入项目"
-						: project.github
-							? "再点一次 · 打开 GitHub"
-							: "翻面继续逛"
-			: phase === "title"
-				? "Click the name · expand"
-				: phase === "erasing"
-					? "Erasing…"
-					: project.route
-						? "Click again · open project"
-						: project.github
-							? "Click again · open GitHub"
-							: "Roll to keep exploring";
+		const hint =
+			lang === "zh"
+				? phase === "title"
+					? "点击名称 · 展开介绍"
+					: phase === "erasing"
+						? "墨迹擦除中…"
+						: project.route
+							? "再点一次 · 进入项目"
+							: project.github
+								? "再点一次 · 打开 GitHub"
+								: "翻面继续逛"
+				: phase === "title"
+					? "Click the name · expand"
+					: phase === "erasing"
+						? "Erasing…"
+						: project.route
+							? "Click again · open project"
+							: project.github
+								? "Click again · open GitHub"
+								: "Roll to keep exploring";
 
-	useEffect(() => {
-		if (phase !== "erasing") return;
-		onLockChange?.(true);
-		const t = window.setTimeout(() => setPhase("body"), ERASE_MS);
-		return () => {
-			window.clearTimeout(t);
-			onLockChange?.(false);
-		};
-	}, [phase, onLockChange]);
+		useEffect(() => {
+			if (phase !== "erasing") return;
+			const t = window.setTimeout(() => setPhase("body"), ERASE_MS);
+			return () => {
+				window.clearTimeout(t);
+			};
+		}, [phase]);
 
 	const onActivate = () => {
 		if (phase === "erasing") return;
@@ -228,10 +225,10 @@ function PlaneInkPanel({
 							>
 								{project.title}
 							</p>
-							<p className="plane-ink-body font-serif text-[clamp(17px,1.7vw,22px)] leading-relaxed text-ink-2">
+							<p className="plane-ink-body font-display text-[clamp(17px,1.7vw,22px)] leading-relaxed text-ink-2">
 								{statement}
 							</p>
-							<p className="plane-ink-body font-serif text-[15px] leading-relaxed text-museum-muted md:text-[17px]">
+							<p className="plane-ink-body font-display text-[15px] leading-relaxed text-museum-muted md:text-[17px]">
 								{description}
 							</p>
 							<p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted/80">

@@ -67,6 +67,19 @@ const zh = {
     idleHint: '输入任务，或点一个示例，看它怎么被路由。',
     summaryPrefix: '路由结果',
   },
+  pipeline: {
+    kicker: '· 走一遍 / ONE TASK, FOUR GATES',
+    title: '一件任务，四道关口。',
+    packetLabel: '任务包 / TASK PACKET',
+    packet: '把鉴权模块从 session 迁移到 JWT',
+    stages: [
+      { en: 'ROUTE', zh: '路由', desc: '先定风险级，再决定加载哪些技能桶。', state: '已分级 · HEAVY' },
+      { en: 'JUDGE', zh: '判断', desc: '方案先被挑战，权衡写清楚了才动手。', state: '方案已挑战' },
+      { en: 'REVIEW', zh: '复核', desc: 'diff 对着声明逐条核，不放水。', state: 'diff 与声明一致' },
+      { en: 'VERIFY', zh: '验证', desc: '没有新鲜证据，就不算完成。', state: 'VERIFIED' },
+    ],
+    tapHint: '点按切换关口',
+  },
   moves: {
     kicker: '— 四步功法 / THE FOUR MOVES',
     items: [
@@ -186,6 +199,19 @@ const en: DoItContent = {
     learnTip: 'Off by default. Local, sanitized; /do-it-retrospective reports.',
     idleHint: 'Type a task, or tap an example, and watch it get routed.',
     summaryPrefix: 'Routed',
+  },
+  pipeline: {
+    kicker: '· ONE TASK, FOUR GATES / 走一遍',
+    title: 'One task, four gates.',
+    packetLabel: 'task packet / 任务包',
+    packet: 'migrate the auth module from session to JWT',
+    stages: [
+      { en: 'ROUTE', zh: '路由', desc: 'Grade the risk first. The grade picks the buckets.', state: 'graded · HEAVY' },
+      { en: 'JUDGE', zh: '判断', desc: 'The plan gets challenged before any code moves.', state: 'plan challenged' },
+      { en: 'REVIEW', zh: '复核', desc: 'The diff is checked line by line against the claim.', state: 'diff matches claim' },
+      { en: 'VERIFY', zh: '验证', desc: 'No fresh evidence, no done.', state: 'VERIFIED' },
+    ],
+    tapHint: 'tap a gate',
   },
   moves: {
     kicker: '— THE FOUR MOVES / 四步功法',

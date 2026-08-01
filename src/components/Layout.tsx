@@ -6,8 +6,8 @@ import Footer from '@/components/Footer'
 import RoomAtmosphere from '@/components/RoomAtmosphere'
 import type { RoomId } from '@/lib/rooms'
 import { useLang } from '@/context/LangContext'
+import { ZEN } from '@/lib/motion'
 
-const ZEN = [0.22, 1, 0.36, 1] as [number, number, number, number]
 
 /**
  * Path → gallery room. Home keeps its own hall; about stays in the shared

@@ -74,6 +74,8 @@ export default function Trail() {
           return undefined
         },
       )
+
+      return () => mm.revert()
     },
     { scope: sectionRef, dependencies: [lang] },
   )
@@ -86,7 +88,7 @@ export default function Trail() {
     >
       <InkReveal>
         <Kicker>{c.kicker}</Kicker>
-        <h2 id="trail-title" className="mt-6 font-serif text-h2 font-semibold text-museum-ink">
+        <h2 id="trail-title" className="mt-6 font-display text-h2 font-semibold text-museum-ink">
           {c.title}
         </h2>
       </InkReveal>
@@ -96,12 +98,12 @@ export default function Trail() {
         <span
           ref={lineHRef}
           aria-hidden="true"
-          className="absolute left-0 right-0 top-[3.5px] hidden h-px origin-left bg-museum-brass/40 md:block"
+          className="absolute left-0 right-0 top-[3.5px] hidden h-px origin-left bg-cobalt/40 md:block"
         />
         <span
           ref={lineVRef}
           aria-hidden="true"
-          className="absolute bottom-2 left-[3.5px] top-2 w-px origin-top bg-museum-brass/40 md:hidden"
+          className="absolute bottom-2 left-[3.5px] top-2 w-px origin-top bg-cobalt/40 md:hidden"
         />
 
         <ol className="flex flex-col gap-10 md:grid md:grid-cols-[repeat(4,minmax(0,1fr))_80px] md:gap-6">
@@ -113,7 +115,7 @@ export default function Trail() {
               />
               <div data-label className="md:mt-5">
                 <p className="font-mono text-xs text-museum-muted">{n.date}</p>
-                <p className="mt-1 font-mono text-xs font-medium uppercase tracking-[0.14em] text-museum-brass">
+                <p className="mt-1 font-mono text-xs font-medium uppercase tracking-[0.14em] text-cobalt">
                   {n.tag}
                 </p>
                 <p className="mt-2 max-w-[26ch] text-sm leading-relaxed text-museum-muted">{n.text}</p>
@@ -125,7 +127,7 @@ export default function Trail() {
             <span
               data-hollow
               aria-hidden="true"
-              className="mt-[7px] block h-2 w-2 shrink-0 animate-pulse rounded-full border border-museum-brass/70 bg-transparent will-change-transform [animation-duration:1.6s] md:mt-0"
+              className="mt-[7px] block h-2 w-2 shrink-0 animate-pulse rounded-full border border-cobalt/70 bg-transparent will-change-transform [animation-duration:1.6s] md:mt-0"
             />
             <p data-label className="font-mono text-xs text-museum-muted md:mt-5">
               {c.more}

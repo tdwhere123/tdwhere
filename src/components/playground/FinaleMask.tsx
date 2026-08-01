@@ -61,7 +61,7 @@ export default function FinaleMask({ open, onClose }: Props) {
             </p>
             <h2
               id="finale-question"
-              className="mt-8 font-serif text-[clamp(22px,4.2vw,34px)] font-semibold leading-[1.45] text-white/95"
+              className="mt-8 font-display text-[clamp(22px,4.2vw,34px)] font-semibold leading-[1.45] text-white/95"
             >
               {FINALE_QUESTION[lang]}
             </h2>
