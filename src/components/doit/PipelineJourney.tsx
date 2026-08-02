@@ -145,7 +145,7 @@ function PinnedJourney() {
           {/* the packet */}
           <div
             ref={packetRef}
-            className="absolute bottom-full left-0 z-10 mb-7 w-60 border border-clay/60 bg-paper p-3.5 opacity-0 shadow-card"
+            className="absolute bottom-full left-0 z-10 mb-7 w-60 rounded-xl border border-clay/60 bg-paper p-3.5 opacity-0 shadow-card"
           >
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-clay">
               {c.packetLabel}
@@ -172,7 +172,7 @@ function PinnedJourney() {
               <div key={s.en} className="relative flex h-10 items-center justify-center">
                 <span
                   data-station
-                  className="relative z-10 grid h-4 w-4 place-items-center border border-ink-3/50 bg-paper"
+                  className="relative z-10 grid h-4 w-4 place-items-center rounded-full border border-ink-3/50 bg-paper"
                 >
                   <span data-lit className="h-1.5 w-1.5 bg-cobalt opacity-0" />
                 </span>
@@ -217,7 +217,7 @@ function TapJourney() {
         <h2 className="mt-4 font-display text-h2 font-semibold text-ink">{c.title}</h2>
 
         {/* packet card */}
-        <div className="mt-10 max-w-md border border-clay/60 bg-paper p-4">
+        <div className="mt-10 max-w-md rounded-xl border border-clay/60 bg-paper p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-clay">
             {c.packetLabel}
           </p>

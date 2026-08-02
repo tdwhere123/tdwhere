@@ -7,6 +7,7 @@ import {
 } from "./cube3d/cubeScreenAnchor";
 import PlaneInk from "./cube3d/PlaneInk";
 import HallAmbience from "./HallAmbience";
+import AssociativeField from "./field/AssociativeField";
 import { useExploration } from "./useExploration";
 import { asset } from "@/lib/asset";
 
@@ -15,7 +16,7 @@ const MuseumCubeCanvas = lazy(() => import("./cube3d/MuseumCubeCanvas"));
 function CubeCanvasPlaceholder({ className }: { className?: string }) {
 	return (
 		<div
-			className={`${className ?? ""} flex items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f4f4f2_0%,#ececea_55%,#e2e2de_100%)]`}
+			className={`${className ?? ""} flex items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f6f2e9_0%,#efe9db_55%,#e6ddc9_100%)]`}
 			aria-hidden="true"
 		>
 			<div className="h-14 w-14 animate-pulse rounded-sm bg-museum-stone/70 shadow-sm" />
@@ -137,6 +138,10 @@ export default function DesktopCubeShowcase() {
 					activeId={activeId}
 					progress={progress}
 					litCount={litCount}
+				/>
+				<AssociativeField
+					variant="hero"
+					className="pointer-events-none absolute inset-0 z-0 h-full w-full"
 				/>
 
 				<Suspense

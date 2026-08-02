@@ -46,7 +46,7 @@ export default function Footer() {
             type="button"
             onClick={() => scrollToTop(false)}
             aria-label={t.common.backTop}
-            className="group grid h-11 w-11 place-items-center rounded-none border border-hairline text-ink-3 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-cobalt hover:text-cobalt"
+            className="group grid h-11 w-11 place-items-center rounded-full border border-hairline text-ink-3 transition-all duration-300 ease-zen hover:-translate-y-1 hover:border-cobalt hover:text-cobalt"
           >
             <ArrowUp className="h-4 w-4" />
           </button>

@@ -104,7 +104,7 @@ export default function RouterSimulator() {
         whileInView={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.9, ease: ZEN }}
-        className="mx-auto max-w-demo border border-cobalt/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
+        className="mx-auto max-w-demo rounded-2xl border border-cobalt/25 bg-museum-stone/80 p-[clamp(24px,4vw,56px)]"
       >
         <motion.div
           onViewportEnter={() => {
@@ -205,7 +205,7 @@ export default function RouterSimulator() {
                         ▼
                       </span>
                     </motion.div>
-                    <div className="flex overflow-hidden border border-cobalt/30">
+                    <div className="flex overflow-hidden rounded-lg border border-cobalt/30">
                       {c.levels.map((lv) => {
                         const active = lv === result.level
                         return (
