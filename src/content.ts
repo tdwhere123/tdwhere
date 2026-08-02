@@ -24,18 +24,15 @@ const zh = {
     openMenu: '打开菜单',
     closeMenu: '关闭菜单',
   },
-  hero: {
-    kicker: '一座 side project 的院子',
-    nameA: '阿',
-    nameB: '黄',
-    handle: 'tdwhere',
-    signature: '做让 Agent 靠谱干活的工具。',
-    ctaWorks: '看作品',
-    ctaAbout: '关于我',
-  },
   works: {
     label: '作品 · SELECTED WORKS',
     heading: '业余时间，认真做完。',
+    formula: {
+      title: '记忆的数学骨架 · THE MATHEMATICS OF MEMORY',
+      write: '写入即生长',
+      propagate: '传播必有界',
+      select: '选择受治理',
+    },
   },
   aboutTeaser: {
     lineA: '一个人，在业余时间认真做东西。',
@@ -81,18 +78,15 @@ const en: Content = {
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
   },
-  hero: {
-    kicker: 'A QUIET GARDEN OF SIDE PROJECTS',
-    nameA: '阿',
-    nameB: '黄',
-    handle: 'tdwhere',
-    signature: 'I build tools that make agents pull their weight.',
-    ctaWorks: 'SEE THE WORKS',
-    ctaAbout: 'ABOUT ME',
-  },
   works: {
     label: 'SELECTED WORKS · 作品',
     heading: 'Built after hours, finished properly.',
+    formula: {
+      title: 'THE MATHEMATICS OF MEMORY · 记忆的数学骨架',
+      write: 'WRITE IS GROWTH',
+      propagate: 'PROPAGATION IS BOUNDED',
+      select: 'SELECTION IS GOVERNED',
+    },
   },
   aboutTeaser: {
     lineA: 'One person, off-hours, taken seriously.',

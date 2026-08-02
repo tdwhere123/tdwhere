@@ -98,7 +98,7 @@ export default function DoItHero() {
               {c.hosts.map((host, i) => (
                 <motion.span
                   key={host}
-                  className="inline-flex items-center rounded-[4px] border border-cobalt/35 bg-museum-stone px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-2"
+                  className="inline-flex items-center rounded-full border border-cobalt/35 bg-museum-stone px-2.5 py-1 font-mono text-[11px] tracking-wide text-ink-2"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.45, ease: BACK, delay: 1.15 + i * 0.06 }}
@@ -119,7 +119,7 @@ export default function DoItHero() {
                 target="_blank"
                 rel="noreferrer"
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center rounded-md border border-museum-ink px-5 py-2.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-clay hover:text-clay"
+                className="inline-flex items-center rounded-full border border-museum-ink px-5 py-2.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-clay hover:text-clay"
               >
                 {c.ctaRepo}
               </motion.a>

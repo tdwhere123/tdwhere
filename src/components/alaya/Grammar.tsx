@@ -131,7 +131,7 @@ export default function Grammar() {
 
       {/* invariant strip — ink reveal + 4px moss edge growing */}
       <InkReveal amount={0.5} className="mt-8">
-        <div className="relative overflow-hidden rounded-[6px] border border-hairline bg-museum-bg-deep/60 px-5 py-4">
+        <div className="relative overflow-hidden rounded-xl border border-hairline bg-museum-bg-deep/60 px-5 py-4">
           <motion.span
             aria-hidden="true"
             initial={{ scaleY: 0 }}

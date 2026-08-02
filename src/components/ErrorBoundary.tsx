@@ -27,7 +27,7 @@ function ErrorFallback() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="mt-10 rounded-none border border-ink/25 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-cobalt hover:text-cobalt"
+        className="mt-10 rounded-full border border-ink/25 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-cobalt hover:text-cobalt"
       >
         {reload}
       </button>

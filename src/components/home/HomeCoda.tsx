@@ -48,7 +48,7 @@ export default function HomeCoda() {
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.25, ease: ZEN }}
             aria-label={`${t.common.copy}: ${t.meta.email}`}
-            className="rounded-none border border-ink/25 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-cobalt hover:text-cobalt"
+            className="rounded-full border border-ink/25 px-7 py-3.5 font-mono text-sm text-museum-ink transition-colors duration-300 hover:border-cobalt hover:text-cobalt"
           >
             {t.meta.email}
           </motion.button>

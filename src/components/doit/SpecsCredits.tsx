@@ -28,7 +28,7 @@ export default function SpecsCredits() {
             {c.buckets.map((b, i) => (
               <motion.span
                 key={b}
-                className="rounded-[4px] border border-cobalt/35 bg-museum-stone/70 px-3 py-1 font-mono text-xs text-ink-2"
+                className="rounded-full border border-cobalt/35 bg-museum-stone/70 px-3 py-1 font-mono text-xs text-ink-2"
                 initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
@@ -38,7 +38,7 @@ export default function SpecsCredits() {
               </motion.span>
             ))}
             <motion.span
-              className="rounded-[4px] border border-dashed border-cobalt/30 px-3 py-1 font-mono text-xs text-ink-3"
+              className="rounded-full border border-dashed border-cobalt/30 px-3 py-1 font-mono text-xs text-ink-3"
               initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}

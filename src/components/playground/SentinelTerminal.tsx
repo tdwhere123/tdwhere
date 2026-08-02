@@ -509,8 +509,10 @@ export default function SentinelTerminal() {
     >
       <style>{`
         .pg-sentinel {
-          --pg-chassis-hi: color-mix(in srgb, var(--museum-stone) 58%, var(--cobalt));
-          --pg-chassis-lo: color-mix(in srgb, var(--cobalt) 62%, var(--museum-dark));
+          --pg-chassis-hi: #eae1ce;
+          --pg-chassis-lo: #c9bb9e;
+          --pg-bezel-hi: #b3a689;
+          --pg-bezel-lo: #9c8f72;
           --pg-crt: color-mix(in srgb, var(--night-2) 72%, var(--museum-dark));
           --pg-phosphor: color-mix(in srgb, var(--amber) 70%, var(--museum-stone) 30%);
           --pg-phosphor-hi: color-mix(in srgb, var(--amber) 45%, var(--museum-stone));
@@ -518,7 +520,7 @@ export default function SentinelTerminal() {
           --pg-glow-soft: color-mix(in srgb, var(--amber) 14%, transparent);
           --pg-seal-muted: color-mix(in srgb, var(--seal) 48%, var(--museum-dark));
           --pg-metal-ink: color-mix(in srgb, var(--museum-ink) 70%, var(--cobalt));
-          --pg-case-edge: color-mix(in srgb, var(--cobalt) 55%, transparent);
+          --pg-case-edge: rgba(23, 24, 28, 0.18);
           --pg-blurb: var(--museum-muted);
         }
         @keyframes pg-led-breath { 0%,100% { opacity:.3 } 50% { opacity:1 } }
@@ -551,9 +553,9 @@ export default function SentinelTerminal() {
             className="pg-machine relative mx-auto w-[min(760px,100%)] rounded-[18px] border p-4 md:p-6"
             style={{
               borderColor: 'var(--pg-case-edge)',
-              background: 'linear-gradient(160deg, var(--pg-chassis-hi) 0%, var(--pg-chassis-lo) 100%)',
+              background: 'linear-gradient(165deg, var(--pg-chassis-hi) 0%, var(--pg-chassis-lo) 100%)',
               boxShadow:
-                '0 0 56px color-mix(in srgb, var(--cobalt) 16%, transparent), inset 0 1px 0 color-mix(in srgb, var(--museum-stone) 35%, transparent)',
+                '0 28px 56px -18px rgba(23, 24, 28, 0.35), 0 0 56px color-mix(in srgb, var(--cobalt) 10%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 6px rgba(23, 24, 28, 0.12)',
             }}
           >
             {/* case glow — rises once when the machine wakes into view */}
@@ -572,9 +574,17 @@ export default function SentinelTerminal() {
               style={{ backgroundImage: `url("${GRAIN}")` }}
             />
 
-            {/* CRT bezel */}
+            {/* CRT bezel — a recessed plastic band holding the curved glass */}
             <div
-              className="pg-crt-bezel relative aspect-[4/3] cursor-text overflow-hidden rounded-[28px]"
+              className="rounded-[26px] p-2.5 md:p-3.5"
+              style={{
+                background: 'linear-gradient(180deg, var(--pg-bezel-hi) 0%, var(--pg-bezel-lo) 100%)',
+                boxShadow:
+                  'inset 0 2px 10px rgba(23, 24, 28, 0.38), inset 0 -1px 0 rgba(255, 255, 255, 0.3), 0 1px 0 rgba(255, 255, 255, 0.35)',
+              }}
+            >
+            <div
+              className="pg-crt-bezel relative aspect-[4/3] cursor-text overflow-hidden rounded-[18px]"
               style={{
                 background: 'var(--pg-crt)',
                 boxShadow:
@@ -742,6 +752,15 @@ export default function SentinelTerminal() {
 
               {/* scanlines */}
               <div aria-hidden="true" className="crt-scanlines pointer-events-none absolute inset-0 z-30 opacity-80" />
+              {/* curved-glass sheen */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-30"
+                style={{
+                  background:
+                    'linear-gradient(115deg, rgba(255, 255, 255, 0.09) 0%, transparent 26%, transparent 72%, rgba(255, 255, 255, 0.04) 100%), radial-gradient(ellipse 52% 34% at 28% 0%, rgba(255, 255, 255, 0.07), transparent 70%)',
+                }}
+              />
               {/* slow bright band */}
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-30 overflow-hidden mix-blend-overlay">
                 <div
@@ -763,6 +782,7 @@ export default function SentinelTerminal() {
                   transition: 'opacity 2000ms ease',
                 }}
               />
+            </div>
             </div>
 
             {/* bottom panel: power, LED, floppy slot, vents, and silk */}

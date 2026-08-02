@@ -4,33 +4,60 @@
 
 @layer base {
   :root {
-    /* —— Bright gallery wall (off-white, off-black ink, cobalt accent) —— */
-    --museum-bg: #f4f4f2;
-    --museum-bg-deep: #e9e9e6;
+    /* —— Warm gallery wall (gilded marble cream, off-black ink, clay accent) —— */
+    --museum-bg: #f6f2e9;
+    --museum-bg-deep: #ece5d5;
     --museum-ink: #17181c;
     --museum-muted: #5b5e66;
     --museum-line: rgba(23, 24, 28, 0.14);
-    --museum-stone: #e9e9e6;
-    --cobalt: #1f3cf0;
-    --museum-dark: #1a1b1f;
+    --museum-stone: #ece5d5;
+    /* accent: warm clay/ochre, tuned to sit with the marble wall (legacy name: cobalt) */
+    --cobalt: #96684a;
+    --museum-dark: #1d1913;
 
-    --paper: #f4f4f2;
-    --paper-warm: #fafaf8;
-    --paper-deep: #e9e9e6;
+    --paper: #f6f2e9;
+    --paper-warm: #faf6ec;
+    --paper-deep: #ece5d5;
     --ink: #17181c;
     --ink-2: #2a2c33;
     --ink-3: #454854;
     --faint: #5b5e66;
-    --cobalt-deep: #1630c4;
+    --cobalt-deep: #7a5138;
     --clay: #9a7348;
     --moss: #6a7a68;
     --dai: #5a6864;
     --seal: #8f4a32;
     --hairline: rgba(23, 24, 28, 0.14);
-    --night: #1a1b1f;
-    --night-2: #121317;
-    --amber: #4f68f5;
-    --amber-dim: #3d51ce;
+    --night: #1d1913;
+    --night-2: #14100c;
+    --amber: #c09a68;
+    --amber-dim: #9c7c50;
+
+    /* RGB channels — Tailwind maps colors through these so /opacity
+       modifiers actually compose (plain var() colors silently dropped them) */
+    --museum-bg-rgb: 246 242 233;
+    --museum-bg-deep-rgb: 236 229 213;
+    --museum-ink-rgb: 23 24 28;
+    --museum-muted-rgb: 91 94 102;
+    --museum-stone-rgb: 236 229 213;
+    --museum-dark-rgb: 29 25 19;
+    --paper-rgb: 246 242 233;
+    --paper-warm-rgb: 250 246 236;
+    --paper-deep-rgb: 236 229 213;
+    --ink-rgb: 23 24 28;
+    --ink-2-rgb: 42 44 51;
+    --ink-3-rgb: 69 72 84;
+    --faint-rgb: 91 94 102;
+    --cobalt-rgb: 150 104 74;
+    --cobalt-deep-rgb: 122 81 56;
+    --clay-rgb: 154 115 72;
+    --moss-rgb: 106 122 104;
+    --dai-rgb: 90 104 100;
+    --seal-rgb: 143 74 50;
+    --night-rgb: 29 25 19;
+    --night-2-rgb: 20 16 12;
+    --amber-rgb: 192 154 104;
+    --amber-dim-rgb: 156 124 80;
 
     /* motion */
     --ease-zen: cubic-bezier(0.22, 1, 0.36, 1);
@@ -40,65 +67,65 @@
     --cube-size: clamp(200px, 26vw, 380px);
     --cube-content-inset: 9%;
 
-    /* shadcn tokens remapped to bright-gallery palette (HSL triplets) */
-    --background: 60 8% 95%;
+    /* shadcn tokens remapped to warm-gallery palette (HSL triplets) */
+    --background: 42 40% 94%;
     --foreground: 228 10% 10%;
-    --card: 60 8% 95%;
+    --card: 42 40% 94%;
     --card-foreground: 228 10% 10%;
-    --popover: 60 8% 97%;
+    --popover: 42 46% 96%;
     --popover-foreground: 228 10% 10%;
-    --primary: 232 88% 53%;
-    --primary-foreground: 60 8% 95%;
-    --secondary: 60 6% 91%;
+    --primary: 24 34% 44%;
+    --primary-foreground: 42 40% 94%;
+    --secondary: 40 32% 88%;
     --secondary-foreground: 228 10% 10%;
-    --muted: 60 6% 91%;
+    --muted: 40 32% 88%;
     --muted-foreground: 224 6% 38%;
-    --accent: 60 6% 91%;
+    --accent: 40 32% 88%;
     --accent-foreground: 228 10% 10%;
     --destructive: 15 48% 38%;
-    --destructive-foreground: 60 8% 95%;
+    --destructive-foreground: 42 40% 94%;
     --border: 228 10% 10% / 0.14;
     --input: 228 10% 10% / 0.14;
-    --ring: 232 88% 53%;
-    --radius: 0rem;
-    --sidebar-background: 60 8% 97%;
+    --ring: 24 34% 44%;
+    --radius: 0.75rem;
+    --sidebar-background: 42 44% 96%;
     --sidebar-foreground: 228 10% 10%;
-    --sidebar-primary: 232 88% 53%;
-    --sidebar-primary-foreground: 60 8% 95%;
-    --sidebar-accent: 60 6% 91%;
+    --sidebar-primary: 24 34% 44%;
+    --sidebar-primary-foreground: 42 40% 94%;
+    --sidebar-accent: 40 32% 88%;
     --sidebar-accent-foreground: 228 10% 10%;
     --sidebar-border: 228 10% 10% / 0.14;
-    --sidebar-ring: 232 88% 53%;
+    --sidebar-ring: 24 34% 44%;
   }
 
   .dark {
-    --background: 228 9% 11%;
-    --foreground: 60 8% 95%;
-    --card: 228 9% 11%;
-    --card-foreground: 60 8% 95%;
-    --popover: 228 9% 9%;
-    --popover-foreground: 60 8% 95%;
-    --primary: 231 89% 64%;
-    --primary-foreground: 228 9% 11%;
-    --secondary: 228 9% 16%;
-    --secondary-foreground: 60 8% 95%;
-    --muted: 228 9% 16%;
-    --muted-foreground: 224 6% 62%;
-    --accent: 228 9% 16%;
-    --accent-foreground: 60 8% 95%;
+    --background: 30 14% 9%;
+    --foreground: 42 24% 92%;
+    --card: 30 14% 9%;
+    --card-foreground: 42 24% 92%;
+    --popover: 30 16% 7%;
+    --popover-foreground: 42 24% 92%;
+    --primary: 29 38% 60%;
+    --primary-foreground: 30 14% 9%;
+    --secondary: 32 10% 15%;
+    --secondary-foreground: 42 24% 92%;
+    --muted: 32 10% 15%;
+    --muted-foreground: 36 8% 60%;
+    --accent: 32 10% 15%;
+    --accent-foreground: 42 24% 92%;
     --destructive: 15 48% 38%;
-    --destructive-foreground: 60 8% 95%;
-    --border: 228 8% 26%;
-    --input: 228 8% 26%;
-    --ring: 231 89% 64%;
-    --sidebar-background: 228 9% 9%;
-    --sidebar-foreground: 60 8% 95%;
-    --sidebar-primary: 231 89% 64%;
-    --sidebar-primary-foreground: 228 9% 11%;
-    --sidebar-accent: 228 9% 16%;
-    --sidebar-accent-foreground: 60 8% 95%;
-    --sidebar-border: 228 8% 26%;
-    --sidebar-ring: 231 89% 64%;
+    --destructive-foreground: 42 24% 92%;
+    --border: 30 8% 25%;
+    --input: 30 8% 25%;
+    --ring: 29 38% 60%;
+    --sidebar-background: 30 16% 7%;
+    --sidebar-foreground: 42 24% 92%;
+    --sidebar-primary: 29 38% 60%;
+    --sidebar-primary-foreground: 30 14% 9%;
+    --sidebar-accent: 32 10% 15%;
+    --sidebar-accent-foreground: 42 24% 92%;
+    --sidebar-border: 30 8% 25%;
+    --sidebar-ring: 29 38% 60%;
   }
 }
 
@@ -317,7 +344,7 @@
 }
 
 /* ———————— 展厅 Hall ambience (home exploration) ————————
-   A bright gallery: cool neutral light, subtle cobalt. Each explored face
+   A bright gallery: cool neutral light, subtle clay. Each explored face
    brings up its own glow. Purely environmental — no counters, no chrome. */
 
 .hall {
@@ -339,19 +366,19 @@
   background: radial-gradient(ellipse 62% 46% at 50% 64%, rgba(23, 24, 28, 0.07), transparent 70%);
 }
 .hall[data-active='alaya'] .hall__wash {
-  background: radial-gradient(ellipse 62% 46% at 42% 60%, rgba(31, 60, 240, 0.09), transparent 70%);
+  background: radial-gradient(ellipse 62% 46% at 42% 60%, rgba(150, 104, 74, 0.09), transparent 70%);
 }
 .hall[data-active='do-it'] .hall__wash {
-  background: radial-gradient(ellipse 62% 46% at 58% 60%, rgba(31, 60, 240, 0.14), transparent 70%);
+  background: radial-gradient(ellipse 62% 46% at 58% 60%, rgba(150, 104, 74, 0.14), transparent 70%);
 }
 .hall[data-active='write-right'] .hall__wash {
   background: radial-gradient(ellipse 62% 46% at 50% 62%, rgba(23, 24, 28, 0.09), transparent 70%);
 }
 .hall[data-active='sentinel'] .hall__wash {
-  background: radial-gradient(ellipse 62% 46% at 50% 60%, rgba(31, 60, 240, 0.12), transparent 70%);
+  background: radial-gradient(ellipse 62% 46% at 50% 60%, rgba(150, 104, 74, 0.12), transparent 70%);
 }
 .hall[data-active='vegetarian'] .hall__wash {
-  background: radial-gradient(ellipse 62% 46% at 50% 62%, rgba(31, 60, 240, 0.08), transparent 70%);
+  background: radial-gradient(ellipse 62% 46% at 50% 62%, rgba(150, 104, 74, 0.08), transparent 70%);
 }
 
 /* One glow per face, parked at the hall's edge. Off until explored. */
@@ -376,12 +403,12 @@
 .hall__glow[data-face='alaya'] {
   left: -9%;
   top: 16%;
-  background: radial-gradient(circle, rgba(31, 60, 240, 0.42), transparent 70%);
+  background: radial-gradient(circle, rgba(150, 104, 74, 0.42), transparent 70%);
 }
 .hall__glow[data-face='do-it'] {
   right: -9%;
   top: 16%;
-  background: radial-gradient(circle, rgba(31, 60, 240, 0.5), transparent 70%);
+  background: radial-gradient(circle, rgba(150, 104, 74, 0.5), transparent 70%);
 }
 .hall__glow[data-face='write-right'] {
   left: -7%;
@@ -391,13 +418,13 @@
 .hall__glow[data-face='sentinel'] {
   right: -7%;
   bottom: 6%;
-  background: radial-gradient(circle, rgba(31, 60, 240, 0.46), transparent 70%);
+  background: radial-gradient(circle, rgba(150, 104, 74, 0.46), transparent 70%);
 }
 .hall__glow[data-face='vegetarian'] {
   left: 50%;
   top: -16%;
   translate: -50% 0;
-  background: radial-gradient(circle, rgba(31, 60, 240, 0.4), transparent 70%);
+  background: radial-gradient(circle, rgba(150, 104, 74, 0.4), transparent 70%);
 }
 .hall__glow[data-lit] {
   opacity: 0.34;

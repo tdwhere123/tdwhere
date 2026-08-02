@@ -20,7 +20,7 @@ export default function FourMoves() {
           <InkReveal key={item.en} delay={i * 0.12} className="h-full">
             <div className="group relative h-full border-t border-cobalt/35 pt-6 transition-transform duration-300 ease-zen hover:-translate-y-0.5">
               {i === 3 && (
-                <span className="absolute right-0 top-6 border border-cobalt/40 bg-museum-stone px-2.5 py-0.5 font-mono text-[10px] text-cobalt">
+                <span className="absolute right-0 top-6 rounded-full border border-cobalt/40 bg-museum-stone px-2.5 py-0.5 font-mono text-[10px] text-cobalt">
                   {c.learnBadge}
                 </span>
               )}

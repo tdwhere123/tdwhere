@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useLang } from "@/context/LangContext";
 import { cubeProjects, cubeRotations, type CubeStageId } from "./cube-data";
 import HallAmbience from "./HallAmbience";
+import AssociativeField from "./field/AssociativeField";
 import { useExploration } from "./useExploration";
 import { useHomeCubeMobile } from "./useHomeCubeMobile";
 import { asset } from "@/lib/asset";
@@ -60,7 +61,7 @@ function ProjectExternalLink({
 function DesktopFallback() {
 	return (
 		<div
-			className="relative flex min-h-[100svh] w-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f4f4f2_0%,#ececea_55%,#e2e2de_100%)]"
+			className="relative flex min-h-[100svh] w-full items-center justify-center bg-[radial-gradient(ellipse_at_50%_42%,#f6f2e9_0%,#efe9db_55%,#e6ddc9_100%)]"
 			aria-hidden="true"
 		>
 			<div className="h-14 w-14 animate-pulse rounded-sm bg-museum-stone/70 shadow-sm" />
@@ -136,6 +137,10 @@ function MobileCubeShowcase() {
 				activeId={activeProject.id}
 				progress={progress}
 				litCount={litCount}
+			/>
+			<AssociativeField
+				variant="hero"
+				className="pointer-events-none absolute inset-0 z-0 h-full w-full"
 			/>
 			{/* X-only scroller: keep overflow-y clipped so vertical pans scroll the page to coda. */}
 			<div
