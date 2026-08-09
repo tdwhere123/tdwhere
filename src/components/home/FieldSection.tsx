@@ -124,6 +124,53 @@ export default function FieldSection() {
               </motion.li>
             )
           })}
+
+          {/* 文章 — a reading corner, not a cube exhibit: no field anchor to light. */}
+          <motion.li
+            initial={reduce ? false : { opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.6, ease: ZEN, delay: reduce ? 0 : projects.length * 0.06 }}
+          >
+            <Link to="/blog" className="group block rounded-2xl outline-offset-4">
+              <motion.div
+                whileHover={reduce ? undefined : { x: 10 }}
+                whileFocus={reduce ? undefined : { x: 10 }}
+                transition={LEAN}
+                className="flex items-start gap-5 py-6 md:gap-7"
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-1 shrink-0 font-display text-4xl font-light italic leading-none text-ink/[0.14] transition-colors duration-500 group-hover:text-cobalt/60 md:text-5xl"
+                >
+                  06
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="truncate font-display text-xl font-semibold leading-snug text-museum-ink transition-colors duration-300 group-hover:text-cobalt md:text-2xl">
+                      {t.blogTeaser.title}
+                    </h3>
+                    <span className="flex shrink-0 items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-museum-muted transition-colors duration-300 group-hover:text-cobalt">
+                      {t.blogTeaser.cta}
+                      <ArrowUpRight
+                        className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </div>
+                  <p className="mt-2 max-w-[46ch] text-[14px] leading-relaxed text-museum-muted">
+                    {t.blogTeaser.statement}
+                  </p>
+                  {t.blogTeaser.tags.length > 0 && (
+                    <p className="mt-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-faint">
+                      {t.blogTeaser.tags.join(' · ')}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            </Link>
+          </motion.li>
         </ol>
       </div>
 

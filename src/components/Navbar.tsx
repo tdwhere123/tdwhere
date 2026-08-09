@@ -20,6 +20,7 @@ export default function Navbar() {
 
   const links = [
     { to: '/', label: t.nav.projects, end: true },
+    { to: '/blog', label: t.nav.blog, end: false },
     { to: '/about', label: t.nav.about, end: false },
   ]
 

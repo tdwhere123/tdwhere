@@ -60,6 +60,8 @@ const Alaya = lazyWithRetry(() => import("@/pages/Alaya"));
 const WriteRight = lazyWithRetry(() => import("@/pages/WriteRight"));
 const Playground = lazyWithRetry(() => import("@/pages/Playground"));
 const About = lazyWithRetry(() => import("@/pages/About"));
+const Blog = lazyWithRetry(() => import("@/pages/Blog"));
+const BlogPost = lazyWithRetry(() => import("@/pages/BlogPost"));
 
 function isHomePath(pathname: string) {
 	return pathname === "/" || pathname === "";
@@ -142,6 +144,8 @@ export default function App() {
 								<Route path="alaya" element={<Alaya />} />
 								<Route path="write-right" element={<WriteRight />} />
 								<Route path="playground" element={<Playground />} />
+								<Route path="blog" element={<Blog />} />
+								<Route path="blog/:slug" element={<BlogPost />} />
 								<Route path="about" element={<About />} />
 								<Route path="*" element={<NotFound />} />
 							</Route>

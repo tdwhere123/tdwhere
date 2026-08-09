@@ -78,6 +78,7 @@ module.exports = {
       },
       fontFamily: {
         display: ['"Fraunces"', '"Noto Serif SC"', "serif"],
+        serif: ['"Noto Serif SC"', '"Songti SC"', "STSong", "SimSun", "serif"],
         sans: ['"Noto Sans SC"', "system-ui", "sans-serif"],
         mono: ['"IBM Plex Mono"', "monospace"],
         hand: ['"Ma Shan Zheng"', "cursive"],

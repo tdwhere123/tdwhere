@@ -19,6 +19,7 @@ const zh = {
     writeRight: 'Write-Right',
     corners: '角落',
     about: '关于',
+    blog: '文章',
     github: 'GitHub',
     tagline: '用业余时间，认真做工具。',
     openMenu: '打开菜单',
@@ -38,6 +39,12 @@ const zh = {
     lineA: '一个人，在业余时间认真做东西。',
     lineB: '流程、记忆、写作，三件事，慢慢做。',
     link: '更多关于我',
+  },
+  blogTeaser: {
+    title: '文章',
+    statement: '关于 AI 的学习、记忆与思考。',
+    tags: ['AI', 'MEMORY', 'ESSAYS'],
+    cta: '阅读',
   },
   coda: {
     line: '所有项目都在 GitHub 上，欢迎来逛。',
@@ -73,6 +80,7 @@ const en: Content = {
     writeRight: 'Write-Right',
     corners: 'Corners',
     about: 'About',
+    blog: 'Blog',
     github: 'GitHub',
     tagline: 'Serious tools, built after hours.',
     openMenu: 'Open menu',
@@ -92,6 +100,12 @@ const en: Content = {
     lineA: 'One person, off-hours, taken seriously.',
     lineB: 'Process, memory, and writing, built to last.',
     link: 'MORE ABOUT ME',
+  },
+  blogTeaser: {
+    title: 'Essays',
+    statement: 'Notes on AI, memory, and learning.',
+    tags: ['AI', 'MEMORY', 'ESSAYS'],
+    cta: 'Read',
   },
   coda: {
     line: 'Every project lives on GitHub. Come wander.',
