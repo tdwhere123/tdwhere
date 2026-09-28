@@ -175,8 +175,8 @@
   .a-query {
     grid-column: 1/-1;
   }
-  .a-query select {
-    font-size: 12px;
+  .a-query-current {
+    font-size: 13px;
   }
   .a-budget {
     width: auto;
@@ -477,8 +477,7 @@
     margin: 20px 0;
   }
   .a-task-choices button {
-    font-size: 10px !important;
-    padding: 7px 11px;
+    font-size: 12px !important;
   }
   .a-scaffold {
     height: 290px;

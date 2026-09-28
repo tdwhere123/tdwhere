@@ -1,10 +1,76 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pause, Play, RotateCcw, ArrowRight } from 'lucide-react'
+import { Pause, Play, RotateCcw, ArrowRight, ChevronDown } from 'lucide-react'
 import { evidence, recallFixture, type QueryId } from '../model'
 import { useSequence, useWords } from '../hooks'
 import { Art, Caption, DemoNote } from './Primitives'
 import { paint } from '../paint/bus'
 import { Constellation } from './Constellation'
+
+function QuestionField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: QueryId
+  options: { id: QueryId; label: string }[]
+  onChange: (id: QueryId) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('pointerdown', close)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('pointerdown', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  const current = options.find((option) => option.id === value)
+  return (
+    <div className="a-query" ref={root}>
+      <span>{label}</span>
+      <button
+        type="button"
+        className="a-query-current"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        data-testid="memory-query"
+        onClick={() => setOpen((open) => !open)}
+      >
+        {current?.label}
+        <ChevronDown size={14} aria-hidden="true" />
+      </button>
+      {open && (
+        <ul className="a-query-list" role="listbox" aria-label={label}>
+          {options.map((option) => (
+            <li key={option.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={option.id === value}
+                onClick={() => {
+                  onChange(option.id)
+                  setOpen(false)
+                }}
+              >
+                {option.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 function recallLight(map: HTMLElement | null, x: number, y: number, amount: number, radius: number) {
   if (!map) return
@@ -129,23 +195,18 @@ export default function MemoryScene({
         </aside>
       </div>
       <div className="a-memory-console">
-        <label className="a-query">
-          {w('现在的问题', 'The present question')}
-          <select
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value as QueryId)
-              seq.reset()
-            }}
-            data-testid="memory-query"
-          >
-            {(Object.keys(labels) as QueryId[]).map((id) => (
-              <option key={id} value={id}>
-                {w(...labels[id])}
-              </option>
-            ))}
-          </select>
-        </label>
+        <QuestionField
+          label={w('现在的问题', 'The present question')}
+          value={query}
+          options={(Object.keys(labels) as QueryId[]).map((id) => ({
+            id,
+            label: w(...labels[id]),
+          }))}
+          onChange={(id) => {
+            setQuery(id)
+            seq.reset()
+          }}
+        />
         <label className="a-budget">
           {w('证据预算', 'Evidence budget')} <output>{budget}</output>
           <input

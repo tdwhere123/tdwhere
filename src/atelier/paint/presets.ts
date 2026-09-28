@@ -149,7 +149,7 @@ export function presetFor(
 
 export const studyGlazes: Rgb[] = [
   [0.84, 0.94, 1.12],
-  [0.9, 1.1, 0.86],
+  [0.97, 0.93, 0.9],
   [1.08, 1.01, 0.84],
 ]
 

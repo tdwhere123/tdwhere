@@ -20,10 +20,18 @@
 }
 .a-reading-layout {
   display: grid;
-  grid-template-columns: 205px minmax(0, 740px);
+  grid-template-columns: minmax(0, 740px) 200px;
   justify-content: center;
   gap: 6vw;
   padding: 60px 7% 0;
+}
+.a-reading-layout > .a-prose {
+  grid-column: 1;
+  grid-row: 1;
+}
+.a-reading-layout > .a-toc {
+  grid-column: 2;
+  grid-row: 1;
 }
 .a-toc {
   align-self: start;
@@ -52,6 +60,36 @@
 .a-toc nav > a[data-level='3'] {
   padding-left: 12px;
   font-size: 10px;
+}
+.a-toc nav > a:hover {
+  color: var(--a-pigment);
+}
+.a-essay-turns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+.a-toc nav + .a-essay-turns {
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1px solid var(--a-line);
+}
+.a-essay-turns a {
+  display: block;
+  color: var(--a-ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.a-essay-turns a:hover {
+  color: var(--a-pigment);
+}
+.a-essay-turns small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--a-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
 }
 .a-prose {
   min-width: 0;

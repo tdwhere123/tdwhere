@@ -6,7 +6,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
-import { getPost, getPostBody } from '@/content/posts'
+import { getPost, getPostBody, posts } from '@/content/posts'
 import { resolveContentUrl } from '@/content/resolveContentUrl'
 import { useWords } from '../hooks'
 import { Caption } from '../components/Primitives'
@@ -72,6 +72,9 @@ export default function Article() {
     }
   }, [post])
   if (!post || !body) return <NotFound />
+  const index = posts.findIndex((item) => item.slug === post.slug)
+  const newer = index > 0 ? posts[index - 1] : undefined
+  const older = index >= 0 ? posts[index + 1] : undefined
   return (
     <article className="a-essay">
       <div className="a-reading-progress" ref={progress} aria-hidden="true" />
@@ -97,20 +100,35 @@ export default function Article() {
       </header>
       <div className="a-reading-layout">
         <aside className="a-toc">
-          <Caption>{w('沿着这篇文章', 'IN THIS NOTE')}</Caption>
-          <nav aria-label={w('文章目录', 'Table of contents')}>
-            {toc.map((h) => (
-              <a key={h.id} href={`#${h.id}`} data-level={h.level}>
-                {h.title}
-              </a>
-            ))}
-          </nav>
-          <p>
-            {w(
-              '正文保留原文；这里只改变排印。',
-              'The original text is preserved; only its presentation changes.',
-            )}
-          </p>
+          {toc.length > 0 && (
+            <>
+              <Caption>{w('沿着这篇文章', 'IN THIS NOTE')}</Caption>
+              <nav aria-label={w('文章目录', 'Table of contents')}>
+                {toc.map((h) => (
+                  <a key={h.id} href={`#${h.id}`} data-level={h.level}>
+                    {h.title}
+                  </a>
+                ))}
+              </nav>
+            </>
+          )}
+          {(newer || older) && (
+            <div className="a-essay-turns">
+              <Caption>{w('接着读', 'CONTINUE')}</Caption>
+              {newer && (
+                <Link to={`/blog/${newer.slug}`}>
+                  <small>{w('较新', 'NEWER')}</small>
+                  {newer.title}
+                </Link>
+              )}
+              {older && (
+                <Link to={`/blog/${older.slug}`}>
+                  <small>{w('较早', 'EARLIER')}</small>
+                  {older.title}
+                </Link>
+              )}
+            </div>
+          )}
         </aside>
         <div className="a-prose" lang="zh" ref={article}>
           <ReactMarkdown

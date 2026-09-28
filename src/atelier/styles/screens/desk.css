@@ -24,7 +24,7 @@
     font-size: 9px !important;
   }
   .a-reading-layout {
-    grid-template-columns: 150px minmax(0, 740px);
+    grid-template-columns: minmax(0, 740px) 160px;
     padding-inline: 5%;
     gap: 4vw;
   }

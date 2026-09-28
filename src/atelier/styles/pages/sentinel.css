@@ -182,9 +182,3 @@
 .a-back:hover {
   color: var(--a-pigment);
 }
-.a-toc > p {
-  margin-top: 36px !important;
-  font-size: 11px;
-  line-height: 1.8;
-  color: var(--a-muted);
-}

@@ -58,23 +58,26 @@
 .a-task-choices {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 22px 0;
+  gap: 6px 22px;
+  margin: 18px 0 10px;
 }
 .a-task-choices button {
-  padding: 8px 15px;
+  padding: 2px 0 5px;
   background: none;
-  border: 1px solid var(--a-line);
-  font-size: 11px !important;
-  border-radius: 40px;
-  transition:
-  color 0.2s,
-  background 0.2s;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  font-size: 13px !important;
+  letter-spacing: 0.04em;
+  color: var(--a-muted);
+  transition: color 0.2s, border-color 0.2s;
+}
+.a-task-choices button:hover {
+  color: var(--a-ink);
 }
 .a-task-choices button[aria-pressed='true'] {
-  background: var(--a-ink);
-  border-color: var(--a-ink);
-  color: var(--a-paper-light);
+  color: var(--a-pigment);
+  border-bottom-color: var(--a-pigment);
 }
 .a-scaffold {
   position: relative;

@@ -90,25 +90,22 @@
   gap: 8px;
 }
 .a-archive-tags button {
-  border: 1px solid var(--a-line);
-  background: transparent;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px !important;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  border-radius: 0;
+  padding: 2px 0 4px;
+  font-size: 13px !important;
+  letter-spacing: 0.03em;
   color: var(--a-muted);
-  transition:
-    color 0.3s,
-    background 0.3s,
-    border-color 0.3s;
+  transition: color 0.2s, border-color 0.2s;
 }
 .a-archive-tags button:hover {
   color: var(--a-ink);
-  border-color: #8c704988;
 }
 .a-archive-tags button[aria-pressed='true'] {
-  background: var(--a-ink);
-  border-color: var(--a-ink);
-  color: var(--a-paper-light);
+  color: var(--a-pigment);
+  border-bottom-color: var(--a-pigment);
 }
 .a-archive-count {
   font-size: 11px;

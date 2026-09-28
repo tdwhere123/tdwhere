@@ -125,8 +125,8 @@
     font-size: 10px !important;
     padding: 8px;
   }
-  .a-query select {
-    font-size: 12px;
+  .a-query-current {
+    font-size: 13px;
   }
   .a-stages button {
     font-size: 10px !important;
