@@ -1,0 +1,254 @@
+/* do-it: a drawn construction scaffold is animated by the workflow state. */
+.a-construct-hero {
+  position: relative;
+  min-height: 800px;
+  padding: 75px 8vw 65px;
+  isolation: isolate;
+}
+.a-construct-hero > .a-art {
+  position: absolute;
+  left: 33%;
+  top: 11%;
+  width: 72%;
+  height: 74%;
+  object-fit: cover;
+  opacity: 0.74;
+  mask-image: radial-gradient(ellipse at 58% 50%, #000 22%, transparent 76%);
+  z-index: -1;
+}
+.a-construct-hero h1 {
+  font-size: clamp(120px, 21vw, 300px);
+  font-weight: 500;
+  line-height: 0.95;
+  margin-top: 50px;
+  letter-spacing: -0.07em;
+}
+.a-construct-hero h1 > span {
+  display: block;
+  font: 500 clamp(28px, 4vw, 58px) / 1.4 var(--a-cn);
+  letter-spacing: -0.045em;
+  margin-top: 15px;
+}
+.a-construct-hero h1 em {
+  font-style: normal;
+  color: var(--a-pigment);
+}
+.a-construct-hero > p:not(.a-caption) {
+  max-width: 360px;
+  font-size: 13px;
+  line-height: 2;
+  margin-top: 22px;
+}
+.a-construction-mark {
+  position: absolute;
+  right: 8%;
+  bottom: 11%;
+  font: italic 43px/1 var(--a-serif);
+  color: var(--a-pigment);
+  transform: rotate(-8deg);
+}
+.a-workflow-chapter {
+  padding: 35px 5vw 75px;
+}
+.a-process-scene {
+  border-top: 1px solid var(--a-line);
+  padding: 30px 3vw;
+  background: linear-gradient(140deg, #ebdec250, transparent);
+}
+.a-task-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0;
+}
+.a-task-choices button {
+  padding: 8px 15px;
+  background: none;
+  border: 1px solid var(--a-line);
+  font-size: 11px !important;
+  border-radius: 40px;
+  transition:
+  color 0.2s,
+  background 0.2s;
+}
+.a-task-choices button[aria-pressed='true'] {
+  background: var(--a-ink);
+  border-color: var(--a-ink);
+  color: var(--a-paper-light);
+}
+.a-scaffold {
+  position: relative;
+  height: 370px;
+}
+.a-construction-art {
+  position: absolute;
+  inset: 20% 0 0;
+  width: 100%;
+  height: 80%;
+  object-fit: cover;
+  opacity: 0.66;
+  mask-image: radial-gradient(ellipse, #000 32%, transparent 80%);
+}
+.a-scaffold-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #8c70497a;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.a-scaffold-lines .a-lane {
+  stroke: #8c704955;
+}
+.a-scaffold-lines .a-lane-walked {
+  stroke: var(--a-pigment);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: d 0.8s var(--a-ease);
+}
+.a-gate path {
+  stroke-linecap: round;
+  transition:
+  stroke 0.5s,
+  stroke-width 0.5s,
+  opacity 0.5s;
+}
+.a-gate.is-ahead path {
+  stroke: #8c7049;
+  stroke-dasharray: 3 5;
+  opacity: 0.55;
+}
+.a-gate.is-passed path {
+  stroke: var(--a-ink);
+  stroke-width: 1.4;
+  opacity: 0.8;
+}
+.a-gate.is-current path {
+  stroke: var(--a-pigment);
+  stroke-width: 2.6;
+}
+.a-gate .a-gate-bar {
+  stroke: var(--a-pigment);
+  stroke-width: 3;
+  animation: a-gate-drop 0.45s var(--a-ease) both;
+}
+@keyframes a-gate-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+.a-task-packet {
+  position: absolute;
+  top: 48%;
+  height: 42px;
+  width: 35px;
+  background: #fbf3dc;
+  border: 1px solid #a48659;
+  box-shadow: 4px 6px 0 #a4854f1a;
+  transform: translateX(-50%) rotate(-6deg);
+  display: grid;
+  place-items: center;
+  transition:
+  left 0.8s var(--a-ease),
+  transform 0.4s;
+  z-index: 2;
+}
+.a-task-packet:before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 4px;
+  width: 15px;
+  height: 1px;
+  background: #baa17355;
+}
+.a-task-packet span {
+  font: italic 26px/1 var(--a-serif);
+  color: var(--a-pigment);
+}
+.a-process-scene[data-failed='true'] .a-task-packet {
+  transform: translateX(-50%) rotate(8deg);
+  border-color: var(--a-pigment);
+}
+.a-scaffold-labels > div {
+  position: absolute;
+  top: 17%;
+  width: 120px;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0.55;
+  transition: opacity 0.4s;
+}
+.a-scaffold-labels small {
+  display: block;
+  font: italic 23px/1.3 var(--a-serif);
+}
+.a-scaffold-labels strong {
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.a-scaffold-labels .is-current {
+  opacity: 1;
+  color: var(--a-pigment);
+}
+.a-run-log {
+  border-top: 1px solid var(--a-line);
+  padding: 22px 0;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 25px;
+}
+.a-run-log > .a-micro {
+  color: var(--a-pigment);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+}
+.a-run-log p {
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 620px;
+}
+.a-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.a-run-actions > p {
+  font-size: 10px !important;
+  color: var(--a-muted);
+  max-width: 310px;
+  margin-left: auto !important;
+}
+.a-process-scene .a-demo-note {
+  margin-top: 30px !important;
+}
+.a-making-notes {
+  padding: 70px 10% 90px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12vw;
+}
+.a-large-aside {
+  font: 400 6vw/0.95 var(--a-serif);
+  letter-spacing: -0.05em;
+  transform: rotate(-5deg);
+  color: #8a715b;
+  margin-top: 90px;
+}
+.a-making-notes article + article {
+  margin-top: 65px;
+}
+.a-making-notes h3 {
+  font: 500 25px/1.5 var(--a-cn);
+  margin: 16px 0;
+}
+.a-making-notes article > p:not(.a-caption) {
+  font-size: 13px;
+  line-height: 2;
+  color: var(--a-muted);
+}

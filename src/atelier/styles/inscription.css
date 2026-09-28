@@ -1,0 +1,191 @@
+/* A word inscribed in the painting. Clicking it turns to the next study. */
+.a-hero-inscription {
+  position: absolute;
+  right: 12%;
+  top: 18%;
+  z-index: 4;
+  width: min(300px, 28vw);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: var(--a-pigment);
+  transform: rotate(-1.25deg);
+}
+.a-hero-inscription-word {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+.a-hero-inscription-word small {
+  display: block;
+  font: italic 15px/1 var(--a-serif);
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+  opacity: 0.72;
+}
+.a-hero-inscription-word span {
+  display: block;
+  font-family: var(--a-cn);
+  font-weight: 400;
+  font-size: clamp(64px, 6.4vw, 104px);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  mix-blend-mode: multiply;
+  animation: a-inscribe 0.75s var(--a-ease) both;
+}
+.a-hero-inscription-word[lang='en'] span {
+  font-family: var(--a-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(52px, 5vw, 84px);
+  letter-spacing: -0.03em;
+}
+.a-hero-inscription-word::after {
+  content: '';
+  display: block;
+  width: 36%;
+  height: 1px;
+  margin-top: 12px;
+  background: currentColor;
+  opacity: 0.4;
+  transform-origin: left;
+  transition: width 0.5s var(--a-ease);
+}
+.a-hero-inscription-word:hover::after,
+.a-hero-inscription-word:focus-visible::after {
+  width: 100%;
+}
+.a-shell .a-hero-inscription-word:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--a-pigment) 50%, transparent);
+  outline-offset: 12px;
+}
+.a-hero-inscription > p {
+  margin: 16px 0 12px;
+  max-width: 16em;
+  font: 13px/1.75 var(--a-cn);
+}
+.a-hero-inscription > a {
+  font: italic 22px/1 var(--a-serif);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  padding-bottom: 2px;
+}
+.a-hero-inscription > a:hover {
+  border-bottom-color: currentColor;
+}
+.a-hero-inscription-hint {
+  margin-top: 14px;
+  font: 10px/1.6 var(--a-sans);
+  letter-spacing: 0.14em;
+  opacity: 0.62;
+}
+@keyframes a-inscribe {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 1150px) {
+  .a-hero-inscription {
+    right: 7%;
+    top: 22%;
+    width: min(230px, 30vw);
+  }
+  .a-hero-inscription-word span {
+    font-size: 56px;
+  }
+  .a-hero-inscription-word[lang='en'] span {
+    font-size: 46px;
+  }
+}
+@media (max-width: 850px) {
+  .a-hero-inscription {
+    top: 38%;
+    right: 8%;
+    width: min(240px, 46vw);
+  }
+  .a-hero-inscription-word span {
+    font-size: 52px;
+  }
+  .a-hero-inscription-word[lang='en'] span {
+    font-size: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .a-hero-inscription {
+    top: 34%;
+    right: 7%;
+    width: min(210px, 58vw);
+  }
+  .a-hero-inscription > p {
+    font-size: 12px;
+  }
+  .a-hero-inscription-hint {
+    display: none;
+  }
+}
+
+.a-opening-statement {
+  padding: 130px 9% 120px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  column-gap: 7vw;
+  align-items: end;
+}
+.a-opening-statement > .a-caption {
+  grid-column: 1 / -1;
+  margin-bottom: 46px;
+}
+.a-opening-statement h2 {
+  font-family: var(--a-cn);
+  font-size: clamp(30px, 3.9vw, 58px);
+  line-height: 1.5;
+  font-weight: 500;
+  letter-spacing: -0.06em;
+}
+.a-opening-statement h2 em {
+  font-style: normal;
+  color: var(--a-pigment);
+}
+.a-opening-body > p {
+  font-size: 14.5px;
+  line-height: 2;
+  max-width: 480px;
+  color: #3a4a4f;
+}
+.a-opening-threads {
+  list-style: none;
+  padding: 0;
+  margin: 34px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--a-line);
+}
+.a-opening-threads a {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 14px 4px 0;
+  transition:
+    color 0.3s,
+    transform 0.4s var(--a-ease);
+}
+.a-opening-threads span {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--a-muted);
+}
+.a-opening-threads em {
+  font: italic 24px/1.2 var(--a-serif);
+}
+.a-opening-threads a:hover {
+  color: var(--a-pigment);
+  transform: translateY(-2px);
+}
+

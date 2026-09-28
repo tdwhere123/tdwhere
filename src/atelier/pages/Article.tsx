@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import ReactMarkdown, { defaultUrlTransform } from 'react-markdown'
+import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { getPost, getPostBody } from '@/content/posts'
-import { asset } from '@/lib/asset'
+import { resolveContentUrl } from '@/content/resolveContentUrl'
 import { useWords } from '../hooks'
 import { Caption } from '../components/Primitives'
 import NotFound from './NotFound'
@@ -116,12 +116,7 @@ export default function Article() {
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}
-            urlTransform={(url) => {
-              const safe = defaultUrlTransform(url)
-              return safe.startsWith('/') && !safe.startsWith('//')
-                ? asset(safe.slice(1))
-                : safe
-            }}
+            urlTransform={(url) => resolveContentUrl(url)}
             components={{
               h2: ({ node, children, ...props }) => (
                 <h2

@@ -1,8 +1,9 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowRight, RotateCcw, Check } from 'lucide-react'
 import { writingNotes, writingOrders, type WritingGoal } from '../model'
 import { useWords } from '../hooks'
 import { Art, Caption, DemoNote } from './Primitives'
+import { centerOf, paint } from '../paint/bus'
 const goals: Record<WritingGoal, [string, string]> = {
   report: ['汇报进展', 'Report progress'],
   request: ['申请支持', 'Request support'],
@@ -34,6 +35,21 @@ export default function WritingScene() {
     [arranged, setArranged] = useState(false),
     [reviewed, setReviewed] = useState(false)
   const order = writingOrders[goal]
+  const table = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const slips = [...(table.current?.querySelectorAll('.a-paper-slip') ?? [])]
+    const ordered = arranged
+      ? writingOrders[goal].map((i) => slips[i])
+      : slips
+    const timers = ordered.map((slip, i) =>
+      setTimeout(() => {
+        const at = centerOf(slip, arranged ? 0.1 : 0.5, 0.5)
+        if (at)
+          paint('writing', { type: 'pulse', ...at, radius: arranged ? 0.05 : 0.03, amount: arranged ? 1 : 0.4 })
+      }, 450 + i * 220),
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [arranged, goal])
   return (
     <div
       className="a-writing-scene"
@@ -65,8 +81,8 @@ export default function WritingScene() {
           </button>
         ))}
       </div>
-      <div className="a-paper-table">
-        <Art name="manuscript" className="a-manuscript-art" />
+      <div className="a-paper-table" ref={table}>
+        <Art name="manuscript" channel="writing" className="a-manuscript-art" />
         <span className="a-table-script" aria-hidden="true">
           from fragments
           <br />

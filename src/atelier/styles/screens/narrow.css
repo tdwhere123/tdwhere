@@ -1,0 +1,33 @@
+@media (max-width: 360px) {
+  .a-nav-note {
+    max-width: 110px;
+    font-size: 7px;
+  }
+  .a-hero-copy h1 {
+    font-size: 10.3vw;
+  }
+  .a-memory-map .a-star-label {
+    font-size: 7px !important;
+    max-width: 76px;
+  }
+  .a-memory-inspector {
+    left: 1%;
+    right: 1%;
+    grid-template-columns: 1fr 1.25fr;
+  }
+  .a-stages button {
+    font-size: 9px !important;
+  }
+  .a-stages button > span {
+    margin-right: 4px;
+  }
+  .a-paper-slip p {
+    font-size: 13px;
+  }
+  .a-writing-hero {
+    min-height: 820px;
+  }
+  .a-prose {
+    font-size: 15px;
+  }
+}

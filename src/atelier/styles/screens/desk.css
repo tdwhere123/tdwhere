@@ -1,0 +1,31 @@
+@media (max-width: 1150px) {
+  .a-nav-note {
+    display: none;
+  }
+  .a-nav nav {
+    gap: 18px;
+  }
+  .a-hero-copy {
+    width: 53%;
+  }
+  .a-hero-copy h1 {
+    font-size: 6vw;
+  }
+  .a-hero-signature {
+    font-size: 14.1vw;
+  }
+  .a-memory-inspector {
+    width: 180px;
+  }
+  .a-memory-inspector p {
+    font-size: 10px;
+  }
+  .a-star-label {
+    font-size: 9px !important;
+  }
+  .a-reading-layout {
+    grid-template-columns: 150px minmax(0, 740px);
+    padding-inline: 5%;
+    gap: 4vw;
+  }
+}

@@ -42,6 +42,5 @@ jobs:
           test -f dist/index.html
           test -d dist/assets
 
-      # E2E (scripts/e2e-smoke.mjs) stays manual: needs Chrome + WebGL-tolerant
-      # headless environment and a preview server with /tdwhere/ base.
+      # E2E stays manual: needs Chrome and a preview server with /tdwhere/ base.
       # Run locally: npm run build && npm run preview & node scripts/e2e-smoke.mjs http://localhost:4173/tdwhere/

@@ -1,28 +1,111 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEventHandler,
+  type ReactNode,
+} from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
-import { asset } from '@/lib/asset'
-import { useWords } from '../hooks'
+import { useNarrow, useQuiet, useWords } from '../hooks'
+import {
+  presetFor,
+  type ArtName,
+  type PaintIntensity,
+} from '../paint/presets'
 
+function whenIdle(fn: () => void, soon: boolean) {
+  if ('requestIdleCallback' in window) {
+    const id = requestIdleCallback(fn, { timeout: soon ? 150 : 900 })
+    return () => cancelIdleCallback(id)
+  }
+  const id = setTimeout(fn, 120)
+  return () => clearTimeout(id)
+}
+
+/**
+ * A procedurally painted brushstroke field. With WebGL2 and motion allowed it
+ * is rendered live (impasto light, pointer response); otherwise the same
+ * painting is shown as a still image. Both carry the same classes.
+ */
 export function Art({
   name = 'landscape',
   className = '',
   eager = false,
+  channel,
+  intensity = 'full',
 }: {
-  name?: string
+  name?: ArtName
   className?: string
   eager?: boolean
+  /** Paint bus channel that scenes signal into. */
+  channel?: string
+  intensity?: PaintIntensity
 }) {
+  const portrait = useNarrow(),
+    quiet = useQuiet()
+  const canvas = useRef<HTMLCanvasElement>(null)
+  const [mode, setMode] = useState<'pending' | 'live' | 'still'>('pending')
+  const [still, setStill] = useState<string | null>(null)
+  const key = `${name}:${portrait}:${quiet}`
+  useEffect(() => {
+    let handle: { destroy(): void } | undefined,
+      cancelled = false
+    const surface = canvas.current?.parentElement
+    const fallBack = (paintedStill: (n: ArtName, p: boolean) => Promise<string>) =>
+      paintedStill(name, portrait).then((url) => {
+        if (cancelled) return
+        setStill(url)
+        setMode('still')
+      })
+    const cancelIdle = whenIdle(async () => {
+      const painter = await import('../paint/painter')
+      if (cancelled) return
+      if (quiet || !canvas.current || !surface) return fallBack(painter.paintedStill)
+      try {
+        const { mountPaint } = await import('../paint/engine')
+        if (cancelled || !canvas.current) return
+        handle = mountPaint({
+          canvas: canvas.current,
+          source: painter.paintedSource(name, portrait),
+          preset: presetFor(name, intensity),
+          surface,
+          channel,
+          onLost: () => void fallBack(painter.paintedStill),
+        })
+        setMode('live')
+      } catch {
+        await fallBack(painter.paintedStill)
+      }
+    }, eager)
+    return () => {
+      cancelled = true
+      cancelIdle()
+      handle?.destroy()
+      setMode('pending')
+    }
+  }, [key, name, portrait, quiet, intensity, channel, eager])
   return (
-    <img
-      className={`a-art ${className}`}
-      src={asset(`atelier/${name}.webp`)}
-      alt=""
-      aria-hidden="true"
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-      draggable={false}
-    />
+    <>
+      {mode !== 'still' && (
+        <canvas
+          key={key}
+          ref={canvas}
+          className={`a-art a-paint ${className}`}
+          data-stage={mode}
+          aria-hidden="true"
+        />
+      )}
+      {mode === 'still' && still && (
+        <img
+          className={`a-art a-still ${className}`}
+          src={still}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
+      )}
+    </>
   )
 }
 export function LinkLine({
@@ -67,9 +150,11 @@ export function Caption({
 export function Reveal({
   children,
   className = '',
+  onPointerEnter,
 }: {
   children: ReactNode
   className?: string
+  onPointerEnter?: PointerEventHandler<HTMLDivElement>
 }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -97,7 +182,11 @@ export function Reveal({
     }
   }, [])
   return (
-    <div ref={ref} className={`a-reveal ${className}`}>
+    <div
+      ref={ref}
+      className={`a-reveal ${className}`}
+      onPointerEnter={onPointerEnter}
+    >
       {children}
     </div>
   )

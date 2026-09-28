@@ -19,7 +19,7 @@ export default function Blog() {
   return (
     <div className="a-blog">
       <header className="a-notes-hero">
-        <Art name="manuscript" eager />
+        <Art name="manuscript" eager intensity="quiet" />
         <Caption>ESSAYS / OBSERVATIONS / UNFINISHED QUESTIONS</Caption>
         <h1>
           Field
