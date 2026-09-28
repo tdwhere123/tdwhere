@@ -1,46 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowDown, ArrowUpRight } from 'lucide-react'
 import { useWords } from '../hooks'
+import { HeroInscription } from '../components/HeroInscription'
 import { Art, Caption, LinkLine, Reveal } from '../components/Primitives'
 import MemoryScene from '../components/MemoryScene'
+import { centerOf, paint, sweep } from '../paint/bus'
+import { studyGlazes } from '../paint/presets'
 
 export default function Home() {
   const w = useWords(),
     [study, setStudy] = useState(0)
-  const studies = [
-    {
-      name: w('记忆', 'Memory'),
-      to: '/alaya',
-      project: 'Alaya',
-      note: w(
-        '让分散的过去，在此刻重新发生联系。',
-        'Scattered pieces of the past find a relation in the present.',
-      ),
-    },
-    {
-      name: w('行动', 'Action'),
-      to: '/do-it',
-      project: 'do-it',
-      note: w(
-        '让意图穿过执行、审查与验证，成为结果。',
-        'Carry an intention through implementation, review and verification.',
-      ),
-    },
-    {
-      name: w('表达', 'Expression'),
-      to: '/write-right',
-      project: 'Write-Right',
-      note: w(
-        '让材料因目的而重组，而不是先生成一段话。',
-        'Arrange material around a purpose, before composing the words.',
-      ),
-    },
-  ]
+  useEffect(() => {
+    paint('home', { type: 'glaze', color: studyGlazes[study] })
+  }, [study])
   return (
     <div className="a-home">
       <section className="a-home-hero" data-study={study}>
-        <Art eager className="a-hero-landscape" />
+        <Art eager channel="home" className="a-hero-landscape" />
         <div className="a-hero-orbits" aria-hidden="true">
           <i />
           <i />
@@ -79,25 +56,14 @@ export default function Home() {
             +
           </span>
         </div>
-        <div className="a-hero-study">
-          <div role="group" aria-label={w('选择研究切面', 'Choose a study')}>
-            {studies.map((s, i) => (
-              <button
-                key={s.project}
-                onClick={() => setStudy(i)}
-                aria-pressed={study === i}
-              >
-                <small>0{i + 1}</small>
-                {s.name}
-              </button>
-            ))}
-          </div>
-          <p aria-live="polite">{studies[study].note}</p>
-          <Link to={studies[study].to}>
-            {studies[study].project}
-            <ArrowUpRight size={16} />
-          </Link>
-        </div>
+        <HeroInscription
+          index={study}
+          onAdvance={(from) => {
+            setStudy((study + 1) % studyGlazes.length)
+            const at = centerOf(from)
+            if (at) paint('home', { type: 'pulse', ...at, radius: 0.11, amount: 0.85 })
+          }}
+        />
         <div className="a-hero-signature" aria-hidden="true">
           a longer <em>tomorrow.</em>
         </div>
@@ -107,25 +73,42 @@ export default function Home() {
         </a>
       </section>
       <section id="work" className="a-opening-statement">
-        <Caption number="00">
-          {w(
-            '一次回答之后，工作还在继续。',
-            'After an answer, the work continues.',
-          )}
-        </Caption>
+        <Caption number="00">{w('一个共同的问题', 'One shared question')}</Caption>
         <Reveal>
           <h2>
-            {w('不是更响亮的答案。', 'Not a louder answer.')}
+            {w('一次回答很容易。', 'An answer is easy.')}
             <br />
-            <em>{w('是更长久的能力。', 'A more lasting capability.')}</em>
+            <em>{w('把事情做完，很难。', 'Finishing the work is not.')}</em>
           </h2>
         </Reveal>
-        <p>
-          {w(
-            '什么值得留下？什么时候该被找回？一个任务怎样才算真正完成？这些项目从不同方向，走向同一个问题。',
-            'What should remain? When should it return? What makes a task truly complete? These projects approach the same question from different directions.',
-          )}
-        </p>
+        <div className="a-opening-body">
+          <p>
+            {w(
+              '把一件事做完，需要记得之前发生过什么，按可靠的步骤推进，最后交出一个经得起检查的结果。我的项目分别从这三处入手。',
+              'Finishing takes remembering what came before, moving through dependable steps, and handing over a result that holds up to checking. Each project starts from one of these.',
+            )}
+          </p>
+          <ul className="a-opening-threads">
+            <li>
+              <Link to="/alaya">
+                <span>{w('记得', 'Remember')}</span>
+                <em>Alaya</em>
+              </Link>
+            </li>
+            <li>
+              <Link to="/do-it">
+                <span>{w('做完', 'Carry through')}</span>
+                <em>do-it</em>
+              </Link>
+            </li>
+            <li>
+              <Link to="/write-right">
+                <span>{w('说清', 'Say it clearly')}</span>
+                <em>Write-Right</em>
+              </Link>
+            </li>
+          </ul>
+        </div>
       </section>
       <section className="a-home-memory">
         <div className="a-project-intro">
@@ -147,8 +130,15 @@ export default function Home() {
         <MemoryScene compact />
       </section>
       <section className="a-home-making">
-        <Reveal className="a-work-construction">
-          <Art name="construction" />
+        <Reveal
+          className="a-work-construction"
+          onPointerEnter={(e) => {
+            const art = e.currentTarget.querySelector('.a-art')
+            sweep('home-doit', art, 0.62)
+            sweep('home-doit', art, 0.78, 0.15, 0.85)
+          }}
+        >
+          <Art name="construction" channel="home-doit" />
           <Caption number="02">AGENT WORKFLOW</Caption>
           <h2>
             <Link to="/do-it">
@@ -167,8 +157,19 @@ export default function Home() {
             {w('看一次任务如何完成', 'Follow a task')}
           </LinkLine>
         </Reveal>
-        <Reveal className="a-work-writing">
-          <Art name="manuscript" />
+        <Reveal
+          className="a-work-writing"
+          onPointerEnter={(e) => {
+            const art = e.currentTarget.querySelector('.a-art')
+            ;[0.3, 0.5, 0.7].forEach((fy, i) =>
+              setTimeout(() => {
+                const at = centerOf(art, 0.55 + i * 0.1, fy)
+                if (at) paint('home-writing', { type: 'pulse', ...at, radius: 0.05, amount: 0.9 })
+              }, i * 180),
+            )
+          }}
+        >
+          <Art name="manuscript" channel="home-writing" />
           <Caption number="03">WRITING & CONTEXT</Caption>
           <h2>
             <Link to="/write-right">

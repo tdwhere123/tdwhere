@@ -1,0 +1,190 @@
+/* SENTINEL: a painted 3D machine; the live screen is mapped onto its glass. */
+.a-experiment.is-sentinel {
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.5fr);
+}
+.a-machine {
+  margin: 0;
+}
+.a-machine-stage,
+.a-machine-wait {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.12;
+}
+.a-machine-wait {
+  background: radial-gradient(ellipse 42% 46% at 52% 48%, rgba(188, 161, 108, 0.18), transparent 70%);
+}
+.a-machine-stage > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.a-machine-screen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  container-type: inline-size;
+}
+.a-machine.is-flat .a-machine-stage {
+  aspect-ratio: 4 / 3;
+  border-radius: 22px;
+  padding: 16px;
+  background: linear-gradient(165deg, #e6dcc6, #c9bb9e);
+}
+.a-machine.is-flat .a-machine-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+.a-machine-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+  padding-left: 8%;
+  font-size: 12px;
+  color: var(--a-muted);
+}
+.a-machine-power {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--a-line);
+  background: var(--a-paper-light);
+  color: var(--a-ink);
+  font-size: 13px;
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+}
+.a-machine-power:hover,
+.a-machine-power[aria-pressed='true'] {
+  color: var(--a-pigment);
+  border-color: color-mix(in srgb, var(--a-pigment) 45%, transparent);
+}
+
+@media (max-width: 850px) {
+  .a-opening-statement {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 90px 7% 90px;
+  }
+  .a-opening-statement h2 {
+    margin-bottom: 30px;
+  }
+  .a-about-hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    padding: 60px 7% 60px;
+  }
+  .a-about-intro,
+  .a-about-hand {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .a-about-hand {
+    justify-self: start;
+    margin-top: 30px;
+    font-size: 34px;
+  }
+  .a-about-questions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    padding: 70px 7%;
+  }
+  .a-about-questions > .a-caption {
+    margin-bottom: 0;
+  }
+  .a-about-method {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    padding: 70px 7% 90px;
+  }
+  .a-notes-hero {
+    min-height: 0;
+    padding: 60px 7% 50px;
+  }
+  .a-notes-hero > p:not(.a-caption),
+  .a-notes-hand {
+    position: static;
+    display: block;
+    margin-top: 34px;
+  }
+  .a-notes-hand {
+    margin-top: 18px;
+    font-size: 32px;
+  }
+  .a-archive {
+    padding: 20px 7% 80px;
+  }
+  .a-archive-entry {
+    grid-template-columns: 44px minmax(0, 1fr) 20px;
+    gap: 16px;
+    padding: 28px 0;
+  }
+  .a-entry-index {
+    font-size: 32px;
+  }
+  .a-search input {
+    width: 100%;
+  }
+  .a-search {
+    flex: 1 1 100%;
+  }
+  .a-essay-header {
+    padding: 44px 7% 44px;
+  }
+  .a-elsewhere-hero {
+    min-height: 0;
+    padding: 60px 7% 50px;
+  }
+  .a-elsewhere-hero h1 {
+    margin-top: 60px;
+  }
+  .a-experiment,
+  .a-experiment.is-veggie .a-experiment-copy {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 70px 6vw;
+  }
+  .a-experiment.is-veggie .a-experiment-copy {
+    padding: 0;
+  }
+  .a-experiment.is-sentinel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .a-machine-stage,
+  .a-machine-wait {
+    aspect-ratio: 0.95;
+  }
+  .a-machine-controls {
+    padding-left: 0;
+  }
+}
+@media (max-width: 600px) {
+  .a-opening-threads em {
+    font-size: 19px;
+  }
+}
+.a-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s;
+}
+.a-back:hover {
+  color: var(--a-pigment);
+}
+.a-toc > p {
+  margin-top: 36px !important;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--a-muted);
+}

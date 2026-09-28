@@ -1,0 +1,77 @@
+/* A single essay. */
+.a-essay {
+  padding-bottom: 90px;
+}
+.a-reading-progress {
+  transform: none;
+  scale: 0 1;
+  transform-origin: left;
+}
+.a-essay-header {
+  padding: 64px 9% 60px;
+  border-bottom: 1px solid var(--a-line);
+}
+.a-essay-header > .a-caption {
+  color: var(--a-pigment);
+  margin-bottom: 26px;
+}
+.a-essay-header h1 {
+  font: 600 clamp(28px, 4vw, 58px) / 1.45 var(--a-cn);
+  letter-spacing: -0.04em;
+  max-width: 960px;
+}
+.a-essay-deck {
+  font-size: 16px;
+  line-height: 1.95;
+  color: #4a5a5e;
+  max-width: 720px;
+  margin-top: 24px !important;
+}
+.a-essay-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  align-items: center;
+  margin-top: 30px;
+  font-size: 12px;
+  color: var(--a-muted);
+}
+.a-essay-byline a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+.a-essay-byline a:hover {
+  color: var(--a-pigment);
+}
+.a-figure {
+  display: block;
+  margin: 36px 0;
+}
+.a-prose .a-figure img {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 100%;
+}
+.a-figcaption {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--a-muted);
+}
+.a-essay-end {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 70px 8% 0;
+  border-top: 1px solid var(--a-line);
+  padding-top: 40px;
+}
+.a-essay-end .a-handwritten {
+  font-size: clamp(36px, 5vw, 64px);
+  color: #a08460;
+}
+

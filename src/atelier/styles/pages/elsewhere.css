@@ -1,0 +1,80 @@
+/* Elsewhere: earlier experiments, kept working. */
+.a-elsewhere-hero {
+  position: relative;
+  min-height: 610px;
+  padding: 80px 7% 60px;
+  isolation: isolate;
+}
+.a-elsewhere-hero > .a-art {
+  position: absolute;
+  right: -10%;
+  top: 6%;
+  width: 86%;
+  height: 94%;
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse, #000 13%, transparent 73%);
+  z-index: -1;
+}
+.a-elsewhere-hero h1 {
+  font-size: clamp(85px, 16vw, 230px);
+  letter-spacing: -0.065em;
+  line-height: 1;
+  margin-top: 100px;
+}
+.a-elsewhere-hero h1 em {
+  color: var(--a-pigment);
+}
+.a-elsewhere-hero > p:not(.a-caption) {
+  font-size: 14px;
+  margin: 40px 0 0 8%;
+  max-width: 350px;
+}
+.a-elsewhere-hero > .a-handwritten {
+  display: block;
+  margin: 14px 0 0 6%;
+  font-size: 34px;
+  color: var(--a-pigment);
+}
+.a-experiment {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.4fr);
+  gap: 5vw;
+  align-items: center;
+  padding: 100px 6vw;
+  border-top: 1px solid var(--a-line);
+}
+.a-experiment.is-veggie {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 30px;
+}
+.a-experiment-copy h2 {
+  font-family: var(--a-cn);
+  font-size: clamp(28px, 3vw, 44px);
+  line-height: 1.45;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  margin: 24px 0 18px;
+}
+.a-experiment-copy p {
+  font-size: 14px;
+  line-height: 2;
+  color: #3d4c50;
+  max-width: 460px;
+}
+.a-experiment-copy small {
+  display: block;
+  margin-top: 18px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--a-muted);
+}
+.a-experiment.is-veggie .a-experiment-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  column-gap: 5vw;
+  align-items: end;
+}
+.a-experiment.is-veggie .a-experiment-copy > .a-caption {
+  grid-column: 1 / -1;
+}
+

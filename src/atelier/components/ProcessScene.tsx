@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, RotateCcw, Check, AlertTriangle } from 'lucide-react'
 import { workflow, advanceRun, emptyRun, type TaskKind } from '../model'
 import { useWords } from '../hooks'
 import { Art, Caption, DemoNote } from './Primitives'
+import { paint } from '../paint/bus'
 const stageNames: Record<string, [string, string]> = {
   scope: ['辨认任务', 'Scope'],
   plan: ['形成方案', 'Plan'],
@@ -54,6 +55,27 @@ export default function ProcessScene() {
     auth: ['迁移鉴权方式', 'Migrate authentication'],
   }
   const x = 10 + (run.index / (path.length - 1)) * 80
+  const scaffold = useRef<HTMLDivElement>(null),
+    walked = useRef(0)
+  const lanes = path.length - 1
+  useEffect(() => {
+    const el = scaffold.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const at = (i: number) => r.left + r.width * (0.1 + (i / lanes) * 0.8)
+    const y = r.top + r.height * 0.6
+    if (run.index > walked.current)
+      paint('process', { type: 'stroke', x0: at(walked.current), y0: y, x1: at(run.index), y1: y })
+    walked.current = run.index
+    paint('process', {
+      type: 'mark',
+      id: 'verify',
+      x: at(run.index),
+      y,
+      radius: 0.14,
+      on: run.failed,
+    })
+  }, [run.index, run.failed, lanes])
   return (
     <div
       className="a-process-scene"
@@ -83,39 +105,43 @@ export default function ProcessScene() {
           </button>
         ))}
       </div>
-      <div className="a-scaffold">
-        <Art name="construction" className="a-construction-art" />
+      <div className="a-scaffold" ref={scaffold}>
+        <Art name="construction" channel="process" className="a-construction-art" />
         <svg
           viewBox="0 0 1000 340"
           preserveAspectRatio="none"
           className="a-scaffold-lines"
           aria-hidden="true"
         >
-          <path d="M65 225H935M100 230L120 290H880L900 230M85 193H915" />
+          <path className="a-lane" d="M40 252H960M40 262H960" />
+          <path
+            className="a-lane-walked"
+            d={`M100 257H${100 + (run.index / (path.length - 1)) * 800}`}
+          />
           {path.map((s, i) => {
             const px = 100 + (i * 800) / (path.length - 1)
+            const state =
+              i < run.index
+                ? 'is-passed'
+                : i === run.index
+                  ? run.failed
+                    ? 'is-current is-blocked'
+                    : 'is-current'
+                  : 'is-ahead'
             return (
-              <g key={s}>
+              <g key={s} className={`a-gate ${state}`}>
                 <path
-                  d={`M${px} 145V297M${px - 10} 297h20M${px} 240l55 50M${px} 240l-55 50`}
+                  d={`M${px - 26} 252V150M${px + 26} 252V150M${px - 38} 146H${px + 38}M${px - 26} 164H${px + 26}`}
                 />
-                <circle
-                  cx={px}
-                  cy={193}
-                  r={8}
-                  className={i <= run.index ? 'is-traversed' : ''}
-                />
+                {i === run.index && run.failed && (
+                  <path
+                    className="a-gate-bar"
+                    d={`M${px - 26} 206H${px + 26}M${px - 22} 192L${px - 8} 220M${px - 4} 192L${px + 10} 220M${px + 14} 192L${px + 24} 212`}
+                  />
+                )}
               </g>
             )
           })}
-          <path
-            className="a-task-path"
-            d="M100 193H900"
-            pathLength="100"
-            style={{
-              strokeDasharray: `${(run.index / (path.length - 1)) * 100} 100`,
-            }}
-          />
         </svg>
         <div className="a-task-packet" style={{ left: `${x}%` }}>
           <span>{run.failed ? '!' : current === 'deliver' ? '✓' : 't'}</span>

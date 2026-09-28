@@ -1,0 +1,212 @@
+/* Writing: persistent paper fragments actually reorder into a composition. */
+.a-writing-hero {
+  position: relative;
+  min-height: 900px;
+  padding: 75px 7vw 70px;
+  isolation: isolate;
+}
+.a-writing-hero > .a-art {
+  position: absolute;
+  left: -5%;
+  top: 29%;
+  width: 77%;
+  height: 49%;
+  object-fit: cover;
+  mask-image: radial-gradient(ellipse at 42% 50%, #000 18%, transparent 75%);
+  opacity: 0.85;
+  transform: rotate(-5deg);
+  z-index: -1;
+}
+.a-writing-hero > h1 {
+  font-size: clamp(110px, 17vw, 250px);
+  letter-spacing: -0.07em;
+  line-height: 0.68;
+  margin-top: 63px;
+  margin-left: 4vw;
+}
+.a-writing-hero > h1 em {
+  display: block;
+  margin-top: 14px;
+  margin-left: 10vw;
+  color: var(--a-pigment);
+}
+.a-writing-script {
+  position: absolute;
+  right: 9%;
+  top: 15%;
+  font: italic 48px/0.95 var(--a-serif);
+  transform: rotate(-7deg);
+  color: #9b725b;
+}
+.a-writing-intro {
+  margin: 45px 0 0 56%;
+  position: relative;
+}
+.a-writing-intro h2 {
+  font-family: var(--a-cn);
+  font-size: clamp(25px, 3vw, 43px);
+  line-height: 1.5;
+}
+.a-writing-intro > p {
+  font-size: 13px;
+  max-width: 350px;
+  line-height: 1.95;
+  margin: 22px 0;
+}
+.a-writing-chapter {
+  padding: 30px 5vw 65px;
+}
+.a-writing-scene {
+  padding: 30px 3vw;
+  border-top: 1px solid var(--a-line);
+  background: #e9e0d12e;
+}
+.a-paper-table {
+  height: 390px;
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 15px;
+}
+.a-manuscript-art {
+  position: absolute;
+  inset: 6% 0 0;
+  width: 100%;
+  height: 90%;
+  object-fit: cover;
+  opacity: 0.5;
+  mask-image: radial-gradient(ellipse, #000 30%, transparent 82%);
+  z-index: -1;
+}
+.a-table-script {
+  position: absolute;
+  right: 4%;
+  top: 3%;
+  font-size: 31px;
+  opacity: 0.65;
+}
+.a-paper-spread {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.a-paper-slip {
+  position: absolute;
+  top: calc(35px + var(--origin) * 36px);
+  left: calc(14% + var(--origin) * 12%);
+  width: 28%;
+  min-height: 157px;
+  padding: 20px 25px;
+  background: #fbf5e7;
+  box-shadow:
+  0 2px 1px #9d876333,
+  4px 12px 30px #5e473417;
+  transform: rotate(var(--tilt));
+  transition:
+  top 1s var(--a-ease),
+  left 1s var(--a-ease),
+  width 1s var(--a-ease),
+  transform 1s var(--a-ease);
+  border-top: 1px solid #fffdf6;
+  border-bottom: 1px solid #bba58840;
+}
+.a-paper-slip:nth-child(2) {
+  background: #f5ebd8;
+}
+.a-paper-slip:nth-child(3) {
+  background: #f8f1e4;
+}
+.a-paper-slip:nth-child(4) {
+  background: #eee5d7;
+}
+.a-paper-slip small {
+  font: 11px/1.7 var(--a-sans);
+  color: var(--a-pigment);
+  display: block;
+  border-bottom: 1px solid var(--a-line);
+  padding-bottom: 8px;
+  margin-bottom: 13px;
+}
+.a-paper-slip p {
+  font: 500 17px/1.65 var(--a-cn);
+}
+.a-paper-slip > span {
+  position: absolute;
+  right: 17px;
+  bottom: 8px;
+  font: italic 20px/1 var(--a-serif);
+  color: #ab9a7e;
+}
+.a-writing-scene[data-arranged='true'] .a-paper-slip {
+  left: calc(var(--slot) * 25%);
+  top: 100px;
+  width: 23.5%;
+  transform: rotate(0);
+}
+.a-writing-result {
+  margin: 30px 0;
+  padding: 25px 0;
+  border-top: 1px solid var(--a-line);
+  min-height: 120px;
+}
+.a-writing-result > p {
+  font-size: 13px;
+  max-width: 640px;
+  color: var(--a-muted);
+}
+.a-writing-result h4 {
+  font: 500 22px/1.5 var(--a-cn);
+  margin-bottom: 20px;
+}
+.a-writing-result ol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 30px;
+  padding: 0;
+  list-style: none;
+}
+.a-writing-result li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  animation: a-evidence-in 0.65s var(--a-ease);
+}
+.a-writing-result li > strong {
+  font-weight: 500;
+  color: var(--a-pigment);
+}
+.a-writing-result li > span {
+  color: var(--a-muted);
+}
+.a-writing-result .a-review-warning {
+  margin-top: 25px;
+  color: var(--a-pigment);
+  padding-left: 15px;
+  border-left: 1px solid var(--a-pigment);
+  font-size: 12px;
+}
+.a-writing-margins {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 14vw;
+  padding: 60px 10% 90px;
+}
+.a-writing-margins > .a-marginalia {
+  font-size: 5vw;
+  margin-top: 80px;
+}
+.a-writing-margins h2 {
+  font: 500 clamp(27px, 3.4vw, 46px) / 1.6 var(--a-cn);
+  letter-spacing: -0.04em;
+  margin: 24px 0;
+}
+.a-writing-margins h2 em {
+  font-style: normal;
+  color: var(--a-pigment);
+}
+.a-writing-margins p:not(.a-caption) {
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--a-muted);
+  margin-bottom: 25px;
+}

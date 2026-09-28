@@ -4,44 +4,82 @@
  * Animates transform / opacity / filter only.
  */
 
-/* —— one-shot wake: case glow rises —— */
-.pg-halo {
-  opacity: 0;
-  transition: opacity 1800ms ease;
-}
-.pg-woken .pg-halo {
-  opacity: 1;
+.pg-sentinel {
+  --pg-phosphor: color-mix(in srgb, var(--amber) 70%, var(--museum-stone) 30%);
+  --pg-phosphor-hi: color-mix(in srgb, var(--amber) 45%, var(--museum-stone));
+  --pg-glow: color-mix(in srgb, var(--cobalt) 42%, transparent);
+  --pg-glow-soft: color-mix(in srgb, var(--amber) 14%, transparent);
 }
 
-/* —— one-shot wake: screen flickers once from dark to standby —— */
-@keyframes pg-wake-bezel {
-  0% { filter: brightness(0.55) }
-  12% { filter: brightness(1.18) }
-  24% { filter: brightness(0.7) }
-  42% { filter: brightness(1.08) }
-  100% { filter: brightness(1) }
+/* The screen is laid over painted glass, so it stays translucent at the edges. */
+.pg-screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  border-radius: 7% / 9%;
+  cursor: text;
+  background: radial-gradient(ellipse 80% 75% at 50% 48%, rgba(20, 32, 34, 0.9), rgba(10, 16, 18, 0.62) 100%);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55);
+  font-size: clamp(11px, 5.4cqw, 15px);
 }
-.pg-waking .pg-crt-bezel {
-  animation: pg-wake-bezel 1100ms ease-out 1;
+.pg-scroll {
+  padding: 5.5cqw 6cqw 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--cobalt) 36%, transparent) transparent;
 }
-@keyframes pg-wake-flash {
-  0% { opacity: 0 }
-  10% { opacity: 0.5 }
-  22% { opacity: 0.04 }
-  38% { opacity: 0.3 }
-  100% { opacity: 0 }
+.pg-text {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  line-height: 1.7;
+  text-shadow: 0 0 7px var(--pg-glow);
 }
-.pg-wake-flash {
-  animation: pg-wake-flash 1100ms ease-out 1 forwards;
+.pg-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.3em 6cqw 4.5cqw;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color: var(--pg-phosphor-hi);
+  text-shadow: 0 0 7px var(--pg-glow);
 }
-
-/* —— standby afterglow: once woken, the off screen is asleep, not dead —— */
-.pg-standby {
-  opacity: 0;
-  transition: opacity 1400ms ease;
+.pg-input-row input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  color: var(--pg-phosphor-hi);
+  caret-color: var(--pg-phosphor);
 }
-.pg-woken .pg-standby {
-  opacity: 1;
+.pg-input-row input::placeholder {
+  color: inherit;
+  opacity: 0.4;
+}
+.pg-standby-text {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 10;
+  padding: 0 7cqw 7cqw;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  line-height: 1.8;
+  color: #d9c58f;
+  text-shadow: 0 0 7px rgba(217, 197, 143, 0.45);
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+.pg-standby-text small {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.55;
+}
+.pg-sheen {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.08) 0%, transparent 26%, transparent 72%, rgba(255, 255, 255, 0.04) 100%),
+    radial-gradient(ellipse 52% 34% at 28% 0%, rgba(255, 255, 255, 0.07), transparent 70%);
+}
+@keyframes pg-caret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+.pg-caret {
+  animation: pg-caret 1.06s steps(1) infinite;
 }
 
 /* —— idle life: very slow phosphor breathe (only while screen is on) —— */
@@ -53,49 +91,14 @@
   animation: pg-crt-breathe 9s ease-in-out infinite;
 }
 
-/* —— hidden delight: long-press power — a ghost pulse + LED shiver —— */
-@keyframes pg-ghost-pulse {
-  0% { opacity: 0 }
-  18% { opacity: 0.42 }
-  34% { opacity: 0.08 }
-  52% { opacity: 0.28 }
-  100% { opacity: 0 }
-}
-.pg-ghost-flash {
-  animation: pg-ghost-pulse 1400ms ease-out 1 forwards;
-}
-@keyframes pg-ghost-led {
-  0%, 100% { opacity: 1 }
-  20% { opacity: 0.15 }
-  40% { opacity: 1 }
-  60% { opacity: 0.15 }
-  80% { opacity: 1 }
-}
-.pg-ghost-led {
-  animation: pg-ghost-led 700ms ease-in-out 2;
-}
-
 /* —— perf: pause every infinite ambient loop while the section is offscreen —— */
-.pg-paused .pg-band,
-.pg-paused .pg-led,
 .pg-paused .pg-breathe,
 .pg-paused .pg-caret {
   animation-play-state: paused;
 }
 
-/* —— reduced motion: everything degrades to static —— */
 @media (prefers-reduced-motion: reduce) {
-  .pg-waking .pg-crt-bezel,
-  .pg-wake-flash,
-  .pg-breathe,
-  .pg-ghost-flash,
-  .pg-ghost-led,
-  .pg-sentinel .pg-band,
-  .pg-sentinel .pg-led {
+  .pg-breathe {
     animation: none;
-  }
-  .pg-halo,
-  .pg-standby {
-    transition: none;
   }
 }

@@ -1,0 +1,34 @@
+/* Painted fields: the live canvas and its still fallback share every .a-art rule. */
+.a-paint[data-stage='pending'] {
+  visibility: hidden;
+}
+.a-paint[data-stage='live'],
+.a-still {
+  animation: a-paint-in 1.1s var(--a-ease) both;
+}
+@keyframes a-paint-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a-shell *,
+  .a-shell *::before,
+  .a-shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .a-reveal-ready:not(.is-seen) {
+    opacity: 1;
+    transform: none;
+  }
+  .a-hero-landscape,
+  .a-hero-orbits {
+    transform: none !important;
+  }
+  .a-evidence-result button {
+    opacity: 1;
+  }
+}
+

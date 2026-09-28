@@ -109,56 +109,6 @@ module.exports = {
         xs: "0 1px 2px 0 rgb(23 24 28 / 0.05)",
         card: "0 1px 0 rgba(23, 24, 28, 0.05)",
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "caret-blink": {
-          "0%,70%,100%": { opacity: "1" },
-          "20%,50%": { opacity: "0" },
-        },
-        "cue-drop": {
-          "0%": { transform: "translateY(0)", opacity: "1" },
-          "80%": { opacity: "0.15" },
-          "100%": { transform: "translateY(24px)", opacity: "0" },
-        },
-        scanlines: {
-          from: { backgroundPosition: "0 0" },
-          to: { backgroundPosition: "0 48px" },
-        },
-        "gate-breath": {
-          "0%, 100%": { transform: "scaleX(1)" },
-          "50%": { transform: "scaleX(0.35)" },
-        },
-        "ring-rotate": {
-          from: { transform: "rotate(0deg)" },
-          to: { transform: "rotate(360deg)" },
-        },
-        "type-press": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(3px)" },
-        },
-        "lang-fade": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "caret-blink": "caret-blink 1.25s ease-out infinite",
-        "cue-drop": "cue-drop 2.2s ease-in infinite",
-        scanlines: "scanlines 12s linear infinite",
-        "gate-breath": "gate-breath 4.8s ease-in-out infinite",
-        "ring-rotate": "ring-rotate 60s linear infinite",
-        "type-press": "type-press 2.6s ease-in-out infinite",
-        "lang-fade": "lang-fade 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
-      },
     },
   },
   plugins: [require("tailwindcss-animate")],

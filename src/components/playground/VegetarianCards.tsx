@@ -94,7 +94,7 @@ function readUnlocked(): string[] {
   }
 }
 
-export default function VegetarianCards() {
+export default function VegetarianCards({ bare = false }: { bare?: boolean } = {}) {
   const { lang } = useLang()
   const t = playground[lang].veggie
   const cards = t.cards
@@ -175,7 +175,7 @@ export default function VegetarianCards() {
         : null
 
   return (
-    <section aria-label={t.title} className="mx-auto max-w-shell px-5 py-[clamp(96px,15vh,168px)] md:px-10">
+    <section aria-label={t.title} className={bare ? '' : 'mx-auto max-w-shell px-5 py-[clamp(96px,15vh,168px)] md:px-10'}>
       <style>{`
         .pg-veggie {
           --pg-veggie-muted: var(--museum-muted);
@@ -196,14 +196,18 @@ export default function VegetarianCards() {
       <div className="pg-veggie grid gap-14 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-20">
         {/* left: intro */}
         <InkReveal>
-          <Kicker>{t.kicker}</Kicker>
-          <h2 className="mt-6 font-display text-h2 font-semibold text-museum-ink">{t.title}</h2>
-          <p
-            className="mt-5 max-w-reading text-[15px] leading-[1.85]"
-            style={{ color: 'var(--pg-veggie-muted)' }}
-          >
-            {t.blurb}
-          </p>
+          {!bare && (
+            <>
+              <Kicker>{t.kicker}</Kicker>
+              <h2 className="mt-6 font-display text-h2 font-semibold text-museum-ink">{t.title}</h2>
+              <p
+                className="mt-5 max-w-reading text-[15px] leading-[1.85]"
+                style={{ color: 'var(--pg-veggie-muted)' }}
+              >
+                {t.blurb}
+              </p>
+            </>
+          )}
           <div className="mt-6 flex flex-wrap items-center gap-2">
             {t.chips.map((c, i) => (
               <motion.span

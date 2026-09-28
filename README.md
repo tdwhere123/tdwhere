@@ -1,6 +1,6 @@
 # 阿黄 · tdwhere
 
-个人作品集站点（React + TypeScript + Vite）。
+个人作品集站点。前端是 React 19 + TypeScript + Vite，线上界面在 `src/atelier`。
 
 ## 在线访问
 
@@ -28,6 +28,12 @@ npm run dev
 ```bash
 npm run build
 npm run preview
+```
+
+冒烟测试（需本机 Chrome，先起 preview）：
+
+```bash
+node scripts/e2e-smoke.mjs http://localhost:4173/tdwhere/
 ```
 
 生产构建的 `base` 为 `/tdwhere/`，与 GitHub Pages 项目站点路径一致。

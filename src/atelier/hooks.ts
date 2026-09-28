@@ -17,6 +17,19 @@ export function useQuiet() {
     () => true,
   )
 }
+const narrowQuery = '(max-width: 850px)'
+function subscribeNarrow(fn: () => void) {
+  const m = matchMedia(narrowQuery)
+  m.addEventListener('change', fn)
+  return () => m.removeEventListener('change', fn)
+}
+export function useNarrow() {
+  return useSyncExternalStore(
+    subscribeNarrow,
+    () => matchMedia(narrowQuery).matches,
+    () => false,
+  )
+}
 function subscribeVisibility(fn: () => void) {
   document.addEventListener('visibilitychange', fn)
   return () => document.removeEventListener('visibilitychange', fn)

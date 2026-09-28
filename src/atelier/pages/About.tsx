@@ -30,7 +30,7 @@ export default function About() {
   return (
     <div className="a-about">
       <header className="a-about-hero">
-        <Art name="landscape" eager />
+        <Art name="landscape" eager intensity="quiet" />
         <Caption>ABOUT / THE PERSON BEHIND THE QUESTIONS</Caption>
         <h1>
           {w('我是阿黄。', 'I am 阿黄.')}
