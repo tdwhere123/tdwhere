@@ -1,6 +1,6 @@
 export type Rgb = [number, number, number]
 export type Vec2 = [number, number]
-export type ArtName = 'landscape' | 'pigment' | 'construction' | 'manuscript'
+export type ArtName = 'landscape' | 'pigment' | 'construction' | 'manuscript' | 'pond'
 export type PaintIntensity = 'full' | 'quiet'
 
 /**
@@ -130,6 +130,26 @@ const base: Record<ArtName, PaintPreset> = {
     lightTo: [-0.2, 0.6],
     drift: 0.5,
   },
+  pond: {
+    mode: 'smear',
+    strokeAngle: 0.04,
+    directionBias: 0.45,
+    strokeLength: 0.012,
+    impasto: 1.05,
+    dabScale: 1.1,
+    brushRadius: 0.06,
+    gain: [0.85, 0, 0.08],
+    anisotropy: [1, 0.7],
+    decay: [0.994, 0.97, 0.99],
+    diffusion: [0.16, 0.1],
+    glaze: [1, 1, 1],
+    scrollGlaze: [1, 1, 1],
+    accent: [1, 0.9, 0.7],
+    ground: [0.95, 0.93, 0.87],
+    lightFrom: [-0.6, 0.8],
+    lightTo: [0.6, 0.5],
+    drift: 0.8,
+  },
 }
 
 export function presetFor(
@@ -146,12 +166,6 @@ export function presetFor(
     drift: p.drift * 0.5,
   }
 }
-
-export const studyGlazes: Rgb[] = [
-  [0.84, 0.94, 1.12],
-  [0.97, 0.93, 0.9],
-  [1.08, 1.01, 0.84],
-]
 
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 

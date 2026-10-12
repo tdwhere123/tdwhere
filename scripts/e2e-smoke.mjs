@@ -7,8 +7,8 @@ import fs from 'node:fs'
 import puppeteer from 'puppeteer-core'
 
 const BASE = process.argv[2] || 'http://localhost:4173/tdwhere/'
-const ROUTES = ['', 'alaya', 'do-it', 'write-right', 'blog', 'about', 'playground', 'no-such-route']
-const HERO = new Set(['', 'alaya', 'do-it', 'write-right', 'blog', 'about', 'playground', 'no-such-route'])
+const ROUTES = ['', 'alaya', 'do-it', 'blog', 'about', 'playground', 'no-such-route']
+const HERO = new Set(['', 'alaya', 'do-it', 'blog', 'about', 'playground', 'no-such-route'])
 const WEBGL_NOISE = /WebGL|WEBGL|createWebGLContext|getContext/i
 
 function findChrome() {

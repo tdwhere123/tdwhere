@@ -60,8 +60,8 @@
 .a-about-questions {
   padding: 100px 8vw;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 4vw;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 6vw;
 }
 .a-about-questions > .a-caption {
   grid-column: 1 / -1;

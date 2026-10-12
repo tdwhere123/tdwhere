@@ -4,8 +4,8 @@ import {
   emptyRun,
   evidence,
   recallFixture,
+  sceneAt,
   workflow,
-  writingOrders,
   type QueryId,
   type TaskKind,
 } from './model'
@@ -62,10 +62,22 @@ describe('illustrative workflow', () => {
   it('does not repair before failure', () =>
     expect(advanceRun('api', emptyRun(), 'repair')).toEqual(emptyRun()))
 })
-describe('writing composition', () => {
-  it('reorders the same facts without replacing them', () => {
-    for (const o of Object.values(writingOrders))
-      expect([...o].sort()).toEqual([0, 1, 2, 3])
-    expect(writingOrders.request).not.toEqual(writingOrders.report)
+describe('scene from scroll', () => {
+  const chapters = [
+    { center: 100, scene: 0 },
+    { center: 500, scene: 0 },
+    { center: 900, scene: 1 },
+    { center: 1300, scene: 3 },
+  ]
+  it('holds the first and last scenes beyond the chapters', () => {
+    expect(sceneAt(chapters, 0)).toBe(0)
+    expect(sceneAt(chapters, 2000)).toBe(3)
+    expect(sceneAt([], 10)).toBe(0)
+  })
+  it('holds near a chapter center and turns between them', () => {
+    expect(sceneAt(chapters, 560)).toBe(0)
+    expect(sceneAt(chapters, 700)).toBeCloseTo(0.5)
+    expect(sceneAt(chapters, 880)).toBe(1)
+    expect(sceneAt(chapters, 1100)).toBeCloseTo(2)
   })
 })

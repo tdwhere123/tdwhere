@@ -44,8 +44,8 @@ export default function About() {
         <div className="a-about-intro">
           <p>
             {w(
-              '我研究 Agent 的记忆与工作方式，也做工具、写手记。Alaya、do-it、Write-Right 是这些问题在不同地方留下的形状。',
-              'I study how agents remember and work, build tools, and write notes. Alaya, do-it and Write-Right are different forms those questions have taken.',
+              '我研究 Agent 的记忆与工作方式，也做工具、写手记。Alaya 和 do-it 是这些问题在不同地方留下的形状。',
+              'I study how agents remember and work, build tools, and write notes. Alaya and do-it are different forms those questions have taken.',
             )}
           </p>
           <p>
@@ -79,17 +79,6 @@ export default function About() {
             )}
           </p>
           <LinkLine to="/do-it">do-it</LinkLine>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>{w('文字究竟为了什么？', 'What are the words for?')}</h2>
-          <p>
-            {w(
-              '先理解表达的对象与目的，再决定材料如何展开。',
-              'Understand the audience and purpose before deciding how the material unfolds.',
-            )}
-          </p>
-          <LinkLine to="/write-right">Write-Right</LinkLine>
         </article>
       </section>
       <section className="a-about-method">

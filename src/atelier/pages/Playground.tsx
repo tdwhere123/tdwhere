@@ -26,7 +26,7 @@ export default function Playground() {
           unfinished, not forgotten.
         </span>
       </header>
-      <section className="a-experiment is-sentinel">
+      <section id="sentinel" className="a-experiment is-sentinel">
         <div className="a-experiment-copy">
           <Caption number="01">SENTINEL</Caption>
           <h2>{w('一段尚未结束的对话。', 'An unfinished conversation.')}</h2>
@@ -47,7 +47,7 @@ export default function Playground() {
           <PaintedMachine />
         </Suspense>
       </section>
-      <section className="a-experiment is-veggie">
+      <section id="veggie" className="a-experiment is-veggie">
         <div className="a-experiment-copy">
           <Caption number="02">VEGETARIAN-CARD</Caption>
           <h2>{w('从一张素食卡片开始。', 'It began with a recipe card.')}</h2>

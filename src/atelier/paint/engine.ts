@@ -15,7 +15,10 @@ import { onPaint, type PaintSignal } from './bus'
 
 export type PaintOptions = {
   canvas: HTMLCanvasElement
-  source: HTMLCanvasElement
+  /** Number of layers in the painting; a series has one per scene. */
+  layers: number
+  /** Paints (or returns the cached) layer; layers after the first are requested when idle. */
+  layer: (index: number) => HTMLCanvasElement
   preset: PaintPreset
   /** Element that receives the pointer; usually the section around the art. */
   surface: Element
@@ -26,6 +29,9 @@ export type PaintOptions = {
 type Target = { tex: WebGLTexture; fbo: WebGLFramebuffer }
 type Sweep = { from: Vec2; to: Vec2; t: number; radius: number }
 type Mark = { x: number; y: number; r: number; strength: number; on: boolean }
+type Drag = { from: Vec2; to: Vec2; t: number }
+
+const DRAG_MS = 420
 
 const MAX_PULSES = 8
 const MAX_MARKS = 4
@@ -56,7 +62,8 @@ function compile(gl: WebGL2RenderingContext, fragment: string) {
 
 /** Throws when WebGL2 or float render targets are unavailable; callers keep the still image. */
 export function mountPaint(o: PaintOptions) {
-  const { canvas, source, preset } = o
+  const { canvas, preset } = o
+  const source = o.layer(0)
   const gl = canvas.getContext('webgl2', {
     antialias: false,
     depth: false,
@@ -84,16 +91,24 @@ export function mountPaint(o: PaintOptions) {
   gl.enableVertexAttribArray(0)
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
 
-  const imageTex = gl.createTexture()!
-  gl.bindTexture(gl.TEXTURE_2D, imageTex)
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-  gl.generateMipmap(gl.TEXTURE_2D)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  // one texture per layer, so adding a layer only builds its own mipmaps
+  const layerTex: WebGLTexture[] = []
+  let loaded = 0
+  function upload(image: HTMLCanvasElement) {
+    const tex = gl!.createTexture()!
+    gl!.bindTexture(gl!.TEXTURE_2D, tex)
+    gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true)
+    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, image)
+    gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, false)
+    gl!.generateMipmap(gl!.TEXTURE_2D)
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR_MIPMAP_LINEAR)
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR)
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE)
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE)
+    layerTex.push(tex)
+    loaded++
+  }
+  upload(source)
 
   let targets: [Target, Target] | null = null,
     fieldSize: Vec2 = [0, 0]
@@ -144,6 +159,10 @@ export function mountPaint(o: PaintOptions) {
   const pulses: [number, number, number, number][] = []
   const sweeps: Sweep[] = []
   const marks = new Map<string, Mark>()
+  const drags: Drag[] = []
+  let scene = 0,
+    sceneTarget = 0,
+    idle = 0
   const glaze: Rgb = [...preset.glaze]
   let glazeTarget: Rgb = [...preset.glaze]
   let light: Vec2 = [...preset.lightFrom],
@@ -222,9 +241,15 @@ export function mountPaint(o: PaintOptions) {
     gl!.viewport(0, 0, canvas.width, canvas.height)
     gl!.useProgram(paintProgram.program)
     const u = paintProgram.at
+    const at = Math.min(scene, loaded - 1),
+      base = Math.floor(at)
     gl!.activeTexture(gl!.TEXTURE0)
-    gl!.bindTexture(gl!.TEXTURE_2D, imageTex)
+    gl!.bindTexture(gl!.TEXTURE_2D, layerTex[base])
     gl!.uniform1i(u('uImage'), 0)
+    gl!.activeTexture(gl!.TEXTURE2)
+    gl!.bindTexture(gl!.TEXTURE_2D, layerTex[Math.min(base + 1, loaded - 1)])
+    gl!.uniform1i(u('uImageNext'), 2)
+    gl!.uniform1f(u('uMix'), at - base)
     gl!.activeTexture(gl!.TEXTURE1)
     gl!.bindTexture(gl!.TEXTURE_2D, targets![0].tex)
     gl!.uniform1i(u('uField'), 1)
@@ -265,6 +290,22 @@ export function mountPaint(o: PaintOptions) {
       m.strength += (target - m.strength) * (1 - Math.exp(-dt / 320))
       if (Math.abs(target - m.strength) > 0.01) moving = true
       else if (!m.on) marks.delete(id)
+    }
+    const ds = sceneTarget - scene
+    if (Math.abs(ds) > 0.001) {
+      scene += ds * (1 - Math.exp(-dt / 520))
+      moving = true
+    } else scene = sceneTarget
+    const drag = drags[0]
+    if (drag) {
+      const ease = (t: number) => t * t * (3 - 2 * t)
+      const from = mixVec2(drag.from, drag.to, ease(drag.t))
+      drag.t = Math.min(1, drag.t + dt / DRAG_MS)
+      // accumulate only: waking from inside a frame would schedule a second loop
+      const to = mixVec2(drag.from, drag.to, ease(drag.t))
+      brush = brush ? { p0: brush.p0, p1: to } : { p0: from, p1: to }
+      if (drag.t >= 1) drags.shift()
+      moving = true
     }
     for (let i = sweeps.length - 1; i >= 0; i--) {
       const s = sweeps[i]
@@ -366,6 +407,13 @@ export function mountPaint(o: PaintOptions) {
         t: 0,
         radius: preset.brushRadius * 0.8,
       })
+    } else if (signal.type === 'drag') {
+      if (drags.length < 3)
+        drags.push({ from: toUv(signal.x0, signal.y0), to: toUv(signal.x1, signal.y1), t: 0 })
+    } else if (signal.type === 'scene') {
+      sceneTarget = Math.max(0, Math.min(o.layers - 1, signal.at))
+      while (loaded < o.layers && sceneTarget > loaded - 0.98 && !destroyed && !gl!.isContextLost())
+        loadNext()
     } else if (signal.type === 'glaze') {
       glazeTarget = [...(signal.color ?? preset.glaze)]
     } else {
@@ -417,6 +465,7 @@ export function mountPaint(o: PaintOptions) {
     if (destroyed) return
     destroyed = true
     cancelAnimationFrame(raf)
+    if (idle) cancelIdleCallback(idle)
     ro.disconnect()
     io.disconnect()
     offSignal?.()
@@ -431,7 +480,7 @@ export function mountPaint(o: PaintOptions) {
         gl!.deleteTexture(t.tex)
         gl!.deleteFramebuffer(t.fbo)
       })
-      gl!.deleteTexture(imageTex)
+      layerTex.forEach((t) => gl!.deleteTexture(t))
       gl!.deleteBuffer(buffer)
       gl!.deleteVertexArray(vao)
       gl!.deleteProgram(field.program)
@@ -439,6 +488,31 @@ export function mountPaint(o: PaintOptions) {
       gl!.getExtension('WEBGL_lose_context')?.loseContext()
     }
   }
+
+  // Later layers are painted on the main thread: in idle time, or at once
+  // when the scene is about to need them.
+  function loadNext() {
+    if (idle) cancelIdleCallback(idle)
+    idle = 0
+    if (destroyed || loaded >= o.layers || gl!.isContextLost()) return
+    upload(o.layer(loaded))
+    dirty = true
+    wake()
+    prefetch()
+  }
+  function prefetch() {
+    if (loaded >= o.layers || idle) return
+    idle = requestIdleCallback(
+      (deadline) => {
+        idle = 0
+        if (deadline.didTimeout || deadline.timeRemaining() > 30) loadNext()
+        else prefetch()
+      },
+      { timeout: 5000 },
+    )
+  }
+  if (o.layers > 1 && 'requestIdleCallback' in window) prefetch()
+  else while (loaded < o.layers) upload(o.layer(loaded))
 
   resize()
   return { destroy }

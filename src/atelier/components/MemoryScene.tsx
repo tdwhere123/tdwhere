@@ -107,11 +107,7 @@ const explanations: [string, string][] = [
     'Select current, complementary evidence within a budget, and return it with its sources.',
   ],
 ]
-export default function MemoryScene({
-  compact = false,
-}: {
-  compact?: boolean
-}) {
+export default function MemoryScene() {
   const w = useWords(),
     seq = useSequence(5)
   const [query, setQuery] = useState<QueryId>('design'),
@@ -138,7 +134,7 @@ export default function MemoryScene({
   }
   return (
     <div
-      className={`a-memory-scene ${compact ? 'is-compact' : ''}`}
+      className="a-memory-scene"
       data-testid="atelier-memory"
       data-stage={seq.step}
     >

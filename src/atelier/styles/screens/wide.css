@@ -1,8 +1,5 @@
 /* Local screens get a recomposed canvas, not a shrunken desktop painting. */
 @media (min-width: 1700px) {
-  .a-home-hero {
-    max-height: 1200px;
-  }
   .a-memory-scene {
     max-width: 1550px;
     margin-inline: auto;

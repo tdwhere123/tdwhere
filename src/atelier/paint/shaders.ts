@@ -1,3 +1,17 @@
+/** Value noise shared by the paint and overture shaders. */
+export const noise = `float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash(i), b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}`
+
 export const vertexSource = `#version 300 es
 in vec2 aPos;
 out vec2 vUv;
@@ -83,6 +97,8 @@ void main() {
 export const paintSource = `#version 300 es
 precision highp float;
 uniform sampler2D uImage;
+uniform sampler2D uImageNext;
+uniform float uMix;
 uniform sampler2D uField;
 uniform vec2 uScale;
 uniform vec2 uOffset;
@@ -104,21 +120,15 @@ uniform int uMarkCount;
 in vec2 vUv;
 out vec4 outColor;
 
-float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
-float vnoise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float a = hash(i), b = hash(i + vec2(1.0, 0.0));
-  float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}
+${noise}
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+// share of the next layer at this fragment; set once the dab cell is known
+float gMix = 0.0;
 vec3 img(vec2 uv, float lod) {
-  return textureLod(uImage, clamp(uv, vec2(0.001), vec2(0.999)), lod).rgb;
+  vec2 c = clamp(uv, vec2(0.001), vec2(0.999));
+  vec3 a = textureLod(uImage, c, lod).rgb;
+  if (gMix <= 0.0) return a;
+  return mix(a, textureLod(uImageNext, c, lod).rgb, gMix);
 }
 // canvas-space (aspect-corrected) offset to image uv
 vec2 toImage(vec2 d) { return vec2(d.x / uAspect, d.y) * uScale; }
@@ -127,6 +137,9 @@ void main() {
   vec4 f = texture(uField, vUv);
   vec2 uv = (vUv - f.xy) * uScale + uOffset;
   vec2 p = vec2(vUv.x * uAspect, vUv.y);
+  gMix = uMix;
+  // relief comes from the smooth blend: dab-by-dab layers would leave ridges at every dab edge
+  float relief = lum(img(uv, 0.0));
 
   vec2 ex = toImage(vec2(uLen * 1.4, 0.0)), ey = toImage(vec2(0.0, uLen * 1.4));
   vec2 g = vec2(
@@ -154,6 +167,22 @@ void main() {
   vec2 local = fract(sp);
   float h1 = hash(cell), h2 = hash(cell + 17.3), h3 = hash(cell + 5.1);
 
+  // The next layer arrives stroke by stroke, in drifting patches. Its strokes
+  // get their own grid on a slow direction field: the dab grid above follows
+  // the image's edges and would scatter the arrival into per-pixel noise.
+  float ma = uAngle + (vnoise(p * 1.1 + 7.0) - 0.5) * 0.7;
+  vec2 md = vec2(cos(ma), sin(ma));
+  vec2 msp = vec2(dot(p, md), dot(p, vec2(-md.y, md.x))) * vec2(15.0, 42.0);
+  msp.x += hash(vec2(floor(msp.y), 1.7)) * 5.0;
+  float due = hash(floor(msp)) * 0.45 + vnoise(p * 1.8 + 3.7) * 0.55
+    + (vnoise(vec2(msp.x * 0.8, msp.y * 6.0)) - 0.5) * 0.08
+    + smoothstep(0.55, 1.0, abs(fract(msp.x) - 0.5) * 2.0) * 0.12
+    + smoothstep(0.7, 1.0, abs(fract(msp.y) - 0.5) * 2.0) * 0.06;
+  // every stroke must have arrived by the end of the turn, and none before it
+  due = clamp(due * 0.85 + 0.05, 0.06, 0.94);
+  gMix = smoothstep(due - 0.04, due + 0.04, uMix * 1.2 - 0.1);
+  float fresh = gMix * (1.0 - gMix) * 4.0;
+
   vec2 stroke = toImage(dir * uLen * (0.55 + h1 * 0.9));
   vec3 col = vec3(0.0);
   float wsum = 0.0;
@@ -171,11 +200,11 @@ void main() {
   col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.012;
 
   float bristle = vnoise(vec2(sp.x * 0.6, sp.y * 7.0) + h1 * 10.0);
-  float height = lum(sharp) * 0.75 + bristle * 0.2 + dabEdge * 0.03;
+  float height = relief * 0.75 + bristle * 0.2 + dabEdge * 0.03;
   vec2 dH = vec2(dFdx(height), dFdy(height));
   vec3 N = normalize(vec3(-dH * uImpasto * 4.0 * (uRes.y / 800.0), 1.0));
   vec3 L = normalize(vec3(uLight, 0.9));
-  float wet = clamp(push * 14.0 + f.z * 0.35, 0.0, 1.0);
+  float wet = clamp(push * 14.0 + f.z * 0.35 + fresh * 0.3, 0.0, 1.0);
   float spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0);
   col *= 0.86 + dot(N, L) * 0.2;
   col += spec * (0.04 + wet * 0.2);

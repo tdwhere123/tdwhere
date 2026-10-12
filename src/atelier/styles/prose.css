@@ -93,7 +93,7 @@
 }
 .a-prose {
   min-width: 0;
-  font: 400 17px/2.08 var(--a-cn);
+  font: 400 17px/2.08 var(--a-text);
   color: #27383d;
   overflow-wrap: anywhere;
 }
@@ -209,7 +209,7 @@
   text-align: left;
 }
 .a-prose th {
-  font-family: var(--a-sans);
+  font-family: var(--a-text);
   font-weight: 500;
 }
 /* The experiments keep their original functionality in a new spatial frame. */

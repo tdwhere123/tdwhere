@@ -210,27 +210,6 @@ export function advanceRun(
     index: Math.min(workflow[kind].length - 1, state.index + 1),
   }
 }
-export type WritingGoal = 'report' | 'request' | 'invite'
-export const writingNotes: [string, string][] = [
-  ['已完成两次社区工作坊。', 'Two community workshops are complete.'],
-  [
-    '参与者希望增加实践环节。',
-    'Participants asked for more hands-on practice.',
-  ],
-  [
-    '现有场地不足以支持小组练习。',
-    'The current space cannot support group exercises.',
-  ],
-  [
-    '下一次活动计划采用分组讨论。',
-    'The next session is planned around group discussion.',
-  ],
-]
-export const writingOrders: Record<WritingGoal, number[]> = {
-  report: [0, 1, 2, 3],
-  request: [2, 0, 3, 1],
-  invite: [3, 2, 0, 1],
-}
 export function extractHeadings(
   body: string,
 ): { level: number; title: string; id: string }[] {
@@ -255,4 +234,23 @@ export function extractHeadings(
       })
   }
   return result
+}
+
+/**
+ * Scene of a layered painting at a viewport line, from chapter centers in
+ * client space. Each chapter holds its scene around its center and the
+ * painting turns over the middle of the gap to the next one.
+ */
+export function sceneAt(chapters: { center: number; scene: number }[], line: number) {
+  if (!chapters.length) return 0
+  if (line <= chapters[0].center) return chapters[0].scene
+  for (let i = 0; i < chapters.length - 1; i++) {
+    const a = chapters[i],
+      b = chapters[i + 1]
+    if (line >= b.center) continue
+    const u = (line - a.center) / Math.max(1, b.center - a.center)
+    const t = Math.min(1, Math.max(0, (u - 0.2) / 0.6))
+    return a.scene + (b.scene - a.scene) * t * t * (3 - 2 * t)
+  }
+  return chapters[chapters.length - 1].scene
 }

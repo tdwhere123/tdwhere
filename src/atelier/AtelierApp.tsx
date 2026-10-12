@@ -8,7 +8,6 @@ import './atelier.css'
 const Home = lazy(() => import('./pages/Home')),
   Alaya = lazy(() => import('./pages/Alaya')),
   DoIt = lazy(() => import('./pages/DoIt')),
-  WriteRight = lazy(() => import('./pages/WriteRight')),
   About = lazy(() => import('./pages/About')),
   Blog = lazy(() => import('./pages/Blog')),
   Article = lazy(() => import('./pages/Article')),
@@ -27,7 +26,6 @@ export default function AtelierApp() {
               <Route index element={<Home />} />
               <Route path="alaya" element={<Alaya />} />
               <Route path="do-it" element={<DoIt />} />
-              <Route path="write-right" element={<WriteRight />} />
               <Route path="about" element={<About />} />
               <Route path="blog" element={<Blog />} />
               <Route path="blog/:slug" element={<Article />} />
