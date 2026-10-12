@@ -13,6 +13,7 @@ import {
   type ArtName,
   type PaintIntensity,
 } from '../paint/presets'
+import { onPaint } from '../paint/bus'
 
 function whenIdle(fn: () => void, soon: boolean) {
   if ('requestIdleCallback' in window) {
@@ -26,7 +27,8 @@ function whenIdle(fn: () => void, soon: boolean) {
 /**
  * A procedurally painted brushstroke field. With WebGL2 and motion allowed it
  * is rendered live (impasto light, pointer response); otherwise the same
- * painting is shown as a still image. Both carry the same classes.
+ * painting is shown as a still image. Both carry the same classes. A layered
+ * series crossfades its stills on the channel's `scene` signal.
  */
 export function Art({
   name = 'landscape',
@@ -46,36 +48,38 @@ export function Art({
     quiet = useQuiet()
   const canvas = useRef<HTMLCanvasElement>(null)
   const [mode, setMode] = useState<'pending' | 'live' | 'still'>('pending')
-  const [still, setStill] = useState<string | null>(null)
+  const [stills, setStills] = useState<string[]>([])
+  const [scene, setScene] = useState(0)
   const key = `${name}:${portrait}:${quiet}`
   useEffect(() => {
     let handle: { destroy(): void } | undefined,
       cancelled = false
     const surface = canvas.current?.parentElement
-    const fallBack = (paintedStill: (n: ArtName, p: boolean) => Promise<string>) =>
-      paintedStill(name, portrait).then((url) => {
+    const fallBack = (paintedStills: (n: ArtName, p: boolean) => Promise<string[]>) =>
+      paintedStills(name, portrait).then((urls) => {
         if (cancelled) return
-        setStill(url)
+        setStills(urls)
         setMode('still')
       })
     const cancelIdle = whenIdle(async () => {
       const painter = await import('../paint/painter')
       if (cancelled) return
-      if (quiet || !canvas.current || !surface) return fallBack(painter.paintedStill)
+      if (quiet || !canvas.current || !surface) return fallBack(painter.paintedStills)
       try {
         const { mountPaint } = await import('../paint/engine')
         if (cancelled || !canvas.current) return
         handle = mountPaint({
           canvas: canvas.current,
-          source: painter.paintedSource(name, portrait),
+          layers: painter.layerCount(name),
+          layer: (i) => painter.paintedSource(name, portrait, i),
           preset: presetFor(name, intensity),
           surface,
           channel,
-          onLost: () => void fallBack(painter.paintedStill),
+          onLost: () => void fallBack(painter.paintedStills),
         })
         setMode('live')
       } catch {
-        await fallBack(painter.paintedStill)
+        await fallBack(painter.paintedStills)
       }
     }, eager)
     return () => {
@@ -85,6 +89,13 @@ export function Art({
       setMode('pending')
     }
   }, [key, name, portrait, quiet, intensity, channel, eager])
+  const layered = mode === 'still' && stills.length > 1
+  useEffect(() => {
+    if (!layered || !channel) return
+    return onPaint(channel, (signal) => {
+      if (signal.type === 'scene') setScene(signal.at)
+    })
+  }, [layered, channel])
   return (
     <>
       {mode !== 'still' && (
@@ -96,15 +107,20 @@ export function Art({
           aria-hidden="true"
         />
       )}
-      {mode === 'still' && still && (
-        <img
-          className={`a-art a-still ${className}`}
-          src={still}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-        />
-      )}
+      {mode === 'still' &&
+        stills.map((src, i) => (
+          <img
+            key={src}
+            className={`a-art a-still ${className}`}
+            src={src}
+            style={
+              i ? { opacity: Math.min(1, Math.max(0, scene - i + 1)) } : undefined
+            }
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
+        ))}
     </>
   )
 }

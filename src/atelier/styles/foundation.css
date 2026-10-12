@@ -1,4 +1,21 @@
 /* The new site is a continuous, responsive canvas. Legacy files are intentionally untouched. */
+/*
+ * Long Cang centres its full-width punctuation, leaving a gap after each
+ * clause. Borrow WenKai's punctuation (same CDN as index.html) for headings;
+ * glyphs missing from these slices fall through to the next family.
+ */
+@font-face {
+  font-family: 'Hand Punct';
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/files/lxgwwenkai-regular-subset-119.woff2') format('woff2');
+  unicode-range: U+3001-3002, U+300C-300F, U+FF01, U+FF0C, U+FF1A-FF1B;
+}
+@font-face {
+  font-family: 'Hand Punct';
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/files/lxgwwenkai-regular-subset-117.woff2') format('woff2');
+  unicode-range: U+FF1F;
+}
 :root {
   --a-paper: #f3eee3;
   --a-paper-light: #fbf7ef;
@@ -12,10 +29,14 @@
   --a-sienna: #a4623c;
   --a-ultramarine: #6f8199;
   --a-olive: #6f7f4f;
-  --a-serif:
-  'Cormorant Garamond', 'LXGW WenKai', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
-  --a-cn: 'LXGW WenKai', 'Noto Serif SC', 'Songti SC', 'STSong', serif;
-  --a-sans: 'DM Sans', 'LXGW WenKai', 'Noto Sans SC', system-ui, sans-serif;
+  /*
+   * A painter's notebook, all by hand. Headings are written quickly with a
+   * brush pen (Caveat, Long Cang); running text is a slower, legible hand
+   * (Kalam, LXGW WenKai) so articles stay readable.
+   */
+  --a-serif: 'Caveat', 'Hand Punct', 'Long Cang', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
+  --a-cn: 'Hand Punct', 'Long Cang', 'Caveat', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
+  --a-text: 'Kalam', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
   --a-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 html {
@@ -24,7 +45,7 @@ html {
 body {
   background: var(--a-paper);
   color: var(--a-ink);
-  font-family: var(--a-sans);
+  font-family: var(--a-text);
   line-height: 1.8;
   letter-spacing: 0;
 }
@@ -43,6 +64,8 @@ select {
   touch-action: manipulation;
 }
 .a-shell {
+  /* single-weight hands must not be thickened or slanted by the browser */
+  font-synthesis: none;
   overflow: clip;
   background: var(--a-paper);
   min-height: 100vh;
@@ -131,7 +154,7 @@ select {
   display: flex;
   align-items: center;
   gap: 22px;
-  font-family: var(--a-sans);
+  font-family: var(--a-text);
   font-size: 11px;
   letter-spacing: 0.12em;
   line-height: 1.6;
@@ -145,7 +168,7 @@ select {
   border-right: 1px solid currentColor;
 }
 .a-micro {
-  font: 10px/1.8 var(--a-sans);
+  font: 10px/1.8 var(--a-text);
   letter-spacing: 0.09em;
 }
 .a-art {
@@ -202,19 +225,13 @@ select {
   padding: 9px 0;
   font-size: 12px !important;
 }
-.a-handwritten,
-.a-marginalia,
-.a-table-script {
+.a-handwritten {
   font-family: 'Caveat', var(--a-serif);
   font-weight: 400;
   font-size: 36px;
   line-height: 1.05;
   transform: rotate(-8deg);
   color: var(--a-pigment);
-}
-.a-small-cross {
-  font-family: var(--a-serif);
-  font-size: 40px;
 }
 .a-reveal {
   opacity: 1;
@@ -311,7 +328,7 @@ select {
   display: flex;
   gap: 7px;
   margin-left: 10px;
-  font: 11px/1 var(--a-sans);
+  font: 11px/1 var(--a-text);
   align-items: center;
 }
 .a-language button {

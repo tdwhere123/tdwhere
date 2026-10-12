@@ -14,3 +14,15 @@ describe('paint bus', () => {
     stop()
   })
 })
+
+describe('paint bus scenes', () => {
+  it('replays the latest scene alongside the glaze', () => {
+    const heard: string[] = []
+    paint('scene-replay', { type: 'scene', at: 0.4 })
+    paint('scene-replay', { type: 'scene', at: 1.2 })
+    paint('scene-replay', { type: 'drag', x0: 0, y0: 0, x1: 1, y1: 1 })
+    const stop = onPaint('scene-replay', (signal) => heard.push(signal.type === 'scene' ? `scene ${signal.at}` : signal.type))
+    expect(heard).toEqual(['scene 1.2'])
+    stop()
+  })
+})

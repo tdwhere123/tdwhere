@@ -23,9 +23,8 @@
     opacity: 1;
     transform: none;
   }
-  .a-hero-landscape,
-  .a-hero-orbits {
-    transform: none !important;
+  .a-alaya-rain {
+    display: none;
   }
   .a-evidence-result button {
     opacity: 1;

@@ -73,13 +73,6 @@
 }
 
 @media (max-width: 850px) {
-  .a-opening-statement {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 90px 7% 90px;
-  }
-  .a-opening-statement h2 {
-    margin-bottom: 30px;
-  }
   .a-about-hero {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
@@ -166,11 +159,6 @@
   }
   .a-machine-controls {
     padding-left: 0;
-  }
-}
-@media (max-width: 600px) {
-  .a-opening-threads em {
-    font-size: 19px;
   }
 }
 .a-back {

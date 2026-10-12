@@ -52,54 +52,6 @@
     font-size: 9px;
     margin-left: 18px;
   }
-  .a-home-hero {
-    min-height: 830px;
-    height: calc(100svh - 65px);
-  }
-  .a-hero-copy {
-    top: 8%;
-    left: 7%;
-    width: 65%;
-  }
-  .a-hero-copy h1 {
-    font-size: 7.3vw;
-    line-height: 1.45;
-  }
-  .a-hero-copy > p:not(.a-caption) {
-    font-size: 13px;
-    max-width: 325px;
-  }
-  .a-hero-landscape {
-    left: 25%;
-    top: 12%;
-    height: 65%;
-    width: 90%;
-    opacity: 0.8;
-  }
-  .a-hero-sidenote {
-    right: 5%;
-    font-size: 8px;
-  }
-  .a-hero-orbits {
-    left: 57%;
-    top: 28%;
-    width: 34%;
-    height: 31%;
-  }
-  .a-hero-signature {
-    bottom: 7%;
-    font-size: 14vw;
-  }
-  .a-project-intro {
-    grid-template-columns: 1fr 1fr;
-    gap: 15px 40px;
-  }
-  .a-project-intro > div > p {
-    font-size: 12px;
-  }
-  .a-project-intro h2 > span {
-    font-size: 20px;
-  }
   .a-memory-map {
     height: 460px;
   }
@@ -134,34 +86,6 @@
   .a-stages button > span {
     font-size: 17px;
     margin-right: 6px;
-  }
-  .a-work-construction {
-    min-height: 580px;
-    padding-top: 100px;
-  }
-  .a-work-construction > .a-art {
-    height: 390px;
-  }
-  .a-work-writing {
-    min-height: 520px;
-    padding-left: 43%;
-  }
-  .a-work-writing > .a-art {
-    height: 390px;
-  }
-  .a-work-writing h2 {
-    font-size: 9vw;
-    left: -15vw;
-  }
-  .a-home-making h3 {
-    font-size: 23px;
-  }
-  .a-home-notes {
-    gap: 7vw;
-    padding: 65px 7% 85px;
-  }
-  .a-home-note-list h3 {
-    font-size: 17px;
   }
   .a-alaya-hero {
     height: auto;
@@ -240,35 +164,6 @@
   }
   .a-making-notes h3 {
     font-size: 21px;
-  }
-  .a-writing-hero {
-    min-height: 830px;
-  }
-  .a-writing-hero > h1 {
-    font-size: 20vw;
-  }
-  .a-writing-script {
-    font-size: 37px;
-  }
-  .a-writing-intro {
-    margin-left: 50%;
-  }
-  .a-writing-margins {
-    padding-inline: 8%;
-    gap: 9vw;
-  }
-  .a-paper-slip {
-    padding: 16px;
-    min-height: 145px;
-  }
-  .a-paper-slip p {
-    font-size: 14px;
-  }
-  .a-paper-slip small {
-    font-size: 10px;
-  }
-  .a-table-script {
-    font-size: 26px;
   }
   .a-reading-progress {
     top: 65px;

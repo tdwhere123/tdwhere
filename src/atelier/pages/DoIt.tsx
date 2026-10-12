@@ -102,11 +102,11 @@ export default function DoIt() {
         </div>
       </section>
       <NextProject
-        name="Write-Right"
-        to="/write-right"
+        name="Field notes"
+        to="/blog"
         note={w(
-          '把同样的过程意识，带进写作。',
-          'Bring the same care to writing.',
+          '有些思考，还停在纸上。',
+          'Some thoughts are still on the page.',
         )}
       />
     </div>

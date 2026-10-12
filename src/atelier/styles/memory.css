@@ -118,7 +118,7 @@
   color: #baab85;
 }
 .a-memory-inspector h4 {
-  font: 500 15px/1.8 var(--a-cn);
+  font: 500 15px/1.8 var(--a-text);
   margin: 7px 0;
 }
 .a-memory-inspector p {
@@ -154,7 +154,7 @@
   justify-content: space-between;
   gap: 16px;
   width: 100%;
-  font: 15px/1.6 var(--a-cn);
+  font: 15px/1.6 var(--a-text);
   letter-spacing: 0.02em;
   text-align: left;
   padding: 6px 0 8px;
@@ -204,7 +204,7 @@
   border-radius: 0;
   background: none;
   color: #8ea0a4;
-  font: 12px/1.5 var(--a-cn);
+  font: 12px/1.5 var(--a-text);
   letter-spacing: 0.02em;
 }
 .a-query-list button:hover {
@@ -396,7 +396,7 @@
   position: absolute;
   right: 6%;
   bottom: 12%;
-  font: 10px/1.9 var(--a-sans);
+  font: 10px/1.9 var(--a-text);
   letter-spacing: 0.18em;
 }
 .a-alaya-sky {
@@ -418,6 +418,36 @@
 }
 .a-alaya-sky i:nth-child(3) {
   transform: rotate(70deg) scaleY(0.5);
+}
+/* A short shower over the hero: the rain stops, and the stars stay. */
+.a-alaya-rain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  animation: a-rain-stop 4.5s 1s ease-out both;
+}
+.a-alaya-rain i {
+  position: absolute;
+  top: -12%;
+  left: var(--x);
+  width: 1px;
+  height: 90px;
+  background: linear-gradient(transparent, #d9e4ea66);
+  transform: rotate(12deg);
+  animation: a-rain-fall var(--d) linear calc(var(--i) * -0.17s) 8;
+}
+@keyframes a-rain-fall {
+  to {
+    translate: -14vh 125vh;
+  }
+}
+@keyframes a-rain-stop {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 .a-memory-thesis {
   padding: 100px 10% 110px;
@@ -496,6 +526,13 @@
   font-family: var(--a-serif);
   font-size: 42px;
   color: #cbb389;
+}
+.a-principles article > small {
+  display: block;
+  margin-top: 10px;
+  font: 11px/1.6 var(--a-text);
+  letter-spacing: 0.22em;
+  color: #9fb3b8;
 }
 .a-principles h3 {
   font-family: var(--a-cn);

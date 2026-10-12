@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { useWords } from '../hooks'
 import {
   Art,
@@ -19,6 +20,20 @@ export default function Alaya() {
           <i />
           <i />
         </div>
+        <div className="a-alaya-rain" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, i) => (
+            <i
+              key={i}
+              style={
+                {
+                  '--x': `${4 + ((i * 37) % 92)}%`,
+                  '--d': `${0.75 + ((i * 7) % 5) * 0.08}s`,
+                  '--i': i,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
         <Caption number="01">AGENT MEMORY / RESEARCH IN PROGRESS</Caption>
         <h1>
           Alaya
@@ -26,8 +41,8 @@ export default function Alaya() {
         </h1>
         <p>
           {w(
-            '一项关于 Agent 长期记忆的研究与工程实践。探索信息如何留下、建立关联，以及在需要的时候带着依据回来。',
-            'Research and engineering for long-term agent memory: how information persists, becomes connected, and returns with evidence when needed.',
+            '每一次对话都像一场雨，落下，渗进土里。Alaya 是一项关于 Agent 长期记忆的研究与工程实践：雨水如何被留下，涟漪如何彼此相连，过去又如何像星光一样，带着来处回到此刻。',
+            'Every conversation falls like rain and soaks into the ground. Alaya is research and engineering for long-term agent memory: how the rain is kept, how its ripples connect, and how the past returns like starlight, carrying where it came from.',
           )}
         </p>
         <div className="a-hero-links">
@@ -39,11 +54,11 @@ export default function Alaya() {
           </LinkLine>
         </div>
         <span className="a-alaya-margin">
-          REPRESENTATION
+          RAIN — REPRESENTATION
           <br />
-          ASSOCIATION
+          RIPPLE — ASSOCIATION
           <br />
-          RECALL
+          STARLIGHT — RECALL
         </span>
       </header>
       <section className="a-memory-thesis">
@@ -58,8 +73,8 @@ export default function Alaya() {
         </Reveal>
         <p>
           {w(
-            '一段旧决定、一条当前约束、一份来源证据，可能谈论同一个主题，却不应该以相同的方式进入下一轮上下文。',
-            'An old decision, a current constraint and a source document may describe the same topic, but they should not enter the next context in the same way.',
+            '满天都是星，能替你指路的只有几颗。一段旧决定、一条当前约束、一份来源证据，可能谈论同一个主题，却不应该以相同的方式进入下一轮上下文。',
+            'The sky is full of stars; only a few can show the way. An old decision, a current constraint and a source document may describe the same topic, but they should not enter the next context in the same way.',
           )}
         </p>
       </section>
@@ -83,31 +98,34 @@ export default function Alaya() {
       <section className="a-principles">
         <article>
           <span>01</span>
+          <small>{w('雨落', 'Rain')}</small>
           <h3>{w('保存的不是答案', 'Store more than answers')}</h3>
           <p>
             {w(
-              '信息需要保留它的对象、上下文和出处。写入形式会影响之后能够如何找到它。',
-              'Preserve what the information concerns, its context and its source. Representation shapes what retrieval can later recover.',
+              '雨水落进土里，也带着它落下的地方。信息需要保留它的对象、上下文和出处；写入的形式，决定了之后能如何找到它。',
+              'Rain soaks in where it falls. Information needs to keep what it concerns, its context and its source; representation shapes what retrieval can later recover.',
             )}
           </p>
         </article>
         <article>
           <span>02</span>
+          <small>{w('涟漪', 'Ripple')}</small>
           <h3>{w('关联不等于采用', 'Connection is not adoption')}</h3>
           <p>
             {w(
-              '线索可以扩展候选范围，但候选仍需区分当前有效性、冗余和用途。',
-              'Connections may broaden the candidate set; candidates still differ in validity, redundancy and purpose.',
+              '两圈涟漪会在水面相遇。线索可以扩展候选范围，但候选仍需区分当前有效性、冗余和用途。',
+              'Two ripples meet on the water. Connections may broaden the candidate set; candidates still differ in validity, redundancy and purpose.',
             )}
           </p>
         </article>
         <article>
           <span>03</span>
+          <small>{w('星光', 'Starlight')}</small>
           <h3>{w('上下文是一种预算', 'Context has a budget')}</h3>
           <p>
             {w(
-              '目标不是把相关项全部塞满，而是在有限空间里带回互相补充的证据。',
-              'The aim is not to fill every slot with relevant items, but to return complementary evidence within limited space.',
+              '星光很久以前就已发出，此刻才抵达。目标不是把相关项全部塞满，而是在有限空间里，带回互相补充、带着来处的证据。',
+              'Starlight left long ago and arrives only now. The aim is not to fill every slot with relevant items, but to return complementary evidence, with its source, within limited space.',
             )}
           </p>
         </article>
