@@ -92,10 +92,12 @@ export default function Article() {
         </p>
         <div className="a-essay-byline">
           <span>阿黄 / tdwhere</span>
-          <a href={post.source} target="_blank" rel="noreferrer">
-            {w('原始发表', 'Original publication')}
-            <ArrowUpRight size={13} />
-          </a>
+          {post.source && (
+            <a href={post.source} target="_blank" rel="noreferrer">
+              {w('原始发表', 'Original publication')}
+              <ArrowUpRight size={13} />
+            </a>
+          )}
         </div>
       </header>
       <div className="a-reading-layout">
@@ -130,7 +132,11 @@ export default function Article() {
             </div>
           )}
         </aside>
-        <div className="a-prose" lang="zh" ref={article}>
+        <div
+          className={post.kind === 'fiction' ? 'a-prose is-fiction' : 'a-prose'}
+          lang="zh"
+          ref={article}
+        >
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex]}

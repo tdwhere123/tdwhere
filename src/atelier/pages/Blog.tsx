@@ -20,7 +20,7 @@ export default function Blog() {
     <div className="a-blog">
       <header className="a-notes-hero">
         <Art name="manuscript" eager intensity="quiet" />
-        <Caption>ESSAYS / OBSERVATIONS / UNFINISHED QUESTIONS</Caption>
+        <Caption>ESSAYS / FICTION / UNFINISHED QUESTIONS</Caption>
         <h1>
           Field
           <br />
@@ -28,8 +28,8 @@ export default function Blog() {
         </h1>
         <p>
           {w(
-            '有些是思考，有些是反思。',
-            'Some thoughts. Some second thoughts.',
+            '有些是思考，有些是反思，也有小说。',
+            'Some thoughts. Some second thoughts. Some fiction.',
           )}
           <br />
           {w(

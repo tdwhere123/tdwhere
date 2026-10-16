@@ -143,6 +143,26 @@
   color: #4a5c62;
   font-size: 19px;
 }
+/* Fiction sections are numbers, not essay titles; verse sits closer to the prose. */
+.a-prose.is-fiction > p {
+  margin-bottom: 1.15em;
+}
+.a-prose.is-fiction h2 {
+  font: 600 15px/1.4 var(--a-cn);
+  letter-spacing: 0.22em;
+  margin: 52px 0 22px;
+}
+.a-prose.is-fiction blockquote {
+  margin: 1.15em 0;
+  font-size: 17px;
+  font-style: italic;
+}
+.a-prose.is-fiction blockquote p {
+  margin: 0;
+}
+.a-prose.is-fiction blockquote p + p {
+  margin-top: 0.2em;
+}
 .a-prose a {
   text-decoration: underline;
   text-underline-offset: 4px;

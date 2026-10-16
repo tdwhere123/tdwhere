@@ -10,11 +10,31 @@ export type PostMeta = {
   date: string
   tags: string[]
   summary: string
-  /** Linux.do 原文链接 */
-  source: string
+  /** Public original, when the piece was first published elsewhere. */
+  source?: string
+  /** Fiction uses a quieter section rhythm than the essays. */
+  kind?: 'fiction'
 }
 
 export const posts: PostMeta[] = [
+  {
+    slug: 'driving-on-nous-avenue',
+    title: '驾驶在努斯大道上',
+    date: '2026-10-16',
+    tags: ['小说'],
+    summary:
+      '雨没有停。一对人堵在努斯大道上，便利店里的人把时间数到午饭。同一本《高速公路》，同一条路，两段彼此错过的下午。',
+    kind: 'fiction',
+  },
+  {
+    slug: 'day-1-myth',
+    title: 'Day-1 神话',
+    date: '2026-10-16',
+    tags: ['小说'],
+    summary:
+      '城里只剩一个书吏还在校泥版。大屋抄得又快又齐，也把长诗的第一行写成了「在第一日」。原版就要下池，这一行得由他决定怎么留。',
+    kind: 'fiction',
+  },
   {
     slug: 'memory-is-not-one-thing',
     title: '关于AI Memory，我们如何理解？（三）',
