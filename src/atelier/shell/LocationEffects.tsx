@@ -24,8 +24,9 @@ export default function LocationEffects() {
         timer = setTimeout(() => observer?.disconnect(), 4000)
       }
     } else window.scrollTo({ top: 0, behavior: 'auto' })
-    if (!pathname.startsWith('/blog/'))
-      document.title = `${({ '/': 'tdwhere', '/alaya': 'Alaya', '/do-it': 'do-it', '/about': 'About', '/blog': 'Field notes', '/playground': 'Elsewhere' } as Record<string, string>)[pathname] || '404'} · 阿黄`
+    if (pathname.startsWith('/film/')) document.title = 'Film · 阿黄'
+    else if (!pathname.startsWith('/blog/'))
+      document.title = `${({ '/': 'tdwhere', '/projects': 'Projects', '/film': 'Film', '/alaya': 'Alaya', '/do-it': 'do-it', '/sentinel': 'SENTINEL', '/about': 'About', '/blog': 'Field notes', '/playground': 'Elsewhere' } as Record<string, string>)[pathname] || '404'} · 阿黄`
     return () => {
       if (timer) clearTimeout(timer)
       observer?.disconnect()

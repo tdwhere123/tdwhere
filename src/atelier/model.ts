@@ -182,34 +182,6 @@ export function recallFixture(query: QueryId, budget = 3) {
   }
   return { candidates, selected, used: selected.length }
 }
-export type TaskKind = 'copy' | 'api' | 'auth'
-export const workflow: Record<TaskKind, string[]> = {
-  copy: ['scope', 'edit', 'verify', 'deliver'],
-  api: ['scope', 'plan', 'edit', 'review', 'verify', 'deliver'],
-  auth: ['scope', 'plan', 'challenge', 'edit', 'review', 'verify', 'deliver'],
-}
-export type RunState = { index: number; failed: boolean; repaired: boolean }
-export const emptyRun = (): RunState => ({
-  index: 0,
-  failed: false,
-  repaired: false,
-})
-export function advanceRun(
-  kind: TaskKind,
-  state: RunState,
-  event: 'next' | 'repair' | 'reset',
-): RunState {
-  if (event === 'reset') return emptyRun()
-  if (event === 'repair')
-    return state.failed ? { ...state, failed: false, repaired: true } : state
-  if (state.failed) return state
-  if (workflow[kind][state.index] === 'verify' && !state.repaired)
-    return { ...state, failed: true }
-  return {
-    ...state,
-    index: Math.min(workflow[kind].length - 1, state.index + 1),
-  }
-}
 export function extractHeadings(
   body: string,
 ): { level: number; title: string; id: string }[] {
@@ -234,23 +206,4 @@ export function extractHeadings(
       })
   }
   return result
-}
-
-/**
- * Scene of a layered painting at a viewport line, from chapter centers in
- * client space. Each chapter holds its scene around its center and the
- * painting turns over the middle of the gap to the next one.
- */
-export function sceneAt(chapters: { center: number; scene: number }[], line: number) {
-  if (!chapters.length) return 0
-  if (line <= chapters[0].center) return chapters[0].scene
-  for (let i = 0; i < chapters.length - 1; i++) {
-    const a = chapters[i],
-      b = chapters[i + 1]
-    if (line >= b.center) continue
-    const u = (line - a.center) / Math.max(1, b.center - a.center)
-    const t = Math.min(1, Math.max(0, (u - 0.2) / 0.6))
-    return a.scene + (b.scene - a.scene) * t * t * (3 - 2 * t)
-  }
-  return chapters[chapters.length - 1].scene
 }

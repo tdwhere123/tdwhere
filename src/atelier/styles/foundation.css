@@ -37,6 +37,8 @@
   --a-serif: 'Caveat', 'Hand Punct', 'Long Cang', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
   --a-cn: 'Hand Punct', 'Long Cang', 'Caveat', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
   --a-text: 'Kalam', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
+  /* the edge print on film stock: frame numbers, roll marks */
+  --a-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --a-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 html {

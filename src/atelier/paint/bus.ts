@@ -9,6 +9,8 @@ export type PaintSignal =
   | { type: 'glaze'; color: Rgb | null }
   /** Position in a layered series painting: 0 is the first layer, 1.5 halfway into the third. */
   | { type: 'scene'; at: number }
+  /** A palette knife drawn across at height y, then the paint parted wide open along it. */
+  | { type: 'part'; y: number }
   | {
       type: 'mark'
       id: string

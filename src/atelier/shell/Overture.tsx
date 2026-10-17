@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useWords } from '../hooks'
+import { heroFrame } from '../film'
+import { caption, lightAt, weatherAt } from '../weather'
+import type { OvertureHandle } from '../paint/overture'
+import { onReplay } from './overtureCue'
 
 const SEEN = 'tdwhere:overture'
 
@@ -14,11 +18,14 @@ function shouldPlay(pathname: string) {
   }
 }
 
+const css = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round(v * 255)).join(' ')})`
+
 /**
- * Rain on painted water around a small square opening, shown once per
- * session when a visit begins on the home page. The rain falls quietly for
- * as long as the visitor waits; a touch, a key or a scroll lets it fall in,
- * and the opening widens onto the painting. Escape skips straight to the page.
+ * A block of water on paper under the visitor's own sky: the hour sets the
+ * light, the date picks the weather. Shown once per session when a visit
+ * begins on the home page. Touching the water rings it; the line beneath
+ * lets the visitor in, sinking into the water onto the home painting.
+ * Escape skips straight to the page. The home page can ask for it again.
  */
 export default function Overture() {
   const w = useWords()
@@ -26,7 +33,23 @@ export default function Overture() {
   const [stage, setStage] = useState<'rest' | 'enter' | 'leave' | 'gone'>(() =>
     shouldPlay(pathname) ? 'rest' : 'gone',
   )
-  const canvas = useRef<HTMLCanvasElement>(null)
+  const now = () => {
+    const weather = weatherAt(new Date())
+    return { weather, light: lightAt(weather) }
+  }
+  const [sky, setSky] = useState(now)
+  // asked for again from the home page: under the sky as it is now
+  useEffect(
+    () =>
+      onReplay(() => {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        setSky(now())
+        setStage((s) => (s === 'gone' ? 'rest' : s))
+      }),
+    [],
+  )
+  const canvas = useRef<HTMLCanvasElement>(null),
+    handle = useRef<OvertureHandle | undefined>(undefined)
   // stays mounted through the fade, so the last frame holds while it leaves
   const shown = stage !== 'gone'
   useEffect(() => {
@@ -39,59 +62,66 @@ export default function Overture() {
     const html = document.documentElement,
       overflow = html.style.overflow
     html.style.overflow = 'hidden'
-    let handle: { enter(x?: number, y?: number): void; destroy(): void } | undefined,
-      cancelled = false
+    let cancelled = false
     const leave = () => setStage((s) => (s === 'gone' ? s : 'leave'))
-    Promise.all([import('../paint/overture'), import('../paint/painter')])
-      .then(([{ mountOverture }, painter]) => {
+    Promise.all([import('../paint/overture'), import('../paint/painter'), import('../paint/presets')])
+      .then(async ([{ mountOverture }, painter, { parseObjectPosition }]) => {
+        await painter.loadFrame(heroFrame)
         if (cancelled || !canvas.current) return
-        const portrait = matchMedia('(max-width: 850px)').matches
-        handle = mountOverture({
+        handle.current = mountOverture({
           canvas: canvas.current,
+          weather: sky.weather,
+          light: sky.light,
+          painting: () => painter.paintedFrame(heroFrame),
+          focus: parseObjectPosition(heroFrame.focus),
           onDone: leave,
-          water: painter.paintedWater(portrait),
-          painting: () => painter.paintedSource('pond', portrait),
         })
       })
       .catch(() => setStage('gone'))
-    const enter = (x?: number, y?: number) => {
-      handle?.enter(x, y)
-      setStage((s) => (s === 'rest' ? 'enter' : s))
-    }
-    const onPointer = (e: PointerEvent) => enter(e.clientX, e.clientY)
+    const onPointer = (e: PointerEvent) => handle.current?.touch(e.clientX, e.clientY)
+    const onMove = (e: PointerEvent) => handle.current?.stir(e.clientX, e.clientY)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') leave()
-      else if (!e.metaKey && !e.ctrlKey && !e.altKey) enter()
     }
-    const onWheel = () => enter()
     addEventListener('pointerdown', onPointer)
+    addEventListener('pointermove', onMove, { passive: true })
     addEventListener('keydown', onKey)
-    addEventListener('wheel', onWheel, { passive: true })
-    addEventListener('touchmove', onWheel, { passive: true })
     return () => {
       cancelled = true
       removeEventListener('pointerdown', onPointer)
+      removeEventListener('pointermove', onMove)
       removeEventListener('keydown', onKey)
-      removeEventListener('wheel', onWheel)
-      removeEventListener('touchmove', onWheel)
       html.style.overflow = overflow
-      handle?.destroy()
+      handle.current?.destroy()
     }
-  }, [shown])
+  }, [shown, sky])
   useEffect(() => {
     if (stage !== 'leave') return
     const timer = setTimeout(() => setStage('gone'), 900)
     return () => clearTimeout(timer)
   }, [stage])
   if (stage === 'gone') return null
+  const enter = () => {
+    handle.current?.enter()
+    setStage((s) => (s === 'rest' ? 'enter' : s))
+  }
+  const [zh, en] = caption(sky.weather)
+  const p = sky.light.paper
   return (
-    <div className="a-overture" data-stage={stage} aria-hidden="true">
-      <canvas ref={canvas} />
-      <p>
-        <span>{w('雨正在下。', 'It is raining.')}</span>
-        {w('轻触，让雨落进那个口子', 'Touch to let the rain fall in')}
+    <div
+      className="a-overture"
+      data-stage={stage}
+      data-dark={p[0] * 0.3 + p[1] * 0.6 + p[2] * 0.1 < 0.5 ? '' : undefined}
+      style={{ background: css(p) }}
+    >
+      <canvas ref={canvas} aria-hidden="true" />
+      <div className="a-overture-foot">
+        <p>{w(zh, en)}</p>
+        <button type="button" onClick={enter} disabled={stage !== 'rest'} autoFocus>
+          {w('点击进入', 'Enter')}
+        </button>
         <small>{w('Esc 跳过', 'Esc to skip')}</small>
-      </p>
+      </div>
     </div>
   )
 }

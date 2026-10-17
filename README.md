@@ -16,6 +16,11 @@
 2. **Source** 选择 **GitHub Actions**
 3. 合并本 PR 或手动在 Actions 里运行 **Deploy to GitHub Pages**
 
+## 加胶片
+
+照片放进 `src/assets/film/` 下的一个文件夹就会出现在「胶片」页，不用改代码。
+文件夹怎么命名、`roll.json` 怎么写、胶卷罐的配色规则，见 [src/assets/film/README.md](src/assets/film/README.md)。
+
 ## 本地开发
 
 ```bash

@@ -32,6 +32,9 @@ type Mark = { x: number; y: number; r: number; strength: number; on: boolean }
 type Drag = { from: Vec2; to: Vec2; t: number }
 
 const DRAG_MS = 420
+/** The knife crosses in KNIFE_MS; the cut then opens past the edges in OPEN_MS. */
+const KNIFE_MS = 560,
+  OPEN_MS = 950
 
 const MAX_PULSES = 8
 const MAX_MARKS = 4
@@ -162,7 +165,8 @@ export function mountPaint(o: PaintOptions) {
   const drags: Drag[] = []
   let scene = 0,
     sceneTarget = 0,
-    idle = 0
+    idle = 0,
+    part: { y: number; at: number } | null = null
   const glaze: Rgb = [...preset.glaze]
   let glazeTarget: Rgb = [...preset.glaze]
   let light: Vec2 = [...preset.lightFrom],
@@ -270,6 +274,15 @@ export function mountPaint(o: PaintOptions) {
     gl!.uniform3fv(u('uAccent'), preset.accent)
     gl!.uniform3fv(u('uGround'), preset.ground)
     gl!.uniform1i(u('uMode'), modeIndex[preset.mode])
+    if (part) {
+      const since = performance.now() - part.at
+      // the blade eases in and out of its stroke; the cut then opens slow, fast, slow
+      const k = Math.min(1, since / KNIFE_MS),
+        open = Math.min(1, Math.max(0, (since - KNIFE_MS * 0.85) / OPEN_MS))
+      const knife = -0.06 + (1 - (1 - k) ** 3) * 1.18,
+        wide = open < 0.5 ? 4 * open ** 3 : 1 - (-2 * open + 2) ** 3 / 2
+      gl!.uniform3f(u('uPart'), knife, part.y, wide * 0.64)
+    } else gl!.uniform3f(u('uPart'), 0, 0, -1)
     const list = [...marks.values()].slice(0, MAX_MARKS)
     if (list.length)
       gl!.uniform4fv(u('uMarks'), list.flatMap((m) => [m.x, m.y, m.r, m.strength]))
@@ -315,6 +328,7 @@ export function mountPaint(o: PaintOptions) {
       if (s.t > 1) sweeps.splice(i, 1)
       moving = true
     }
+    if (part && performance.now() - part.at < KNIFE_MS + OPEN_MS + 100) moving = true
     const target = mixVec2(preset.lightFrom, preset.lightTo, progress)
     light = mixVec2(light, target, 1 - Math.exp(-dt / 400))
     if (Math.hypot(light[0] - target[0], light[1] - target[1]) > 0.003) moving = true
@@ -414,6 +428,8 @@ export function mountPaint(o: PaintOptions) {
       sceneTarget = Math.max(0, Math.min(o.layers - 1, signal.at))
       while (loaded < o.layers && sceneTarget > loaded - 0.98 && !destroyed && !gl!.isContextLost())
         loadNext()
+    } else if (signal.type === 'part') {
+      part = { y: toUv(0, signal.y)[1], at: performance.now() }
     } else if (signal.type === 'glaze') {
       glazeTarget = [...(signal.color ?? preset.glaze)]
     } else {

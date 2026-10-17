@@ -1,7 +1,9 @@
 export type Rgb = [number, number, number]
 export type Vec2 = [number, number]
-export type ArtName = 'landscape' | 'pigment' | 'construction' | 'manuscript' | 'pond'
+export type ArtName = 'landscape' | 'pigment' | 'construction' | 'manuscript'
 export type PaintIntensity = 'full' | 'quiet'
+/** Procedural paintings, plus `film` for the author's own frames repainted. */
+export type PresetName = ArtName | 'film'
 
 /**
  * How the pointer disturbs the paint.
@@ -49,7 +51,7 @@ export type PaintPreset = {
   drift: number
 }
 
-const base: Record<ArtName, PaintPreset> = {
+const base: Record<PresetName, PaintPreset> = {
   landscape: {
     mode: 'smear',
     strokeAngle: -0.12,
@@ -130,30 +132,31 @@ const base: Record<ArtName, PaintPreset> = {
     lightTo: [-0.2, 0.6],
     drift: 0.5,
   },
-  pond: {
+  // the author's film, repainted: level strokes, as on the water most frames hold
+  film: {
     mode: 'smear',
-    strokeAngle: 0.04,
-    directionBias: 0.45,
-    strokeLength: 0.012,
-    impasto: 1.05,
-    dabScale: 1.1,
-    brushRadius: 0.06,
-    gain: [0.85, 0, 0.08],
-    anisotropy: [1, 0.7],
-    decay: [0.994, 0.97, 0.99],
-    diffusion: [0.16, 0.1],
+    strokeAngle: 0.02,
+    directionBias: 0.55,
+    strokeLength: 0.011,
+    impasto: 0.9,
+    dabScale: 1,
+    brushRadius: 0.065,
+    gain: [0.8, 0, 0.06],
+    anisotropy: [1, 0.6],
+    decay: [0.992, 0.985, 0.99],
+    diffusion: [0.14, 0.08],
     glaze: [1, 1, 1],
     scrollGlaze: [1, 1, 1],
-    accent: [1, 0.9, 0.7],
-    ground: [0.95, 0.93, 0.87],
-    lightFrom: [-0.6, 0.8],
-    lightTo: [0.6, 0.5],
-    drift: 0.8,
+    accent: [1, 0.9, 0.68],
+    ground: [0.08, 0.1, 0.13],
+    lightFrom: [0.6, 0.8],
+    lightTo: [0.6, 0.8],
+    drift: 0.6,
   },
 }
 
 export function presetFor(
-  name: ArtName,
+  name: PresetName,
   intensity: PaintIntensity = 'full',
 ): PaintPreset {
   const p = base[name]

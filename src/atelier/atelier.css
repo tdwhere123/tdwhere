@@ -1,7 +1,9 @@
 @import './styles/foundation.css';
 @import './styles/home.css';
+@import './styles/projects.css';
+@import './styles/film.css';
 @import './styles/memory.css';
-@import './styles/making.css';
+@import './styles/doit.css';
 @import './styles/prose.css';
 @import './styles/responsive.css';
 @import './styles/paint.css';
