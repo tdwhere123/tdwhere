@@ -258,3 +258,8 @@ export function settleFrames(decay: number, epsilon = 0.004) {
   if (decay >= 1) return Infinity
   return Math.ceil(Math.log(epsilon) / Math.log(decay))
 }
+
+/** A queued rAF timestamp can predate slow setup in the same frame. */
+export function frameDelta(now: number, last: number, cap: number) {
+  return Math.max(0, Math.min(now - last, cap))
+}

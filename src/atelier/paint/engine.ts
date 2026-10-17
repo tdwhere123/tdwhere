@@ -2,6 +2,7 @@ import { fieldSource, paintSource, vertexSource } from './shaders'
 import {
   coverFit,
   fieldSteps,
+  frameDelta,
   mixRgb,
   mixVec2,
   modeIndex,
@@ -156,6 +157,7 @@ export function mountPaint(o: PaintOptions) {
     lastPaint = 0,
     dirty = true,
     visible = false,
+    suspended = false,
     destroyed = false
   let brush: { p0: Vec2; p1: Vec2 } | null = null,
     lastPointer: Vec2 | null = null
@@ -337,8 +339,8 @@ export function mountPaint(o: PaintOptions) {
 
   function frame(now: number) {
     raf = 0
-    if (destroyed || !visible || document.hidden) return
-    const dt = Math.min(100, now - last || 16)
+    if (destroyed || suspended || !visible || document.hidden) return
+    const dt = frameDelta(now, last, 100)
     last = now
     const r = canvas.getBoundingClientRect()
     progress = scrollProgress(r.top, r.height, innerHeight)
@@ -367,7 +369,7 @@ export function mountPaint(o: PaintOptions) {
   }
 
   function wake() {
-    if (raf || destroyed || !visible || document.hidden) return
+    if (raf || destroyed || suspended || !visible || document.hidden) return
     last = performance.now()
     raf = requestAnimationFrame(frame)
   }
@@ -405,6 +407,12 @@ export function mountPaint(o: PaintOptions) {
   }
 
   function onSignal(signal: PaintSignal) {
+    if (signal.type === 'suspend') {
+      suspended = signal.value
+      if (suspended) { cancelAnimationFrame(raf); raf = 0 }
+      else { dirty = true; wake() }
+      return
+    }
     if (signal.type === 'pulse') {
       const p = toUv(signal.x, signal.y)
       if (pulses.length < MAX_PULSES)

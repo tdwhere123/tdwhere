@@ -5,6 +5,7 @@ import { heroFrame } from '../film'
 import { caption, lightAt, weatherAt } from '../weather'
 import type { OvertureHandle } from '../paint/overture'
 import { onReplay } from './overtureCue'
+import { paint } from '../paint/bus'
 
 const SEEN = 'tdwhere:overture'
 
@@ -52,6 +53,13 @@ export default function Overture() {
     handle = useRef<OvertureHandle | undefined>(undefined)
   // stays mounted through the fade, so the last frame holds while it leaves
   const shown = stage !== 'gone'
+  // The overture draws its own home image while entering. Resume the actual
+  // home canvas before the overlay fades, not while it is fully occluded.
+  const covered = stage === 'rest' || stage === 'enter'
+  useEffect(() => {
+    paint('home', { type: 'suspend', value: covered })
+    return () => paint('home', { type: 'suspend', value: false })
+  }, [covered])
   useEffect(() => {
     if (!shown || !canvas.current) return
     try {

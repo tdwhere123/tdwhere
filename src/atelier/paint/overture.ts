@@ -1,4 +1,4 @@
-import { coverFit, type Vec2 } from './presets'
+import { coverFit, frameDelta, type Vec2 } from './presets'
 import { noise, vertexSource } from './shaders'
 import type { Light, Weather } from '../weather'
 
@@ -492,7 +492,9 @@ export function mountOverture(o: {
   }
 
   function frame(now: number) {
-    t += Math.min(now - last, 34) / 1000
+    raf = 0
+    if (document.hidden) return
+    t += frameDelta(now, last, 34) / 1000
     last = now
     const since = enteredAt < 0 ? -1 : t - enteredAt
     if (weather.sky === 'rain' && t >= nextDrop && enteredAt < 0) {
@@ -534,6 +536,11 @@ export function mountOverture(o: {
     raf = requestAnimationFrame(frame)
   }
   raf = requestAnimationFrame(frame)
+  const onVisibility = () => {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0 }
+    else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame) }
+  }
+  document.addEventListener('visibilitychange', onVisibility)
   addEventListener('resize', resize)
 
   return {
@@ -557,6 +564,7 @@ export function mountOverture(o: {
       cancelAnimationFrame(raf)
       clearTimeout(paintTimer)
       removeEventListener('resize', resize)
+      document.removeEventListener('visibilitychange', onVisibility)
       gl.deleteTexture(image)
       gl.deleteTexture(sceneTex)
       gl.deleteFramebuffer(fbo)

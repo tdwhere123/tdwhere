@@ -2,6 +2,8 @@ import type { Rgb } from './presets'
 
 /** Client-space coordinates, so scenes need not know where the painting sits. */
 export type PaintSignal =
+  /** Retained while an opaque overlay fully covers this painting. */
+  | { type: 'suspend'; value: boolean }
   | { type: 'pulse'; x: number; y: number; radius?: number; amount?: number }
   | { type: 'stroke'; x0: number; y0: number; x1: number; y1: number }
   /** A wet brush dragged along a path: smears pigment instead of scraping it. */
@@ -21,9 +23,9 @@ export type PaintSignal =
     }
 
 type Listener = (signal: PaintSignal) => void
-type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' }>
+type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' | 'suspend' }>
 const channels = new Map<string, Set<Listener>>()
-/** Last glaze and scene per channel, so an engine that mounts after the signal still receives them. */
+/** Last glaze, scene and suspension per channel, so an engine that mounts after the signal still receives them. */
 const held = new Map<string, Map<Held['type'], Held>>()
 
 export function onPaint(channel: string, listener: Listener) {
@@ -37,9 +39,9 @@ export function onPaint(channel: string, listener: Listener) {
   }
 }
 
-/** Ignored when no engine is mounted (static fallback, reduced motion), except glaze and scene, which are kept. */
+/** Ignored when no engine is mounted (static fallback, reduced motion), except glaze, scene and suspension, which are kept. */
 export function paint(channel: string, signal: PaintSignal) {
-  if (signal.type === 'glaze' || signal.type === 'scene') {
+  if (signal.type === 'glaze' || signal.type === 'scene' || signal.type === 'suspend') {
     let kept = held.get(channel)
     if (!kept) held.set(channel, (kept = new Map()))
     kept.set(signal.type, signal)

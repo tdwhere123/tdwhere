@@ -26,3 +26,22 @@ describe('paint bus scenes', () => {
     stop()
   })
 })
+
+describe('paint bus occlusion', () => {
+  it('replays suspension to a late-mounted home painting and releases it', () => {
+    paint('home-occlusion', { type: 'suspend', value: true })
+    const states: boolean[] = []
+    const stop = onPaint('home-occlusion', s => {
+      if (s.type === 'suspend') states.push(s.value)
+    })
+    paint('home-occlusion', { type: 'suspend', value: false })
+    expect(states).toEqual([true, false])
+    stop()
+    const late: boolean[] = []
+    const cleanup = onPaint('home-occlusion', s => {
+      if (s.type === 'suspend') late.push(s.value)
+    })
+    expect(late).toEqual([false])
+    cleanup()
+  })
+})

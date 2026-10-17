@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   coverFit,
   fieldSteps,
+  frameDelta,
   mixRgb,
   parseObjectPosition,
   presetFor,
@@ -68,5 +69,16 @@ describe('presets', () => {
     expect(mixRgb([0, 0, 0], [1, 1, 1], 2)).toEqual([1, 1, 1])
     expect(scrollProgress(900, 500, 900)).toBe(0)
     expect(scrollProgress(-500, 500, 900)).toBe(1)
+  })
+})
+
+describe('frameDelta', () => {
+  it('does not run backwards when setup finishes after the queued frame timestamp', () => {
+    expect(frameDelta(100, 1600, 34)).toBe(0)
+    expect(frameDelta(117, 100, 34)).toBe(17)
+  })
+  it('caps stalls while preserving ordinary elapsed time', () => {
+    expect(frameDelta(1100, 100, 34)).toBe(34)
+    expect(frameDelta(100, 100, 34)).toBe(0)
   })
 })

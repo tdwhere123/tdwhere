@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { describe, expect, it } from 'vitest'
 import {
   AGAIN,
@@ -47,25 +48,27 @@ describe('SENTINEL', () => {
     let seed = 11
     const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647
     const endings = new Set<string>()
+    // Native assertions retain every invariant without constructing hundreds of thousands
+    // of matcher objects in this deterministic 3,000-night traversal.
     for (let run = 0; run < 3000; run++) {
       let s = begin(run % 2 ? { title: ['旧记录', 'An old record'] } : undefined)
       for (let step = 0; ; step++) {
-        expect(known(s.at), s.at).toBe(true)
+        assert(known(s.at), `unknown scene ${s.at} on run ${run}, step ${step}`)
         for (const l of linesOf(s)) {
-          expect(l.text[0] && l.text[1]).toBeTruthy()
+          assert(l.text[0] && l.text[1], `missing translation at ${s.at}`)
           if (l.clip) {
-            expect(clips[l.clip], l.clip).toBeDefined()
+            assert(clips[l.clip], `unknown clip ${l.clip} at ${s.at}`)
             if (rand() < 0.5) s = copy(s, l.clip)
             if (rand() < 0.5) s = mark(s, l.clip, rand() < 0.6 ? 'trust' : 'doubt')
           }
         }
         const options = choicesOf(s).filter((c) => c.to !== OFF && c.to !== LEDGER)
-        expect(options.length, s.at).toBeGreaterThan(0)
+        assert(options.length > 0, `no choices at ${s.at}`)
         if (options.some((c) => c.to === AGAIN)) {
           endings.add(endingOf(s)[0])
           break
         }
-        expect(step, 'a night should not run forever').toBeLessThan(400)
+        assert(step < 400, `night did not end on run ${run}, scene ${s.at}`)
         s = choose(s, options[Math.floor(rand() * options.length)])
       }
     }
