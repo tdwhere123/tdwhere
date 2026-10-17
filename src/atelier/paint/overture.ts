@@ -1,6 +1,6 @@
 import { coverFit, type Vec2 } from './presets'
 import { noise, vertexSource } from './shaders'
-import type { Light, Weather } from '../weather'
+import { blendLight, type Light, type Weather } from '../weather'
 
 const DROPS = 48
 /** Seconds a raindrop is seen falling before it lands and rings the water. */
@@ -16,6 +16,8 @@ const SEASON = { spring: 0, summer: 1, autumn: 2, winter: 3 } as const
  */
 const SINK = 1.5,
   REVEAL = { AFTER: 0.7, TAKES: 1.4 }
+/** Crossfade when the sky is moved on to the next hour. */
+const BLEND = 0.32
 
 /**
  * The block of water, seen from above at an angle: half its side and its
@@ -354,6 +356,8 @@ export type OvertureHandle = {
   touch(clientX: number, clientY: number): void
   /** A faint ring trailing the pointer across the water. */
   stir(clientX: number, clientY: number): void
+  /** Move the sky toward another hour. The light eases over; weather snaps. */
+  blendTo(weather: Weather, light: Light): void
   destroy(): void
 }
 
@@ -369,7 +373,11 @@ export function mountOverture(o: {
   /** Called once the painting is laid down. */
   onDone: () => void
 }): OvertureHandle {
-  const { canvas, weather, light } = o
+  const { canvas } = o
+  let weather = o.weather
+  let fromLight = o.light
+  let toLight = o.light
+  let blend = 1
   const gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: false })
   if (!gl) throw new Error('WebGL2 unavailable')
   function program(fragment: string) {
@@ -407,7 +415,7 @@ export function mountOverture(o: {
 
   const image = gl.createTexture()!
   gl.bindTexture(gl.TEXTURE_2D, image)
-  const blank = light.water.map((v) => Math.round(v * 255))
+  const blank = o.light.water.map((v) => Math.round(v * 255))
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([...blank, 255]))
   const sceneTex = gl.createTexture()!
   const fbo = gl.createFramebuffer()!
@@ -473,16 +481,16 @@ export function mountOverture(o: {
   }
 
   type Uniform = (name: string) => WebGLUniformLocation | null
-  function shared(u: Uniform, w: number, h: number, sink: number) {
+  function shared(u: Uniform, w: number, h: number, sink: number, lit: Light) {
     gl!.uniform2f(u('uRes'), w, h)
     gl!.uniform1f(u('uTime'), t)
-    gl!.uniform3fv(u('uPaper'), light.paper)
-    gl!.uniform3fv(u('uWater'), light.water)
-    gl!.uniform3fv(u('uDeep'), light.deep)
-    gl!.uniform3fv(u('uLight'), light.light)
-    gl!.uniform3fv(u('uInk'), light.ink)
-    gl!.uniform2fv(u('uFrom'), light.from)
-    gl!.uniform1f(u('uSun'), light.sun)
+    gl!.uniform3fv(u('uPaper'), lit.paper)
+    gl!.uniform3fv(u('uWater'), lit.water)
+    gl!.uniform3fv(u('uDeep'), lit.deep)
+    gl!.uniform3fv(u('uLight'), lit.light)
+    gl!.uniform3fv(u('uInk'), lit.ink)
+    gl!.uniform2fv(u('uFrom'), lit.from)
+    gl!.uniform1f(u('uSun'), lit.sun)
     gl!.uniform1i(u('uSky'), SKY[weather.sky])
     gl!.uniform1i(u('uSeason'), SEASON[weather.season])
     gl!.uniform1f(u('uStrength'), weather.strength)
@@ -492,8 +500,11 @@ export function mountOverture(o: {
   }
 
   function frame(now: number) {
-    t += Math.min(now - last, 34) / 1000
+    const dt = Math.min(now - last, 34) / 1000
+    t += dt
     last = now
+    blend = Math.min(1, blend + dt / BLEND)
+    const lit = blendLight(fromLight, toLight, ease(blend))
     const since = enteredAt < 0 ? -1 : t - enteredAt
     if (weather.sky === 'rain' && t >= nextDrop && enteredAt < 0) {
       drop((Math.random() * 2 - 1) * S * 0.95, (Math.random() * 2 - 1) * S * 0.95, t + FALL)
@@ -507,7 +518,7 @@ export function mountOverture(o: {
     gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo)
     gl!.viewport(0, 0, sceneSize[0], sceneSize[1])
     gl!.useProgram(scene.p)
-    shared(scene.at, sceneSize[0], sceneSize[1], sink)
+    shared(scene.at, sceneSize[0], sceneSize[1], sink, lit)
     gl!.uniform4fv(scene.at('uDrops'), drops)
     gl!.drawArrays(gl!.TRIANGLES, 0, 3)
 
@@ -524,7 +535,7 @@ export function mountOverture(o: {
     gl!.uniform2fv(brush.at('uOffset'), fit.offset)
     gl!.uniform1f(brush.at('uReveal'), reveal)
     gl!.uniform4fv(brush.at('uDrops'), drops)
-    shared(brush.at, canvas.width, canvas.height, sink)
+    shared(brush.at, canvas.width, canvas.height, sink, lit)
     gl!.drawArrays(gl!.TRIANGLES, 0, 3)
 
     if (sink >= 1 && reveal >= 1 && !done) {
@@ -552,6 +563,12 @@ export function mountOverture(o: {
       if (!at) return
       lastStir = t
       drop(at[0], at[1], t, 0.3)
+    },
+    blendTo(next, nextLight) {
+      fromLight = blendLight(fromLight, toLight, ease(blend))
+      toLight = nextLight
+      weather = next
+      blend = 0
     },
     destroy() {
       cancelAnimationFrame(raf)

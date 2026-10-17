@@ -224,7 +224,10 @@
   inset: 0;
   z-index: 80;
   color: #2c3a40;
-  transition: opacity 0.9s var(--a-ease);
+  transition:
+    opacity 0.9s var(--a-ease),
+    color 0.32s linear,
+    background 0.32s linear;
 }
 .a-overture[data-dark] {
   color: #e6e2d8;

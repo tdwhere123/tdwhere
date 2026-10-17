@@ -40,6 +40,43 @@ export function seasonOf(month: number): Season {
   return 'winter'
 }
 
+/** Named parts of a day. Bounds match the line under the water. */
+export type Period = 'night' | 'dawn' | 'morning' | 'noon' | 'afternoon' | 'evening'
+
+export function periodOf(hour: number): Period {
+  const h = ((hour % 24) + 24) % 24
+  if (h < 5 || h >= 21.5) return 'night'
+  if (h < 8) return 'dawn'
+  if (h < 11.5) return 'morning'
+  if (h < 14) return 'noon'
+  if (h < 17.5) return 'afternoon'
+  return 'evening'
+}
+
+/** A representative hour for each part, in the order a day passes. */
+const PERIOD_HOUR: Record<Period, number> = {
+  night: 2,
+  dawn: 6.6,
+  morning: 10,
+  noon: 13,
+  afternoon: 16,
+  evening: 19,
+}
+
+/**
+ * One sky per part of the day, then the visitor's own hour.
+ * Season and weather stay as they are for that date; only the light moves.
+ * When the day already ends on the visitor's part, that beat uses their hour.
+ */
+export function dayTour(date: Date): Weather[] {
+  const real = weatherAt(date)
+  const order: Period[] = ['night', 'dawn', 'morning', 'noon', 'afternoon', 'evening']
+  const beats = order.map((p) => ({ ...real, hour: PERIOD_HOUR[p] }))
+  if (periodOf(real.hour) === 'evening') beats[beats.length - 1] = real
+  else beats.push(real)
+  return beats
+}
+
 /** Each season's odds for the day's sky. */
 const odds: Record<Season, [Sky, number][]> = {
   spring: [['rain', 0.38], ['sun', 0.28], ['wind', 0.18], ['mist', 0.16]],
@@ -136,21 +173,32 @@ export function lightAt(w: Weather): Light {
   return { paper, water, deep, light, from, sun, ink }
 }
 
+/** Blend two hours of light. `t` 0 is `a`, 1 is `b`. */
+export function blendLight(a: Light, b: Light, t: number): Light {
+  const k = Math.min(1, Math.max(0, t))
+  return {
+    paper: mix(a.paper, b.paper, k),
+    water: mix(a.water, b.water, k),
+    deep: mix(a.deep, b.deep, k),
+    light: mix(a.light, b.light, k),
+    from: [a.from[0] + (b.from[0] - a.from[0]) * k, a.from[1] + (b.from[1] - a.from[1]) * k],
+    sun: a.sun + (b.sun - a.sun) * k,
+    ink: mix(a.ink, b.ink, k),
+  }
+}
+
 /** One line under the water, naming the hour and the weather. */
 export function caption(w: Weather): [string, string] {
   const h = w.hour
-  const when: [string, string] =
-    h < 5 || h >= 21.5
-      ? ['夜里', 'Night']
-      : h < 8
-        ? ['清晨', 'Early morning']
-        : h < 11.5
-          ? ['上午', 'Morning']
-          : h < 14
-            ? ['正午', 'Midday']
-            : h < 17.5
-              ? ['下午', 'Afternoon']
-              : ['傍晚', 'Evening']
+  const when: Record<Period, [string, string]> = {
+    night: ['夜里', 'Night'],
+    dawn: ['清晨', 'Early morning'],
+    morning: ['上午', 'Morning'],
+    noon: ['正午', 'Midday'],
+    afternoon: ['下午', 'Afternoon'],
+    evening: ['傍晚', 'Evening'],
+  }
+  const [zh, en] = when[periodOf(h)]
   const what: Record<Sky, [string, string]> = {
     rain: ['在下雨', 'raining'],
     sun: [h < 5 || h >= 21.5 ? '天很清' : '有太阳', h < 5 || h >= 21.5 ? 'clear' : 'sunny'],
@@ -158,5 +206,5 @@ export function caption(w: Weather): [string, string] {
     mist: ['有雾', 'misty'],
     snow: ['在下雪', 'snowing'],
   }
-  return [`${when[0]}，${what[w.sky][0]}。`, `${when[1]}, ${what[w.sky][1]}.`]
+  return [`${zh}，${what[w.sky][0]}。`, `${en}, ${what[w.sky][1]}.`]
 }
