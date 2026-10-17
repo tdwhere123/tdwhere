@@ -15,14 +15,18 @@ const keyName = (e: KeyboardEvent) =>
 /**
  * The painted machine on its own: the 3D model through the oil pass, with
  * `children` mapped onto its glass. The keyboard on the model follows real
- * keys while focus is inside it, or always with `keys="window"`. Without
- * WebGL2 the glass stands alone in a plain frame.
+ * keys while focus is inside it, or always with `keys="window"`. `fixed`
+ * keeps the camera from leaning after the pointer, so the machine only
+ * redraws when it powers or a key moves; `paused` stops it drawing while
+ * something covers it. Without WebGL2 the glass stands alone in a plain frame.
  */
 export default function MachineStage({
   powered,
   onPowerKey,
   near,
   keys = 'focus',
+  fixed = false,
+  paused = false,
   onVisible,
   children,
 }: {
@@ -30,6 +34,8 @@ export default function MachineStage({
   onPowerKey: () => void
   near?: number
   keys?: 'focus' | 'window'
+  fixed?: boolean
+  paused?: boolean
   onVisible?: (visible: boolean) => void
   children: ReactNode
 }) {
@@ -39,6 +45,8 @@ export default function MachineStage({
   const overlay = useRef<HTMLDivElement>(null)
   const stage = useRef<Stage | null>(null)
   const visible = useRef(onVisible)
+  const seen = useRef(true)
+  const hold = useRef(paused)
   const [flat, setFlat] = useState(() => typeof WebGL2RenderingContext === 'undefined')
   const [overPower, setOverPower] = useState(false)
 
@@ -62,7 +70,8 @@ export default function MachineStage({
     const ro = new ResizeObserver(([entry]) => s.resize(entry.contentRect.width, entry.contentRect.height))
     ro.observe(el)
     const io = new IntersectionObserver(([entry]) => {
-      s.setVisible(entry.isIntersecting)
+      seen.current = entry.isIntersecting
+      s.setVisible(entry.isIntersecting && !hold.current)
       visible.current?.(entry.isIntersecting)
     })
     io.observe(el)
@@ -85,6 +94,11 @@ export default function MachineStage({
     stage.current?.setPowered(powered)
   }, [powered, flat])
 
+  useEffect(() => {
+    hold.current = paused
+    stage.current?.setVisible(seen.current && !paused)
+  }, [paused, flat])
+
   const local = (e: ReactMouseEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
     return { x: e.clientX - r.left, y: e.clientY - r.top, r }
@@ -93,7 +107,7 @@ export default function MachineStage({
     const s = stage.current
     if (!s) return
     const { x, y, r } = local(e)
-    if (e.pointerType === 'mouse') s.point((x / r.width) * 2 - 1, (y / r.height) * 2 - 1)
+    if (e.pointerType === 'mouse' && !fixed) s.point((x / r.width) * 2 - 1, (y / r.height) * 2 - 1)
     setOverPower(e.target === canvas.current && s.hitsPower(x, y))
   }
 
