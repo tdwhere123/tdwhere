@@ -247,117 +247,12 @@
   .a-next > p:last-child {
     font-size: 11px;
   }
-  .a-construct-hero {
-    min-height: 785px;
-    padding: 50px 8% 50px;
-  }
-  .a-construct-hero > .a-art {
-    left: 8%;
-    top: 8%;
-    width: 115%;
-    height: 46%;
-    opacity: 0.7;
-  }
-  .a-construct-hero h1 {
-    font-size: 35vw;
-    line-height: 1;
-    margin-top: 130px;
-  }
-  .a-construct-hero h1 > span {
-    font-size: 8.4vw;
-    margin-top: 24px;
-    line-height: 1.45;
-  }
-  .a-construct-hero > p:not(.a-caption) {
-    font-size: 12px;
-    line-height: 1.95;
-    max-width: 290px;
-  }
-  .a-construction-mark {
-    right: 8%;
-    bottom: 4%;
-    font-size: 29px;
-    opacity: 0.6;
-  }
-  .a-workflow-chapter {
-    padding: 0 4% 40px;
-  }
-  .a-process-scene {
-    padding: 25px 3%;
-  }
-  .a-task-choices {
-    gap: 6px;
-    margin: 20px 0;
-  }
-  .a-task-choices button {
-    font-size: 12px !important;
-  }
-  .a-scaffold {
-    height: 290px;
-    margin: 0 -3%;
-  }
-  .a-scaffold-labels > div {
-    width: 40px;
-    top: 8%;
-  }
-  .a-scaffold-labels strong {
-    font-size: 9px;
-    line-height: 1.6;
-    white-space: normal;
-    display: block;
-  }
-  .a-scaffold-labels small {
-    font-size: 18px;
-    margin-bottom: 5px;
-  }
-  .a-task-packet {
-    width: 26px;
-    height: 33px;
-    top: 50%;
-  }
-  .a-task-packet span {
-    font-size: 22px;
-  }
-  .a-run-log {
-    display: block;
-    padding: 18px 0;
-  }
-  .a-run-log p {
-    font-size: 12px;
-    margin-top: 11px;
-  }
-  .a-run-actions {
-    gap: 14px;
-  }
   .a-button {
     font-size: 11px !important;
     padding: 11px 16px;
   }
   .a-text-button {
     font-size: 10px !important;
-  }
-  .a-run-actions > p {
-    max-width: none;
-    font-size: 9px !important;
-    width: 100%;
-    margin: 5px 0 !important;
-  }
-  .a-making-notes {
-    display: block;
-    padding: 25px 8% 70px;
-  }
-  .a-large-aside {
-    font-size: 16vw;
-    margin: 20px 0 70px 10%;
-  }
-  .a-making-notes h3 {
-    font-size: 23px;
-  }
-  .a-making-notes article > p:not(.a-caption) {
-    font-size: 12px;
-  }
-  .a-making-notes article + article {
-    margin-top: 45px;
   }
   .a-back {
     margin-bottom: 32px;

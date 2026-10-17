@@ -117,6 +117,8 @@ uniform vec3 uGround;
 uniform int uMode;
 uniform vec4 uMarks[4];
 uniform int uMarkCount;
+// palette knife: x reached so far and the line's y (canvas uv), and how far it has opened; z < 0 is off
+uniform vec3 uPart;
 in vec2 vUv;
 out vec4 outColor;
 
@@ -135,7 +137,32 @@ vec2 toImage(vec2 d) { return vec2(d.x / uAspect, d.y) * uScale; }
 
 void main() {
   vec4 f = texture(uField, vUv);
-  vec2 uv = (vUv - f.xy) * uScale + uOffset;
+  // Where the knife has passed, the paint in its path is gone (the canvas
+  // shows through) and what it pushed aside is piled along a ragged edge.
+  vec2 pv = vUv;
+  float pile = 0.0, lip = 0.0, drag = 0.5, cover = 1.0;
+  if (uPart.z >= 0.0) {
+    float passed = smoothstep(0.0, 0.05, uPart.x - vUv.x);
+    // drawn by hand: a slight slope, and an edge torn unevenly
+    float line = uPart.y + (vUv.x - 0.5) * 0.05;
+    float rag = ((vnoise(vec2(vUv.x * 46.0, 3.0)) - 0.5) * 0.008
+      + (vnoise(vec2(vUv.x * 7.0, 8.0)) - 0.5) * 0.02) * passed * (0.6 + uPart.z * 1.5);
+    float gap = (0.0025 + uPart.z) * passed + rag;
+    float d = vUv.y - line;
+    float beyond = abs(d) - gap;
+    if (passed > 0.0 && beyond < 0.0) {
+      outColor = vec4(0.0);
+      return;
+    }
+    cover = mix(1.0, smoothstep(0.0, 0.003, beyond), passed);
+    pile = exp(-beyond / 0.022) * passed;
+    lip = exp(-beyond / 0.004) * passed;
+    // the knife drags paint along with it, in streaks, and shoves it off the cut
+    drag = vnoise(vec2(vUv.x * 2.5, vUv.y * 240.0));
+    pv.x -= pile * 0.035 * (0.3 + drag);
+    pv.y -= sign(d) * min(gap, 0.06) * pile;
+  }
+  vec2 uv = (pv - f.xy) * uScale + uOffset;
   vec2 p = vec2(vUv.x * uAspect, vUv.y);
   gMix = uMix;
   // relief comes from the smooth blend: dab-by-dab layers would leave ridges at every dab edge
@@ -200,11 +227,11 @@ void main() {
   col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.012;
 
   float bristle = vnoise(vec2(sp.x * 0.6, sp.y * 7.0) + h1 * 10.0);
-  float height = relief * 0.75 + bristle * 0.2 + dabEdge * 0.03;
+  float height = relief * 0.75 + bristle * 0.2 + dabEdge * 0.03 + pile * bristle * 0.4;
   vec2 dH = vec2(dFdx(height), dFdy(height));
   vec3 N = normalize(vec3(-dH * uImpasto * 4.0 * (uRes.y / 800.0), 1.0));
   vec3 L = normalize(vec3(uLight, 0.9));
-  float wet = clamp(push * 14.0 + f.z * 0.35 + fresh * 0.3, 0.0, 1.0);
+  float wet = clamp(push * 14.0 + f.z * 0.35 + fresh * 0.3 + pile * 0.8, 0.0, 1.0);
   float spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0);
   col *= 0.86 + dot(N, L) * 0.2;
   col += spec * (0.04 + wet * 0.2);
@@ -235,8 +262,11 @@ void main() {
     col += (smoothstep(0.3, 0.45, s) - smoothstep(0.45, 0.7, s)) * 0.05;
   }
 
+  // knife streaks in the shoved paint, and a wet lip catching light along the cut
+  col *= 1.0 - pile * (0.5 - drag) * 0.22;
+  col += lip * (0.16 + spec * 0.5);
   col *= uGlaze;
   vec2 weave = gl_FragCoord.xy * 0.9;
   col += sin(weave.x) * sin(weave.y) * 0.012 + (hash(gl_FragCoord.xy) - 0.5) * 0.02;
-  outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  outColor = vec4(clamp(col, 0.0, 1.0) * cover, cover);
 }`

@@ -45,7 +45,9 @@ function quadMatrix(w: number, h: number, p: Vector2[]) {
 
 export type Stage = ReturnType<typeof createStage>
 
-export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, quiet: boolean) {
+/** `near` below 1 brings the switched-on camera closer, so the glass fills more of the frame. */
+export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, quiet: boolean, near = 1) {
+  const on: Pose = { ...ON, r: ON.r * near }
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: false, premultipliedAlpha: true })
   renderer.setClearColor(0x000000, 0)
   renderer.shadowMap.enabled = true
@@ -101,7 +103,7 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016)
     last = now
     const ease = quiet ? 1 : 1 - Math.exp(-dt * 3.2)
-    const goal = powerTarget > 0.5 ? ON : OFF
+    const goal = powerTarget > 0.5 ? on : OFF
     const sway = powerTarget > 0.5 ? 0.35 : 1
     aim.lerp(pointer, quiet ? 1 : 1 - Math.exp(-dt * 5))
     const want = {
@@ -171,7 +173,7 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
       paint.uniforms.uPx.value = dpr * Math.max(1, w / 760)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
-      placeCamera(ON, ON.look)
+      placeCamera(on, on.look)
       const p = project()
       size.screenW = Math.max(200, Math.round(p[0].distanceTo(p[1])))
       overlay.style.width = `${size.screenW}px`

@@ -45,7 +45,7 @@ export default function Navigation() {
         tdwhere<span>.</span>
       </Link>
       <span className="a-nav-note">
-        {w('阿黄 / 记忆与行动', '阿黄 / memory & making')}
+        阿黄
       </span>
       <button
         className="a-menu-trigger"
@@ -63,8 +63,8 @@ export default function Navigation() {
       <nav id="atelier-navigation" aria-label={w('主导航', 'Main navigation')}>
         {[
           ['/', w('首页', 'Home')],
-          ['/alaya', 'Alaya'],
-          ['/do-it', 'do-it'],
+          ['/projects', w('项目', 'Projects')],
+          ['/film', w('胶片', 'Film')],
           ['/blog', w('手记', 'Notes')],
           ['/about', w('关于', 'About')],
         ].map(([to, label]) => (

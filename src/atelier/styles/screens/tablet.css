@@ -132,39 +132,6 @@
   .a-principles p {
     font-size: 11px;
   }
-  .a-construct-hero {
-    min-height: 750px;
-  }
-  .a-construction-mark {
-    right: 5%;
-    font-size: 35px;
-  }
-  .a-scaffold {
-    height: 320px;
-  }
-  .a-scaffold-labels strong {
-    font-size: 10px;
-  }
-  .a-scaffold-labels > div {
-    width: 90px;
-  }
-  .a-run-log {
-    grid-template-columns: 130px 1fr;
-    gap: 20px;
-  }
-  .a-run-actions {
-    gap: 16px;
-  }
-  .a-run-actions > p {
-    max-width: 250px;
-  }
-  .a-making-notes {
-    padding-inline: 8%;
-    gap: 8vw;
-  }
-  .a-making-notes h3 {
-    font-size: 21px;
-  }
   .a-reading-progress {
     top: 65px;
   }
