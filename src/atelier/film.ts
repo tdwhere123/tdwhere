@@ -10,7 +10,12 @@
  * (by file name without extension) an alt text and a crop focus. A picture
  * named canister.* (a cut-out PNG is best) stands for the roll on the shelf
  * instead of the drawn canister; it is not a frame.
+ * The home painting and the shelf's backdrop live in src/assets/ground/,
+ * outside this folder, so they are not rolls.
  */
+import homeStill from '../assets/ground/home.jpg'
+import filmStill from '../assets/ground/film.jpg'
+
 export type Words = { zh: string; en: string }
 
 export type RollNote = {
@@ -100,5 +105,19 @@ export const rolls = collect(
 export const frameById = (id: string) =>
   rolls.flatMap((r) => r.frames).find((f) => f.id === id)
 
-/** The frame the home page is painted from; the newest frame stands in if it is renamed. */
-export const heroFrame = frameById('first-roll/01') ?? rolls[0].frames[0]
+/** A frame kept for painting, outside the shelf. */
+function ground(name: string, src: string, focus: string, alt: Words): FilmFrame {
+  return { id: `ground/${name}`, roll: 'ground', name, src, focus, alt }
+}
+
+/** The home page and the overture. Not a roll. */
+export const heroFrame = ground('home', homeStill, '64% 50%', {
+  zh: '逆光的水面碎成一片波光，几只水鸟游过一台黄色的增氧机。',
+  en: 'Backlit water broken into glitter; a few water birds swim past a yellow aerator.',
+})
+
+/** The dim painting behind the film shelf. Not a roll. */
+export const filmBackdrop = ground('film', filmStill, '38% 50%', {
+  zh: '蓝调时分的江面，橙色栏杆的船梯下，远处一线灯火。',
+  en: 'A river at blue hour, seen from under an orange-railed gangway; a line of lights far off.',
+})

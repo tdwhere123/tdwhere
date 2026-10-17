@@ -3,10 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useWords } from '../hooks'
 import { Art } from '../components/Primitives'
 import { Canister } from '../components/Canister'
-import { frameById, heroFrame, rolls } from '../film'
+import { filmBackdrop, rolls } from '../film'
 
 /** The dim painting the collection is laid out over. */
-const backdrop = frameById('first-roll/02') ?? heroFrame
+const backdrop = filmBackdrop
 
 /**
  * The collection: every roll as its canister, newest first. Choosing one

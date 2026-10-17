@@ -74,9 +74,9 @@ src/assets/film/
 
 ## 首页那张画
 
-首页和开场动画用的是 `first-roll/01`（在 `src/atelier/film.ts` 的 `heroFrame`）。
-**改了 `first-roll` 这个文件夹名或者 `01.jpg` 的名字，记得去改那一行**，
-不然首页会退回成最新一卷的第一张。胶片页的背景用的是 `first-roll/02`（`src/atelier/pages/Film.tsx` 的 `backdrop`）。
+首页和开场动画用的是 `src/assets/ground/home.jpg`（`src/atelier/film.ts` 的 `heroFrame`）。
+胶片页背后那张用的是 `src/assets/ground/film.jpg`（`filmBackdrop`）。
+这两张不在架子上，换图就换这两个文件。
 
 ## 加完之后
 
