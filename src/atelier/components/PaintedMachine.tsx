@@ -35,7 +35,7 @@ export default function PaintedMachine() {
 
   return (
     <figure className="a-machine">
-      <MachineStage powered={powered} onPowerKey={() => power(!powered)} onVisible={setActive}>
+      <MachineStage powered={powered} onPowerKey={() => power(!powered)} paused={powered} onVisible={setActive}>
         <div className="a-glass" data-on={powered ? '' : undefined} data-paused={active ? undefined : ''} aria-hidden="true">
           <p>
             <span className="a-glass-caret">_</span> 1011-07

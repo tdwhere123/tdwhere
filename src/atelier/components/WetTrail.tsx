@@ -22,7 +22,11 @@ type Drop = {
 /**
  * Pointer movement leaves a wet wash that bleeds outward into the paper,
  * darkens at its edge like watercolor, and dries away. No cursor shape.
+ * Surfaces laid over the paper (`data-dry`) stay dry: nothing is drawn
+ * beneath them.
  */
+const dry = (e: PointerEvent) => e.target instanceof Element && e.target.closest('[data-dry]') !== null
+
 export default function WetTrail({ tone }: { tone: 'paper' | 'night' }) {
   const ref = useRef<HTMLCanvasElement>(null),
     toneRef = useRef(tone)
@@ -100,7 +104,7 @@ export default function WetTrail({ tone }: { tone: 'paper' | 'night' }) {
       if (!raf) raf = requestAnimationFrame(frame)
     }
     const onMove = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return
+      if (e.pointerType !== 'mouse' || dry(e)) return
       const p = { x: e.clientX, y: e.clientY, t: e.timeStamp }
       if (!last || p.t - last.t > 300) {
         const set = washes[toneRef.current]
@@ -124,7 +128,7 @@ export default function WetTrail({ tone }: { tone: 'paper' | 'night' }) {
       wake()
     }
     const onDown = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return
+      if (e.pointerType !== 'mouse' || dry(e)) return
       drop(e.clientX, e.clientY, 8, 70 + Math.random() * 30, 0.2, 2600)
       wake()
     }

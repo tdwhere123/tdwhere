@@ -161,6 +161,11 @@
   }
 }
 
+/* the desk covers the page; the wash beneath it would only be composited for nothing */
+body:has(> .a-desk[data-open]) .a-wet {
+  display: none;
+}
+
 /* The review, laid out on a desk: screen panels for the machine, paper for the rest. */
 .a-desk {
   --scr-bg: #101a1b;

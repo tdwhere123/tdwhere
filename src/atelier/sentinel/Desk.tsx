@@ -213,6 +213,7 @@ export default function Desk({ open, onClose }: { open: boolean; onClose: () => 
   return (
     <div
       className="a-desk"
+      data-dry
       data-open={open ? '' : undefined}
       role="dialog"
       aria-modal="true"
@@ -238,7 +239,7 @@ export default function Desk({ open, onClose }: { open: boolean; onClose: () => 
       <div className="a-desk-body">
         <div className="a-desk-machine">
           {open && (
-            <MachineStage powered onPowerKey={onClose} near={narrow ? 0.62 : 0.86} keys="window">
+            <MachineStage powered onPowerKey={onClose} near={narrow ? 0.62 : 0.86} keys="window" fixed>
               <div className="a-desk-glass" ref={glass} onClick={done ? undefined : finish}>
                 {log.slice(0, upto).map((e, i) =>
                   SCREEN.includes(e.kind) ? (
