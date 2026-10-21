@@ -70,9 +70,17 @@ afterEach(() => {
 })
 
 describe('machine stage lifetime', () => {
-  it('loses the WebGL context after disposing the renderer', () => {
+  it('keeps the WebGL context on dispose, so the same canvas can carry the next stage', () => {
     const s = createStage(canvas(), overlay(), true)
     s.dispose()
+    expect(gl.log).toContain('dispose')
+    expect(gl.log).not.toContain('loseContext')
+  })
+
+  it('loses the WebGL context once when asked after dispose', () => {
+    const s = createStage(canvas(), overlay(), true)
+    s.dispose()
+    s.loseContext()
     expect(gl.log.filter((l) => l === 'loseContext')).toHaveLength(1)
     expect(gl.log.slice(-2)).toEqual(['dispose', 'loseContext'])
   })
