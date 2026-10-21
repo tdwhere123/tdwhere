@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { getPostBody, posts } from './posts'
+import { posts } from './posts'
+import { getPostBody } from './postBodies'
 import { resolveContentUrl } from './resolveContentUrl'
 
 describe('resolveContentUrl', () => {

@@ -1,7 +1,7 @@
 /**
  * 文章索引 · Blog post registry.
- * Meta lives here; bodies are body-only markdown files in ./posts/<slug>.md
- * (loaded via Vite ?raw glob). Array order = list order (date desc).
+ * Meta lives here; bodies are body-only markdown files in ./posts/<slug>.md,
+ * loaded by ./postBodies. Array order = list order (date desc).
  */
 export type PostMeta = {
   slug: string
@@ -91,16 +91,6 @@ export const posts: PostMeta[] = [
   },
 ]
 
-const bodies = import.meta.glob('./posts/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
 export function getPost(slug: string): PostMeta | undefined {
   return posts.find((p) => p.slug === slug)
-}
-
-export function getPostBody(slug: string): string | undefined {
-  return bodies[`./posts/${slug}.md`]
 }
