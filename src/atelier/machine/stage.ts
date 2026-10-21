@@ -47,8 +47,19 @@ export type Stage = ReturnType<typeof createStage>
 
 /** `near` below 1 brings the switched-on camera closer, so the glass fills more of the frame. */
 export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, quiet: boolean, near = 1) {
-  const on: Pose = { ...ON, r: ON.r * near }
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: false, premultipliedAlpha: true })
+  try {
+    return mountStage(renderer, overlay, quiet, near)
+  } catch (e) {
+    // the renderer already holds a context; give it back before the caller falls back to flat
+    renderer.dispose()
+    renderer.forceContextLoss()
+    throw e
+  }
+}
+
+function mountStage(renderer: WebGLRenderer, overlay: HTMLElement, quiet: boolean, near: number) {
+  const on: Pose = { ...ON, r: ON.r * near }
   renderer.setClearColor(0x000000, 0)
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = PCFSoftShadowMap
