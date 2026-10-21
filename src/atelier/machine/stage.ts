@@ -223,7 +223,9 @@ function mountStage(renderer: WebGLRenderer, overlay: HTMLElement, quiet: boolea
       paint.dispose()
       quad.geometry.dispose()
       renderer.dispose()
-      // dispose() keeps the context alive; browsers cap live contexts, so lose it now
+    },
+    /** dispose() keeps the context so the same canvas can carry the next stage; call this once the canvas leaves the page. */
+    loseContext() {
       renderer.forceContextLoss()
     },
   }

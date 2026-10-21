@@ -44,6 +44,9 @@ export default function MachineStage({
   const canvas = useRef<HTMLCanvasElement>(null)
   const overlay = useRef<HTMLDivElement>(null)
   const stage = useRef<Stage | null>(null)
+  // stage is cleared on every rebuild; last outlives that so unmount can still free the canvas's context
+  const last = useRef<Stage | null>(null)
+  const broken = useRef(false)
   const visible = useRef(onVisible)
   const seen = useRef(true)
   const hold = useRef(paused)
@@ -58,15 +61,19 @@ export default function MachineStage({
     const el = root.current,
       cv = canvas.current,
       ov = overlay.current
-    if (!el || !cv || !ov) return
+    if (!el || !cv || !ov || broken.current) return
     let s: Stage
     try {
       s = createStage(cv, ov, quiet, near)
     } catch {
+      // createStage already gave the context back; never rebuild on this canvas
+      broken.current = true
+      last.current = null
       queueMicrotask(() => setFlat(true))
       return
     }
     stage.current = s
+    last.current = s
     const ro = new ResizeObserver(([entry]) => s.resize(entry.contentRect.width, entry.contentRect.height))
     ro.observe(el)
     const io = new IntersectionObserver(([entry]) => {
@@ -89,6 +96,9 @@ export default function MachineStage({
       stage.current = null
     }
   }, [quiet, near, keys])
+
+  // browsers cap live contexts: lose this canvas's context only when it leaves the page, not on a rebuild
+  useEffect(() => () => last.current?.loseContext(), [])
 
   useEffect(() => {
     stage.current?.setPowered(powered)
@@ -125,8 +135,6 @@ export default function MachineStage({
     >
       {!flat && (
         <canvas
-          // a disposed stage has lost its context, so a rebuilt stage needs a fresh canvas
-          key={`${quiet}:${near}:${keys}`}
           ref={canvas}
           aria-hidden="true"
           onClick={(e) => {
