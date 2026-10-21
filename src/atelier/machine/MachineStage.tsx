@@ -125,6 +125,8 @@ export default function MachineStage({
     >
       {!flat && (
         <canvas
+          // a disposed stage has lost its context, so a rebuilt stage needs a fresh canvas
+          key={`${quiet}:${near}:${keys}`}
           ref={canvas}
           aria-hidden="true"
           onClick={(e) => {

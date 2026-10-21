@@ -100,6 +100,7 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
 
   const frame = (now: number) => {
     raf = 0
+    if (disposed) return
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016)
     last = now
     const ease = quiet ? 1 : 1 - Math.exp(-dt * 3.2)
@@ -139,7 +140,7 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
     else last = 0
   }
   const invalidate = (force = false) => {
-    if (!raf && ready && (visible || force)) raf = requestAnimationFrame(frame)
+    if (!raf && ready && !disposed && (visible || force)) raf = requestAnimationFrame(frame)
   }
 
   // ANGLE translates these shaders on first draw, which can stall the GPU for
@@ -163,6 +164,7 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
 
   return {
     resize(w: number, h: number) {
+      if (disposed) return
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
       size.w = w
       size.h = h
@@ -210,6 +212,8 @@ export function createStage(canvas: HTMLCanvasElement, overlay: HTMLElement, qui
       paint.dispose()
       quad.geometry.dispose()
       renderer.dispose()
+      // dispose() keeps the context alive; browsers cap live contexts, so lose it now
+      renderer.forceContextLoss()
     },
   }
 }
