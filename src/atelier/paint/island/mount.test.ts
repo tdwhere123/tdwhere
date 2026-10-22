@@ -11,6 +11,7 @@ it('rejects broken asset contracts before touching the canvas or allocating WebG
     painting: () => canvas,
     focus: [0, 0],
     onDone: () => undefined,
+    onFeedback: () => undefined,
   })).toThrow('Missing aerator wheel_0')
   expect(canvas.style.touchAction).toBe('pan-y')
 })

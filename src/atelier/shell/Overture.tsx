@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useWords } from '../hooks'
 import { heroFrame } from '../film'
 import { caption, lightAt, sessionClock, weatherNow } from '../weather'
-import type { OvertureHandle } from '../paint/overture'
+import type { OvertureHandle, PondFeedback } from '../paint/overture'
 import { onReplay } from './overtureCue'
 import { paint } from '../paint/bus'
 
@@ -31,6 +31,12 @@ const css = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round(v * 
  */
 export default function Overture() {
   const w = useWords()
+  const overlay = useRef<HTMLDivElement>(null)
+  const enterButton = useRef<HTMLButtonElement>(null)
+  const [ready, setReady] = useState(false)
+  const [running, setRunning] = useState(true)
+  const [feedback, setFeedback] = useState<PondFeedback | null>(null)
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const { pathname } = useLocation()
   const [stage, setStage] = useState<'rest' | 'enter' | 'leave' | 'gone'>(() =>
     shouldPlay(pathname) ? 'rest' : 'gone',
@@ -76,6 +82,14 @@ export default function Overture() {
     } catch {
       /* still play; it just may repeat */
     }
+    setReady(false)
+    setRunning(true)
+    setFeedback(null)
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const siblings = Array.from(overlay.current?.parentElement?.children ?? []).filter((el): el is HTMLElement => el instanceof HTMLElement && el !== overlay.current)
+    const inert = siblings.map(el => el.inert)
+    siblings.forEach(el => { el.inert = true })
+    enterButton.current?.focus()
     const html = document.documentElement,
       overflow = html.style.overflow
     html.style.overflow = 'hidden'
@@ -98,29 +112,44 @@ export default function Overture() {
             painting: () => painter.paintedFrame(heroFrame),
             focus: parseObjectPosition(heroFrame.focus),
             onDone: leave,
+            onFeedback: (value) => {
+              setFeedback(value)
+              if (value === 'running' || value === 'stopped') setRunning(value === 'running')
+              clearTimeout(feedbackTimer.current)
+              feedbackTimer.current = setTimeout(() => setFeedback(null), 3200)
+            },
           })
         } catch (error) {
           disposeModelResources(models.coot, models.aerator)
           throw error
         }
+        setReady(true)
         if (enterRequested.current) handle.current.enter()
       })
       .catch(() => {
         if (!cancelled) setStage('gone')
       })
-    const onPointer = (e: PointerEvent) => handle.current?.touch(e.clientX, e.clientY)
-    const onMove = (e: PointerEvent) => handle.current?.stir(e.clientX, e.clientY)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') leave()
+      if (e.key === 'Tab') {
+        const buttons = Array.from(overlay.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])
+        const first = buttons[0], last = buttons[buttons.length - 1]
+        if (!first) { e.preventDefault(); return }
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
     }
-    addEventListener('pointerdown', onPointer)
-    addEventListener('pointermove', onMove, { passive: true })
     addEventListener('keydown', onKey)
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)')
+    const onReduced = () => { if (reduced.matches) setStage('gone') }
+    reduced.addEventListener('change', onReduced)
     return () => {
       cancelled = true
-      removeEventListener('pointerdown', onPointer)
-      removeEventListener('pointermove', onMove)
       removeEventListener('keydown', onKey)
+      reduced.removeEventListener('change', onReduced)
+      clearTimeout(feedbackTimer.current)
+      siblings.forEach((el, i) => { el.inert = inert[i] })
+      if (previousFocus?.isConnected) previousFocus.focus()
       html.style.overflow = overflow
       handle.current?.destroy()
       handle.current = undefined
@@ -141,15 +170,27 @@ export default function Overture() {
   const p = lightAt(weather).paper
   return (
     <div
+      ref={overlay}
       className="a-overture"
+      role="dialog"
+      aria-modal="true"
+      aria-label={w('水边', 'By the water')}
       data-stage={stage}
       data-dark={p[0] * 0.3 + p[1] * 0.6 + p[2] * 0.1 < 0.5 ? '' : undefined}
       style={{ background: css(p) }}
     >
       <canvas ref={canvas} aria-hidden="true" />
+      <div className="a-pond-tools">
+        <div className="a-pond-actions" role="group" aria-label={w('水边互动', 'Pond interactions')}>
+          <button type="button" disabled={!ready || stage !== 'rest'} onClick={() => handle.current?.interact('bird')}>{w('与骨顶鸡打个招呼', 'Greet a coot')}</button>
+          <button type="button" disabled={!ready || stage !== 'rest'} onClick={() => handle.current?.interact('water')}>{w('轻点水面', 'Touch the water')}</button>
+          <button type="button" disabled={!ready || stage !== 'rest'} aria-pressed={running} onClick={() => handle.current?.interact('machine')}>{w('增氧机', 'Aerator')} · {running ? w('开', 'on') : w('关', 'off')}</button>
+        </div>
+        <p className="a-pond-feedback" role="status" aria-live="polite" aria-atomic="true">{feedback === 'greet' ? w('看了一眼，慢慢游开。', 'A glance, then a gentle turn away.') : feedback === 'leave' ? w('从浮筒回到水里。', 'Back into the water from the pontoon.') : feedback === 'water' ? w('涟漪从这里散开。', 'Ripples spread from here.') : feedback === 'running' ? w('水轮重新转起来了。', 'The paddlewheels are turning again.') : feedback === 'stopped' ? w('水轮慢慢停下，水面也静下来。', 'The wheels slow down; the water settles.') : ''}</p>
+      </div>
       <div className="a-overture-foot">
         <p>{w(zh, en)}</p>
-        <button type="button" onClick={enter} disabled={stage !== 'rest'} autoFocus>
+        <button type="button" onClick={enter} disabled={stage !== 'rest'} ref={enterButton}>
           {w('点击进入', 'Enter')}
         </button>
         <small>{w('Esc 跳过', 'Esc to skip')}</small>

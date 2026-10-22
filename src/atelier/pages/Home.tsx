@@ -1,6 +1,6 @@
-import { useEffect, useState, type PointerEvent } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { useWords } from '../hooks'
+import { useQuiet, useWords } from '../hooks'
 import { centerOf, paint } from '../paint/bus'
 import { caption, sessionClock, weatherNow } from '../weather'
 import { replayOverture } from '../shell/overtureCue'
@@ -20,13 +20,15 @@ const doors = [
  * block of water to watch a while.
  */
 export default function Home() {
+  const quiet = useQuiet()
   const w = useWords(),
     { setTone } = useOutletContext<ShellContext>()
   useEffect(() => {
     setTone('night')
     return () => setTone(null)
   }, [setTone])
-  const ripple = (e: PointerEvent<HTMLElement>) => {
+  const ripple = (e: SyntheticEvent<HTMLElement>) => {
+    if (quiet) return
     const at = centerOf(e.currentTarget)
     if (at) paint('home', { type: 'pulse', ...at, radius: 0.06, amount: 0.4 })
   }
@@ -44,15 +46,15 @@ export default function Home() {
       </h1>
       <nav className="a-doors" aria-label={w('入口', 'Ways in')}>
         {doors.map((door, i) => (
-          <Link key={door.to} to={door.to} onPointerEnter={ripple}>
+          <Link key={door.to} to={door.to} onPointerEnter={(e) => { if (e.pointerType === 'mouse') ripple(e) }} onFocus={(e) => { if (e.currentTarget.matches(':focus-visible')) ripple(e) }} onPointerDown={(e) => { if (e.pointerType !== 'mouse') ripple(e) }}>
             <small>{String(i + 1).padStart(2, '0')}</small>
             <span>{w(door.zh, door.en)}</span>
           </Link>
         ))}
       </nav>
-      <button type="button" className="a-weather" onClick={replayOverture}>
+      <button type="button" className="a-weather" onClick={replayOverture} disabled={quiet}>
         {w(zh, en)}
-        <small>{w('去看一会儿', 'Watch a while')}</small>
+        <small>{quiet ? w('已开启减少动态效果', 'Reduced motion is on') : w('去看一会儿', 'Watch a while')}</small>
       </button>
     </div>
   )

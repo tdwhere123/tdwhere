@@ -6,7 +6,7 @@ import { waterField } from './math'
  * and then one dives and comes up somewhere else. While the aerator stands
  * still they climb onto its pontoons; a touch near them sends them back in.
  */
-export type Mode = 'swim' | 'flee' | 'dive' | 'board' | 'hop' | 'perch' | 'leave'
+export type Mode = 'swim' | 'greet' | 'flee' | 'dive' | 'board' | 'hop' | 'perch' | 'leave'
 export type Bird = {
   x: number
   z: number
@@ -22,6 +22,7 @@ export type Bird = {
   perch: number
   /** For the head's pumping and the wander. */
   phase: number
+  greeting?: { heading: number; turn: number }
 }
 export type Pond = {
   random: () => number
@@ -34,6 +35,8 @@ export type Pond = {
 }
 /** What a flock's step did to the water: rings where a bird went under or came up. */
 export type Splash = { x: number; z: number; strength: number }
+
+export const LEAVE_SECONDS = 1.2
 
 const CRUISE = 0.07,
   FLEE = 0.55,
@@ -81,6 +84,16 @@ export function startle(birds: Bird[], x: number, z: number, random: () => numbe
   if (dive && nearest && random() < 0.6) Object.assign(nearest, { mode: 'dive', t: 0, under: 2.2 + random() * 1.8 })
 }
 
+export function greetBird(bird: Bird): 'greet' | 'leave' | null {
+  if (bird.mode === 'greet' || bird.mode === 'dive' || bird.mode === 'leave' || bird.mode === 'hop') return null
+  if (bird.mode === 'perch') {
+    Object.assign(bird, { mode: 'leave', t: 0 })
+    return 'leave'
+  }
+  Object.assign(bird, { mode: 'greet', t: 0, perch: -1, greeting: { heading: bird.heading, turn: Math.sin(bird.phase) >= 0 ? .6 : -.6 } })
+  return 'greet'
+}
+
 /** One step of the flock. Returns the rings it made on the water. */
 export function stepFlock(birds: Bird[], dt: number, pond: Pond): Splash[] {
   const splashes: Splash[] = [],
@@ -105,14 +118,21 @@ export function stepFlock(birds: Bird[], dt: number, pond: Pond): Splash[] {
       continue
     }
     if (b.mode === 'hop' || b.mode === 'leave') {
-      if (b.t >= HOP) {
-        if (b.mode === 'hop') Object.assign(b, { mode: 'perch', t: 0, speed: 0 })
-        else {
-          const [px, pz] = pond.perches[b.perch]
-          const out = Math.atan2(pz - pond.center[1], px - pond.center[0])
-          Object.assign(b, { mode: 'flee', t: 0, perch: -1, heading: out, speed: FLEE * 0.7, x: px + Math.cos(out) * 0.12, z: pz + Math.sin(out) * 0.12 })
+      if (b.mode === 'leave') {
+        const [px, pz] = pond.perches[b.perch]
+        const out = Math.atan2(pz - pond.center[1], px - pond.center[0])
+        b.heading = toward(b.heading, out, dt * 1.6)
+        if (Math.abs(wrap(out - b.heading)) > .001) { b.t = 0; continue }
+        b.speed += (.14 - b.speed) * Math.min(1, dt * 4)
+        b.x += Math.cos(b.heading) * b.speed * dt
+        b.z += Math.sin(b.heading) * b.speed * dt
+        if (b.t >= LEAVE_SECONDS) {
+          Object.assign(b, { mode: 'swim', t: 0, perch: -1 })
           splashes.push({ x: b.x, z: b.z, strength: 0.6 })
         }
+      } else if (b.t >= HOP) {
+        const [x, z] = pond.perches[b.perch]
+        Object.assign(b, { mode: 'perch', t: 0, speed: 0, x, z })
       }
       continue
     }
@@ -132,6 +152,10 @@ export function stepFlock(birds: Bird[], dt: number, pond: Pond): Splash[] {
     }
 
     let want = b.heading + Math.sin(b.t * 0.7 + b.phase) * 0.6 * dt
+    if (b.mode === 'greet' && b.greeting) {
+      const k = Math.max(0, Math.min(1, (b.t - .25) / 1.2))
+      want = b.greeting.heading + b.greeting.turn * k * k * (3 - 2 * k)
+    }
     // home in on a free perch while the wheels are still
     if (b.mode === 'board') {
       const [px, pz] = pond.perches[b.perch],
@@ -163,7 +187,12 @@ export function stepFlock(birds: Bird[], dt: number, pond: Pond): Splash[] {
     const ahead = waterField(b.x + Math.cos(b.heading) * 0.4, b.z + Math.sin(b.heading) * 0.4)
     if (ahead < SHORE) want = toward(want, Math.atan2(-b.z, -b.x), dt * 3)
     b.heading = toward(b.heading, want, dt * (b.mode === 'flee' ? 4 : 1.6))
-    if (b.mode === 'flee') {
+    if (b.mode === 'greet') {
+      const k = Math.min(1, b.t / 2.4)
+      const speed = CRUISE + .08 * Math.sin(Math.PI * k) ** 2
+      b.speed += (speed - b.speed) * Math.min(1, dt * 4)
+      if (b.t >= 2.4) { b.mode = 'swim'; b.greeting = undefined }
+    } else if (b.mode === 'flee') {
       b.speed += (CRUISE - b.speed) * Math.min(1, dt * 1.6)
       if (b.t > 1.8) b.mode = 'swim'
     } else b.speed += ((b.mode === 'board' ? 0.12 : CRUISE) * (0.7 + 0.3 * Math.sin(b.t * 0.5 + b.phase)) - b.speed) * Math.min(1, dt)

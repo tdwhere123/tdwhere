@@ -49,7 +49,7 @@ describe('the coots', () => {
     const [x, z] = perches[up[0].perch]
     startle(flock, x, z, random)
     expect(up[0].mode).toBe('leave')
-    for (let i = 0; i < 30; i++) stepFlock(flock, 1 / 30, pond(0, random))
+    for (let i = 0; i < 120 && up[0].mode === 'leave'; i++) stepFlock(flock, 1 / 30, pond(0, random))
     expect(up[0].mode).not.toBe('perch')
     expect(up[0].perch).toBe(-1)
   })

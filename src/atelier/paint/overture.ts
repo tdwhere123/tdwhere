@@ -5,7 +5,8 @@ import { rainSample } from './island/render-math';
 import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
 import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
 import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots } from './island/aerator';
-import { makeFlock, startle, stepFlock } from './island/birds';
+import { greetBird, makeFlock, stepFlock } from './island/birds';
+import { pickBird, PondGesture } from './island/interaction';
 import { buildCoot } from './island/coot';
 import { disposeModelResources, lightIslandModel, type IslandModels } from './island/models';
 import { islandSky, viewSpan, transitionState } from './island/state';
@@ -21,10 +22,10 @@ type RainDrop = {
     /** The drop falls once the spell's rain or snow is heavier than this. */
     threshold: number;
 };
+export type PondFeedback = 'greet' | 'leave' | 'water' | 'running' | 'stopped';
 export type OvertureHandle = {
     enter(): void;
-    touch(x: number, y: number): void;
-    stir(x: number, y: number): void;
+    interact(action: 'bird' | 'water' | 'machine'): void;
     destroy(): void;
 };
 export function mountOverture(o: {
@@ -33,6 +34,7 @@ export function mountOverture(o: {
     painting: () => HTMLCanvasElement;
     focus: Vec2;
     onDone: () => void;
+    onFeedback: (feedback: PondFeedback) => void;
     models: IslandModels;
 }): OvertureHandle {
     const { canvas, clock } = o;
@@ -211,33 +213,67 @@ gl_FragColor=vec4(col,1.);}` });
         o.onDone();
     } }, 400);
     const raycaster = new THREE.Raycaster(), waterPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    function touch(x: number, y: number, strength = 1.8) { if (destroyed || enteredAt !== null)
-        return; const rect = canvas.getBoundingClientRect(); raycaster.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera);
-        // a touch on the machine switches it off or on; a touch on the water rings it and scatters the birds near
-        if (strength > 1 && aerator.hit(raycaster)) {
-            on = !on;
-            return;
+    function greet(index: number) {
+        const bird = flock[index], response = greetBird(bird);
+        if (!response) return;
+        if (response === 'greet') wavePool.add(bird.x, bird.z, elapsed, .35);
+        o.onFeedback(response);
+    }
+    function toggleMachine() {
+        on = !on;
+        o.onFeedback(on ? 'running' : 'stopped');
+    }
+    function ring(x: number, z: number, strength = 1.8) {
+        if (!wavePool.add(x, z, elapsed, strength)) return;
+        if (strength > 1) o.onFeedback('water');
+    }
+    function touch(x: number, y: number, strength = 1.8) {
+        if (destroyed || enteredAt !== null) return;
+        const rect = canvas.getBoundingClientRect();
+        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
+        raycaster.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera);
+        if (strength > 1) {
+            const index = pickBird(coots.map(coot => {
+                const p = coot.group.position.clone().project(camera);
+                return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2, visible: coot.group.visible && p.z >= -1 && p.z <= 1 };
+            }), x, y);
+            if (index >= 0) { greet(index); return; }
+            if (aerator.hit(raycaster)) { toggleMachine(); return; }
         }
-        const hit = new THREE.Vector3(); if (!raycaster.ray.intersectPlane(waterPlane, hit))
-        return; wavePool.add(hit.x, hit.z, elapsed, strength); if (strength > 1)
-        startle(flock, hit.x, hit.z, random);
-    else
-        startle(flock, hit.x, hit.z, random, .35, false); }
-    let drag: {
-        x: number;
-        yaw: number;
-        id: number;
-    } | null = null;
-    const onDown = (e: PointerEvent) => { if (enteredAt !== null)
-        return; drag = { x: e.clientX, yaw: targetYaw, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); };
-    const onMove = (e: PointerEvent) => { if (drag && drag.id === e.pointerId)
-        targetYaw = drag.yaw + (e.clientX - drag.x) * .009; };
-    const onUp = () => { drag = null; };
+        const hit = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(waterPlane, hit)) ring(hit.x, hit.z, strength);
+    }
+    let drag: { gesture: PondGesture; yaw: number } | null = null;
+    const onDown = (e: PointerEvent) => {
+        if (enteredAt !== null || !e.isPrimary || e.button !== 0 || drag) return;
+        drag = { gesture: new PondGesture(e.pointerId, e.clientX, e.clientY), yaw: targetYaw };
+        canvas.setPointerCapture(e.pointerId);
+    };
+    const onMove = (e: PointerEvent) => {
+        if (drag && drag.gesture.id === e.pointerId) {
+            drag.gesture.move(e.pointerId, e.clientX, e.clientY);
+            if (drag.gesture.dragged) targetYaw = drag.yaw + (e.clientX - drag.gesture.x) * .009;
+        } else if (!drag && e.pointerType === 'mouse' && elapsed - lastStir >= .14) {
+            lastStir = elapsed;
+            touch(e.clientX, e.clientY, .3);
+        }
+    };
+    const onUp = (e: PointerEvent) => {
+        if (!drag || drag.gesture.id !== e.pointerId) return;
+        drag.gesture.move(e.pointerId, e.clientX, e.clientY);
+        const tap = drag.gesture.finish(e.pointerId);
+        drag = null;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        if (tap) touch(e.clientX, e.clientY);
+    };
+    const onCancel = (e: PointerEvent) => {
+        if (drag?.gesture.id === e.pointerId) drag = null;
+    };
     canvas.addEventListener('pointerdown', onDown);
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerup', onUp);
-    canvas.addEventListener('pointercancel', onUp);
-    canvas.addEventListener('lostpointercapture', onUp);
+    canvas.addEventListener('pointercancel', onCancel);
+    canvas.addEventListener('lostpointercapture', onCancel);
     const sinkAt: [number, number, number] = [AERATOR.x + aeratorAxis[0] * 1.1, 0, AERATOR.z + aeratorAxis[1] * 1.1];
     let lastChurn = 0;
     // The aerator rides the long swell only, never its own ripples or the rain's, and eases into
@@ -260,7 +296,7 @@ gl_FragColor=vec4(col,1.);}` });
             wavePool.add(s.x, s.z, elapsed, s.strength);
         flock.forEach((b, i) => {
             coots[i].update(b, elapsed, waveField(b.x, b.z, elapsed), perchAt);
-            wakes[i].set(b.x, b.z, b.heading, b.mode === 'swim' || b.mode === 'flee' || b.mode === 'board' ? Math.min(1.4, b.speed / .08) : 0);
+            wakes[i].set(b.x, b.z, b.heading, b.mode === 'swim' || b.mode === 'greet' || b.mode === 'flee' || b.mode === 'board' ? Math.min(1.4, b.speed / .08) : 0);
         });
     }
     const gusts = () => Math.max(0, Math.min(1, (sky.profile.wind - .25) / 1.75));
@@ -396,9 +432,15 @@ gl_FragColor=vec4(col,1.);}` });
     return {
         enter() { if (destroyed || enteredAt !== null)
             return; enteredAt = elapsed; wavePool.add(sinkAt[0], sinkAt[2], elapsed, 1.8); },
-        touch,
-        stir(x, y) { if (elapsed - lastStir < .14)
-            return; lastStir = elapsed; touch(x, y, .3); },
+        interact(action) {
+            if (destroyed || enteredAt !== null) return;
+            if (action === 'machine') toggleMachine();
+            else if (action === 'water') ring(0, 0);
+            else {
+                const index = flock.findIndex(b => b.mode === 'swim' || b.mode === 'perch' || b.mode === 'board');
+                if (index >= 0) greet(index);
+            }
+        },
         destroy() {
             if (destroyed)
                 return;
@@ -411,10 +453,10 @@ gl_FragColor=vec4(col,1.);}` });
             canvas.removeEventListener('pointerdown', onDown);
             canvas.removeEventListener('pointermove', onMove);
             canvas.removeEventListener('pointerup', onUp);
-            canvas.removeEventListener('pointercancel', onUp);
-            canvas.removeEventListener('lostpointercapture', onUp);
-            if (drag && canvas.hasPointerCapture(drag.id))
-                canvas.releasePointerCapture(drag.id);
+            canvas.removeEventListener('pointercancel', onCancel);
+            canvas.removeEventListener('lostpointercapture', onCancel);
+            if (drag && canvas.hasPointerCapture(drag.gesture.id))
+                canvas.releasePointerCapture(drag.gesture.id);
             drag = null;
             disposeModelResources(scene, rainScene, postScene, o.models.coot);
             homeTexture.dispose();

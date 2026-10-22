@@ -322,3 +322,27 @@
     border-bottom: 1px solid rgba(239, 232, 216, 0.16);
   }
 }
+
+.a-pond-tools {
+  position: absolute;
+  top: max(22px, env(safe-area-inset-top));
+  left: 6%;
+  right: 6%;
+  font: 400 11px/1.6 var(--a-mono);
+}
+.a-pond-actions { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.a-pond-actions button {
+  min-height: 44px;
+  padding: 8px 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-underline-offset: 5px;
+}
+.a-pond-actions button:hover, .a-pond-actions button:focus-visible { text-decoration: underline; }
+.a-pond-actions button:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+.a-pond-actions button:disabled { opacity: .45; cursor: default; }
+.a-pond-feedback { min-height: 1.6em; margin-top: 4px; opacity: .75; }
+.a-overture:not([data-stage='rest']) .a-pond-tools { visibility: hidden; }
+.a-weather:disabled { cursor: default; }
+.a-weather:disabled small { opacity: .65; }
