@@ -1,578 +1,270 @@
-import { coverFit, frameDelta, type Vec2 } from './presets'
-import { noise, vertexSource } from './shaders'
-import type { Light, Weather } from '../weather'
-
-const DROPS = 48
-/** Seconds a raindrop is seen falling before it lands and rings the water. */
-const FALL = 0.3,
-  FALL_SPEED = 1.7
-/** Ring speed on the water, in block units per second. */
-const SPEED = 0.16
-const SKY = { rain: 0, sun: 1, wind: 2, mist: 3, snow: 4 } as const
-const SEASON = { spring: 0, summer: 1, autumn: 2, winter: 3 } as const
-/**
- * Seconds after entering: the view sinks into the water while the painting
- * is laid down. The laying waits for the painting if it is still being made.
- */
-const SINK = 1.5,
-  REVEAL = { AFTER: 0.7, TAKES: 1.4 }
-
-/**
- * The block of water, seen from above at an angle: half its side and its
- * depth, its turn on the paper, the projection's two scales, and where it
- * sits. Space `q` is centered, y up, measured in the shorter screen side.
- */
-const S = 0.29,
-  H = 0.075,
-  TURN = -0.2,
-  CX = 0.82,
-  CY = 0.46,
-  AT: Vec2 = [0, -0.06]
-const E1: Vec2 = [Math.cos(TURN), Math.sin(TURN)],
-  E2: Vec2 = [-Math.sin(TURN), Math.cos(TURN)]
-const project = (w: Vec2): Vec2 => [CX * (w[0] - w[1]), CY * (w[0] + w[1])]
-const A = project(E1),
-  B = project(E2)
-const f = (n: number) => n.toFixed(5)
-const vec2 = (v: Vec2) => `vec2(${f(v[0])}, ${f(v[1])})`
-
-/** Where `q` lands on the plane at height y, in the block's own coordinates. */
-function onPlane(q: Vec2, y: number): Vec2 {
-  const a = (q[0] - AT[0]) / CX,
-    b = (q[1] - AT[1] - y) / CY
-  const w: Vec2 = [(a + b) / 2, (b - a) / 2]
-  return [w[0] * E1[0] + w[1] * E1[1], w[0] * E2[0] + w[1] * E2[1]]
-}
-
-const geometry = `const float S = ${f(S)}, H = ${f(H)}, CX = ${f(CX)}, CY = ${f(CY)};
-const vec2 AT = ${vec2(AT)}, E1 = ${vec2(E1)}, E2 = ${vec2(E2)}, A = ${vec2(A)}, B = ${vec2(B)};
-uniform float uZoom;
-// sinking into the water: magnify around the middle of its surface
-vec2 view(vec2 q) {
-  vec2 z = AT + vec2(0.0, H);
-  return z + (q - z) * uZoom;
-}
-vec2 onPlane(vec2 q, float y) {
-  vec2 p = q - AT;
-  p.y -= y;
-  float a = p.x / CX, b = p.y / CY;
-  vec2 w = vec2(a + b, b - a) * 0.5;
-  return vec2(dot(w, E1), dot(w, E2));
-}
-// 0 paper, 1 the water's surface, 2 and 3 the two near sides; st places q on that face
-int face(vec2 q, out vec2 st) {
-  vec2 l = onPlane(q, H);
-  st = l;
-  if (max(abs(l.x), abs(l.y)) < S) return 1;
-  vec2 p = q - AT;
-  float v = (p.x + S * A.x) / B.x;
-  float y = p.y + S * A.y - v * B.y;
-  st = vec2(v, y);
-  if (abs(v) < S && y > 0.0 && y < H) return 2;
-  float u = (p.x + S * B.x) / A.x;
-  y = p.y + S * B.y - u * A.y;
-  st = vec2(u, y);
-  if (abs(u) < S && y > 0.0 && y < H) return 3;
-  return 0;
-}`
-
-const weatherUniforms = `uniform vec2 uRes;
-uniform float uTime;
-uniform vec3 uPaper;
-uniform vec3 uWater;
-uniform vec3 uDeep;
-uniform vec3 uLight;
-uniform vec3 uInk;
-uniform vec2 uFrom;
-uniform float uSun;
-uniform int uSky;
-uniform int uSeason;
-uniform float uStrength;
-uniform float uLean;
-uniform float uSink;`
-
-/**
- * Pass one: the scene before any brushwork. Paper, the block's shadow, and
- * the block itself: water on top, lit by the hour, ringed by drops; glass
- * sides showing the water's body; mist over everything on a misty day.
- */
-const sceneSource = `#version 300 es
-precision highp float;
-${weatherUniforms}
-uniform vec4 uDrops[${DROPS}];
-in vec2 vUv;
-out vec4 outColor;
-
-${noise}
-${geometry}
-
-void main() {
-  float m = min(uRes.x, uRes.y);
-  vec2 q0 = (gl_FragCoord.xy - 0.5 * uRes) / m;
-  vec2 q = view(q0);
-  float t = uTime;
-  vec2 st;
-  int side = face(q, st);
-
-  vec3 paper = uPaper * (0.97 + vnoise(q0 * 7.0) * 0.04 + (vnoise(q0 * 36.0) - 0.5) * 0.012);
-  paper *= 1.0 - dot(q0, q0) * 0.1;
-  vec3 col = paper;
-
-  if (side == 0) {
-    // the shadow falls away from the light, softest at its far edge
-    vec2 g = onPlane(q + uFrom * 0.07, 0.0), g0 = onPlane(q, 0.0);
-    float shade = smoothstep(0.06, -0.02, max(abs(g.x), abs(g.y)) - S);
-    float contact = smoothstep(0.025, 0.0, max(abs(g0.x), abs(g0.y)) - S);
-    col *= 1.0 - shade * (0.05 + uSun * 0.16) - contact * 0.1;
-  } else if (side == 1) {
-    vec2 l = st / S;
-    col = mix(uWater, uDeep, vnoise(l * 1.7 + 3.0) * 0.45 + (l.y + 1.0) * 0.1);
-    // the sky in the water: a soft pale patch, set off from the light
-    float sky = length((l + uFrom * 0.35) * vec2(1.0, 1.3)) + (vnoise(l * 3.0 + t * 0.05) - 0.5) * 0.5;
-    col = mix(col, mix(uPaper, uLight, 0.5), smoothstep(0.75, 0.15, sky) * (0.22 + uSun * 0.35));
-    // wind combs the surface into streaks
-    float comb = vnoise(vec2(l.x * 14.0 - t * uLean * 8.0, l.y * 3.0 + t * 0.2));
-    col += (comb - 0.5) * (uSky == 2 ? 0.16 : 0.05);
-    // sun: glints that come and go
-    if (uSky != 0 && uSky != 4) {
-      vec2 cell = floor(l * 46.0);
-      float g = hash(cell + floor(t * 2.5 + hash(cell) * 7.0));
-      float wave = vnoise(l * 9.0 + t * 0.4);
-      col += uLight * step(0.965, g) * smoothstep(0.45, 0.8, wave) * uSun * 0.9;
-    }
-    float crest = 0.0, trough = 0.0;
-    for (int i = 0; i < ${DROPS}; i++) {
-      vec4 d = uDrops[i];
-      float age = t - d.z;
-      if (age < 0.0 || d.w <= 0.0) continue;
-      float fade = d.w * exp(-age * 1.1);
-      float s = length(st - d.xy) - ${f(SPEED)} * age;
-      float ring = exp(-s * s / 0.00005) - 0.7 * exp(-pow(s + 0.012, 2.0) / 0.00005)
-        + 0.4 * exp(-pow(s + 0.03, 2.0) / 0.00004);
-      crest += max(ring, 0.0) * fade;
-      trough += max(-ring, 0.0) * fade;
-      // the drop itself, for a moment, where it struck
-      crest += exp(-dot(st - d.xy, st - d.xy) / 0.00002) * smoothstep(0.14, 0.0, age) * d.w;
-    }
-    col = mix(col, mix(uLight, vec3(1.0), 0.5), clamp(crest * 0.9, 0.0, 0.85));
-    col = mix(col, uDeep * 0.8, clamp(trough * 0.6, 0.0, 0.6));
-    // winter: frost creeping in from the rim
-    if (uSeason == 3) {
-      float rim = smoothstep(0.8, 1.0, max(abs(l.x), abs(l.y)) + (vnoise(l * 12.0) - 0.5) * 0.12);
-      col = mix(col, vec3(0.93, 0.95, 0.97) * mix(vec3(1.0), uLight, 0.3), rim * (uSky == 4 ? 0.6 : 0.3));
-    }
-  } else {
-    // glass sides: the body of the water, the paper faintly through it
-    float y = st.y / H;
-    float lit = side == 2 ? 0.5 - uFrom.x * 0.5 : 0.5 + uFrom.x * 0.5;
-    col = mix(mix(uDeep, uWater, 0.35 + y * 0.45), paper, 0.25);
-    col *= 0.8 + lit * 0.24;
-    col += (vnoise(vec2(st.x * 60.0, y * 3.0)) - 0.5) * 0.05;
-    col = mix(col, mix(uWater, vec3(1.0), 0.4), exp(-pow((y - 0.84) / 0.05, 2.0)) * 0.45);
-  }
-
-  if (uSky == 3) {
-    float fog = uStrength * (0.32 + 0.35 * vnoise(q0 * 2.2 + vec2(t * 0.03, 0.0)));
-    col = mix(col, mix(uPaper, vec3(1.0), 0.15), fog);
-  }
-  col = mix(uPaper, col, smoothstep(0.0, 1.0, t));
-  outColor = vec4(col, 1.0);
-}`
-
-/**
- * Pass two: brushwork over everything, so paper, water and weather share
- * one hand. Then what is drawn rather than painted: the block's ink outline,
- * sketched twice like the reference drawing, and whatever is falling. Once
- * the visitor enters, the home painting is laid down stroke by stroke.
- */
-const brushSource = `#version 300 es
-precision highp float;
-${weatherUniforms}
-uniform sampler2D uScene;
-uniform sampler2D uImage;
-uniform vec2 uScale;
-uniform vec2 uOffset;
-uniform float uReveal;
-uniform vec4 uDrops[${DROPS}];
-in vec2 vUv;
-out vec4 outColor;
-
-${noise}
-${geometry}
-// a point on the water's surface, back on the screen
-vec2 screenOf(vec2 l) {
-  vec2 w = l.x * E1 + l.y * E2;
-  vec2 q = AT + vec2(CX * (w.x - w.y), CY * (w.x + w.y) + H);
-  vec2 z = AT + vec2(0.0, H);
-  return z + (q - z) / uZoom;
-}
-float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
-vec3 painting(vec2 screen) {
-  return texture(uImage, clamp(screen * uScale + uOffset, vec2(0.001), vec2(0.999))).rgb;
-}
-float edgeAt(vec2 q0, float e, float seed) {
-  vec2 j = (vec2(vnoise(q0 * 34.0 + seed), vnoise(q0 * 34.0 + seed + 9.0)) - 0.5) * 0.007;
-  vec2 st;
-  int f0 = face(view(q0 + j), st);
-  int fx = face(view(q0 + j + vec2(e, 0.0)), st);
-  int fy = face(view(q0 + j + vec2(0.0, e)), st);
-  return f0 != fx || f0 != fy ? 1.0 : 0.0;
-}
-
-void main() {
-  float m = min(uRes.x, uRes.y);
-  vec2 q0 = (gl_FragCoord.xy - 0.5 * uRes) / m;
-  vec2 screen = gl_FragCoord.xy / uRes;
-  vec2 toUv = m / uRes;
-  float t = uTime;
-  vec2 st;
-  // bare paper takes the brush lightly: rows of dabs on a flat ground read as stripes
-  float worked = face(view(q0), st) == 0 ? 0.35 : 1.0;
-
-  float a = 0.04 + (vnoise(q0 * 2.6 + t * 0.02) - 0.5) * 0.8;
-  vec2 dir = vec2(cos(a), sin(a)), perp = vec2(-dir.y, dir.x);
-  vec2 sp = vec2(dot(q0, dir), dot(q0, perp)) * vec2(32.0, 76.0);
-  sp.x += hash(vec2(floor(sp.y), 3.1)) * 7.0;
-  vec2 cell = floor(sp), local = fract(sp);
-  float h1 = hash(cell), h2 = hash(cell + 17.3), h3 = hash(cell + 5.1);
-  // bristles stay coarser than a pixel, or they alias into moire
-  float bristle = vnoise(vec2(sp.x * 0.6, sp.y * 2.2) + h1 * 10.0);
-
-  vec2 along = dir * toUv * 0.009 * (0.55 + h1 * 0.9);
-  vec3 col = vec3(0.0);
-  float wsum = 0.0;
-  for (int i = -2; i <= 2; i++) {
-    float k = float(i) / 2.0, w = 1.0 - abs(k) * 0.5;
-    col += texture(uScene, screen + along * k).rgb * w;
-    wsum += w;
-  }
-  vec3 sharp = texture(uScene, screen).rgb;
-  col = mix(col / wsum, sharp, 0.4);
-
-  // the home painting arrives stroke by stroke, outward from the middle
-  float laid = 0.0;
-  if (uReveal > 0.0) {
-    vec2 msp = vec2(dot(q0, vec2(1.0, 0.04)), dot(q0, vec2(-0.04, 1.0))) * vec2(15.0, 42.0);
-    msp.x += hash(vec2(floor(msp.y), 1.7)) * 5.0;
-    float due = length(q0) * 0.45 + hash(floor(msp)) * 0.32 + vnoise(q0 * 3.0) * 0.15
-      + smoothstep(0.55, 1.0, abs(fract(msp.x) - 0.5) * 2.0) * 0.1;
-    due = clamp(due * 0.85, 0.06, 0.94);
-    laid = smoothstep(due - 0.05, due + 0.05, uReveal * 1.25 - 0.1);
-    vec3 paint = vec3(0.0);
-    for (int i = -2; i <= 2; i++) paint += painting(screen + dir * toUv * float(i) * 0.005);
-    col = mix(col, paint / 5.0, laid);
-    sharp = mix(sharp, painting(screen), laid);
-  }
-
-  // broken color: each dab leans a little warm or cool
-  col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.026 * worked;
-  float dabEdge = smoothstep(0.0, 0.3, local.y) * smoothstep(1.0, 0.7, local.y);
-  float height = lum(sharp) * 0.75 + (bristle * 0.2 + dabEdge * 0.03) * worked;
-  vec2 dH = vec2(dFdx(height), dFdy(height));
-  vec3 N = normalize(vec3(-dH * 4.0 * (uRes.y / 800.0), 1.0));
-  vec3 L = normalize(vec3(uFrom, 0.9));
-  col *= 0.86 + dot(N, L) * 0.2;
-  col += pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0) * 0.05;
-
-  float drawn = (1.0 - laid) * (1.0 - uSink);
-  // ink: the outline, gone over twice by a quick hand
-  float e = 1.5 / m;
-  float ink = max(edgeAt(q0, e, 0.0), edgeAt(q0, e, 41.0) * 0.45);
-  col = mix(col, uInk, ink * (0.6 + vnoise(q0 * 300.0) * 0.3) * drawn);
-
-  vec3 rain = mix(uInk, uDeep, 0.35);
-  if (uSky == 0) {
-    // over the water, only the drops that will ring it are drawn: each a
-    // streak that ends where it lands. Elsewhere the rain falls on paper.
-    vec2 up = vec2(sin(uLean), cos(uLean));
-    for (int i = 0; i < ${DROPS}; i++) {
-      vec4 d = uDrops[i];
-      float left = d.z - uTime;
-      if (left <= 0.0 || left > ${f(FALL)} || d.w <= 0.0) continue;
-      vec2 head = screenOf(d.xy) + up * left * ${f(FALL_SPEED)};
-      vec2 pa = q0 - head, ba = up * 0.08;
-      float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-      float line = smoothstep(0.0016, 0.0004, length(pa - ba * h)) * (1.0 - h * 0.75);
-      col = mix(col, rain, line * 0.6 * drawn);
-    }
-    float open = worked < 1.0 ? 1.0 : 0.0;
-    vec2 r = mat2(cos(uLean), sin(uLean), -sin(uLean), cos(uLean)) * q0;
-    for (int layer = 0; layer < 3; layer++) {
-      float k = float(layer);
-      float cols = 130.0 - k * 36.0, speed = 1.4 + k * 0.5, len = 0.06 + k * 0.035;
-      float cx = floor(r.x * cols);
-      float h = hash(vec2(cx, k * 7.1));
-      if (h > 0.3 + uStrength * 0.4) continue;
-      float x = (cx + 0.5 + (hash(vec2(cx, 3.3 + k)) - 0.5) * 0.6) / cols;
-      float head = 1.1 - mod(t * speed + h * 13.0, 2.4);
-      float above = r.y - head;
-      float on = step(0.0, above) * step(above, len);
-      float line = smoothstep(0.0013, 0.0003, abs(r.x - x)) * on * (1.0 - above / len * 0.7);
-      col = mix(col, rain, line * (0.3 + k * 0.15) * (0.6 + bristle * 0.4) * drawn * open);
-    }
-  } else if (uSky == 4) {
-    for (int layer = 0; layer < 3; layer++) {
-      float k = float(layer), scale = 26.0 - k * 7.0;
-      vec2 g = q0 * scale + vec2(sin(t * 0.6 + k + q0.y * 3.0) * 0.5 - t * uLean * 2.0, t * (0.9 + k * 0.45));
-      vec2 c = floor(g);
-      if (hash(c + k * 13.0) > 0.12 + uStrength * 0.16) continue;
-      vec2 p = fract(g) - 0.5 + (vec2(hash(c + 1.7), hash(c + 4.2)) - 0.5) * 0.5;
-      float size = 0.0035 + k * 0.0025;
-      float flake = smoothstep(size, size * 0.2, length(p) / scale);
-      col = mix(col, mix(vec3(0.98), uLight, 0.15), flake * (0.55 + k * 0.15) * drawn);
-    }
-  } else if (uSky == 2 && (uSeason == 0 || uSeason == 2)) {
-    // petals in spring, leaves in autumn, carried across by the wind
-    vec3 tint = uSeason == 0 ? vec3(0.95, 0.76, 0.8) : vec3(0.78, 0.46, 0.2);
-    for (int layer = 0; layer < 2; layer++) {
-      float k = float(layer), scale = 9.0 - k * 3.0;
-      vec2 g = q0 * scale + vec2(-t * sign(uLean) * (1.6 + k), t * 0.35 + sin(t + q0.x * 4.0) * 0.4);
-      vec2 c = floor(g);
-      if (hash(c + 3.0 + k) > 0.12) continue;
-      vec2 p = fract(g) - 0.5 + (vec2(hash(c + 2.1), hash(c + 6.4)) - 0.5) * 0.5;
-      float spin = t * (1.0 + hash(c) * 2.0) + hash(c + 9.0) * 6.28;
-      p = mat2(cos(spin), sin(spin), -sin(spin), cos(spin)) * p;
-      float leaf = smoothstep(1.0, 0.6, length(p / vec2(0.09, 0.04)));
-      col = mix(col, tint * (0.85 + hash(c + 5.0) * 0.3), leaf * 0.9 * drawn);
-    }
-  }
-
-  col += (hash(gl_FragCoord.xy) - 0.5) * 0.018;
-  outColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-}`
-
-const ease = (v: number) => {
-  const t = Math.min(1, Math.max(0, v))
-  return t * t * (3 - 2 * t)
-}
-const span = (t: number, [a, b]: readonly [number, number]) => ease((t - a) / (b - a))
-
+import * as THREE from 'three';
+import { coverFit, type Vec2 } from './presets';
+import type { Light, Weather } from '../weather';
+import { rainSample } from './island/render-math';
+import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
+import { height, normal, landField, isOpenWater, randomSource, ELEVATION } from './island/math';
+import { weatherProfile, viewSpan, transitionState, sunVector } from './island/state';
+type RainDrop = {
+    x: number;
+    z: number;
+    phase: number;
+    speed: number;
+    length: number;
+    alpha: number;
+    lean: number;
+};
 export type OvertureHandle = {
-  /** Sinks into the water and lays the home painting down; `onDone` follows. */
-  enter(): void
-  /** A drop where the visitor touched, if they touched the water. */
-  touch(clientX: number, clientY: number): void
-  /** A faint ring trailing the pointer across the water. */
-  stir(clientX: number, clientY: number): void
-  destroy(): void
-}
-
-/** Throws without WebGL2; callers skip the overture. */
+    enter(): void;
+    touch(x: number, y: number): void;
+    stir(x: number, y: number): void;
+    destroy(): void;
+};
 export function mountOverture(o: {
-  canvas: HTMLCanvasElement
-  weather: Weather
-  light: Light
-  /** Paints the home painting; slow, so called after the first frames. */
-  painting: () => HTMLCanvasElement
-  /** Its crop, as the home page's object-position, so the handover lines up. */
-  focus: Vec2
-  /** Called once the painting is laid down. */
-  onDone: () => void
+    canvas: HTMLCanvasElement;
+    weather: Weather;
+    light: Light;
+    painting: () => HTMLCanvasElement;
+    focus: Vec2;
+    onDone: () => void;
 }): OvertureHandle {
-  const { canvas, weather, light } = o
-  const gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: false })
-  if (!gl) throw new Error('WebGL2 unavailable')
-  function program(fragment: string) {
-    const shader = (type: number, source: string) => {
-      const s = gl!.createShader(type)!
-      gl!.shaderSource(s, source)
-      gl!.compileShader(s)
-      if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS))
-        throw new Error(gl!.getShaderInfoLog(s) || 'shader compile failed')
-      return s
+    const { canvas, weather, light } = o, profile = weatherProfile(weather, light);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const originalTouchAction = canvas.style.touchAction;
+    canvas.style.touchAction = 'none';
+    const homeTexture = new THREE.Texture();
+    homeTexture.colorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    renderer.setClearColor('#faf9f4');
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const scene = new THREE.Scene();
+    scene.background = null;
+    const camera = new THREE.OrthographicCamera(-8, 8, 5, -5, .1, 40);
+    let yaw = -.35, targetYaw = yaw;
+    const raining = profile.rain, snowing = profile.snow;
+    const sunDirection = new THREE.Vector3(...sunVector(weather, light)), sun = new THREE.DirectionalLight(0xffecc9, 2.1);
+    sun.position.copy(sunDirection).multiplyScalar(10);
+    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0xe3f0ed, 0x6d9894, 2));
+    const random = randomSource();
+    const noiseGLSL = `float gaussH(vec2 p,vec2 c,vec2 r){vec2 q=(p-c)/r;return exp(-dot(q,q));}float sceneHeight(vec2 p){float x=p.x,z=p.y;float nx=x/1.35,nz=(z+.10*sin(x*3.))/.62;float f=1.-nx*nx-nz*nz-.32*gaussH(p,vec2(.28,.38),vec2(.32,.24))+.10*sin(x*5.-z*4.)+.055*sin(z*12.+x*6.);if(f<=0.)return 0.;float ground=.004+.035*pow(f,1.1)+.025*gaussH(p,vec2(-.50,-.10),vec2(.5,.35));float a=gaussH(p,vec2(-.55,-.13),vec2(.54,.34)),b=gaussH(p,vec2(-.04,-.21),vec2(.40,.25));return ground+max(0.,.29*pow(a,1.3)+.21*pow(b,1.5)-.045)*(1.+.025*sin(x*12.+z*9.));}float landOcclusion(vec3 p,vec3 sun){float shade=0.;for(int i=1;i<=24;i++){float t=float(i)*.10;vec3 q=p+sun*t;shade=max(shade,smoothstep(.004,.055,sceneHeight(q.xz)-q.y));}return shade;}vec3 linearize(vec3 c){return mix(c/12.92,pow((max(c,vec3(0.))+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}`;
+    const worldVertex = `varying vec3 vWorld;varying vec3 vNormal;void main(){vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`;
+    const landMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: true, side: THREE.DoubleSide, uniforms: { sun: { value: sunDirection } }, vertexShader: worldVertex, fragmentShader: `precision highp float;uniform vec3 sun;varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}void main(){float d=max(dot(normalize(vNormal),sun),0.);float canopy=smoothstep(.015,.10,vWorld.y);float shade=landOcclusion(vWorld+vec3(0.,.018,0.),sun);vec3 shadow=vec3(.34,.53,.54),mid=vec3(.55,.69,.62),light=vec3(.91,.78,.60);vec3 col=mix(shadow,mid,smoothstep(.02,.32,d));col=mix(col,light,smoothstep(.25,.75,d)*.78);col=mix(col,shadow,shade*.40);col+=vec3(.020,.012,-.008)*(noise(vWorld.xz*14.)-.5);float alpha=mix(.22,.96,canopy);gl_FragColor=vec4(linearize(col),alpha);}` });
+    const vertices: number[] = [], normals: number[] = [];
+    const step = .045;
+    for (let x = -1.5; x < 1.5; x += step)
+        for (let z = -.85; z < .85; z += step) {
+            if (landField(x + step / 2, z + step / 2) <= 0)
+                continue;
+            for (const [a, b] of [[x, z], [x + step, z], [x + step, z + step], [x, z], [x + step, z + step], [x, z + step]]) {
+                vertices.push(a, height(a, b), b);
+                normals.push(...normal(a, b));
+            }
+        }
+    const landGeometry = new THREE.BufferGeometry();
+    landGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    landGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    const land = new THREE.Mesh(landGeometry, landMaterial);
+    scene.add(land);
+    const wavePool = new WavePool();
+    const drops = Array.from({ length: 48 }, () => new THREE.Vector4(0, 0, 10, 0));
+    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: profile.glint }, glintTint: { value: new THREE.Vector3(...profile.glintTint) }, sun: { value: sunDirection }, drops: { value: drops } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
+void main(){vec2 p=vWorld.xz;float a=atan(p.y,p.x),r=length(p);float bound=2.75+.34*sin(3.*a+.5)+.25*cos(5.*a-1.)+.15*sin(7.*a);float edge=smoothstep(0.,.6,bound-r+(noise(p*7.)-.5)*.16);if(edge<.004)discard;
+vec3 wave=waveField(p);vec3 n=normalize(vec3(-wave.y,1.,-wave.z));
+vec3 view=normalize(cameraPosition-vWorld),halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
+vec3 col=mix(vec3(.71,.83,.85),vec3(.86,.90,.85),noise(p*1.1));float shade=landOcclusion(vWorld+vec3(0.,.033,0.),sun);col=mix(col,vec3(.50,.67,.72),shade*.28);col=mix(col,glintTint,rough*.54*glint*(1.-shade*.90));float broken=smoothstep(.65,.88,noise(p*vec2(8.,13.)))*smoothstep(.24,.50,rough);col+=glintTint*fine*broken*.24*glint*(1.-shade);
+vec2 reflected=(p-vec2(-.4,.25))/vec2(.65,.32);float reflection=exp(-dot(reflected,reflected));col=mix(col,vec3(.56,.72,.67),reflection*.14);
+gl_FragColor=vec4(linearize(col),edge*.88);}` });
+    const waterGeo = new THREE.PlaneGeometry(7.5, 7.5, 128, 128);
+    waterGeo.rotateX(-Math.PI / 2);
+    const water = new THREE.Mesh(waterGeo, waterMaterial);
+    water.position.y = -.015;
+    scene.add(water);
+    const rain: RainDrop[] = [];
+    while (rain.length < Math.round(40 + weather.strength * 40)) {
+        const x = (random() - .5) * 6.4, z = (random() - .5) * 6.4;
+        if (isOpenWater(x, z))
+            rain.push({ x, z, phase: random(), speed: (.8 + random() * .4) * profile.precipitationSpeed, length: snowing ? .025 : .075 + random() * .13, alpha: .60 + random() * .24, lean: weather.lean });
     }
-    const p = gl!.createProgram()!
-    gl!.attachShader(p, shader(gl!.VERTEX_SHADER, vertexSource))
-    gl!.attachShader(p, shader(gl!.FRAGMENT_SHADER, fragment))
-    gl!.bindAttribLocation(p, 0, 'aPos')
-    gl!.linkProgram(p)
-    if (!gl!.getProgramParameter(p, gl!.LINK_STATUS))
-      throw new Error(gl!.getProgramInfoLog(p) || 'program link failed')
-    const cache = new Map<string, WebGLUniformLocation | null>()
-    const at = (name: string) => {
-      if (!cache.has(name)) cache.set(name, gl!.getUniformLocation(p, name))
-      return cache.get(name)!
+    const rainPositions = new Float32Array(rain.length * 18), rainUV = new Float32Array(rain.length * 12), rainAlpha = new Float32Array(rain.length * 6), rainGeo = new THREE.BufferGeometry();
+    for (let i = 0; i < rain.length; i++) {
+        rainUV.set([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], i * 12);
+        rainAlpha.fill(rain[i].alpha, i * 6, i * 6 + 6);
     }
-    return { p, at }
-  }
-  const scene = program(sceneSource),
-    brush = program(brushSource)
-  const vao = gl.createVertexArray()!
-  gl.bindVertexArray(vao)
-  const buffer = gl.createBuffer()!
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
-  gl.enableVertexAttribArray(0)
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
-
-  const image = gl.createTexture()!
-  gl.bindTexture(gl.TEXTURE_2D, image)
-  const blank = light.water.map((v) => Math.round(v * 255))
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([...blank, 255]))
-  const sceneTex = gl.createTexture()!
-  const fbo = gl.createFramebuffer()!
-  let painted: HTMLCanvasElement | null = null,
-    fit = coverFit(1, 1, 1, 1),
-    sceneSize = [2, 2]
-
-  function resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 1.5) * 0.8
-    canvas.width = Math.max(2, Math.round(innerWidth * dpr))
-    canvas.height = Math.max(2, Math.round(innerHeight * dpr))
-    sceneSize = [Math.max(2, canvas.width >> 1), Math.max(2, canvas.height >> 1)]
-    gl!.bindTexture(gl!.TEXTURE_2D, sceneTex)
-    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, sceneSize[0], sceneSize[1], 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null)
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR)
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR)
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE)
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE)
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo)
-    gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, sceneTex, 0)
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null)
-    if (painted) fit = coverFit(innerWidth, innerHeight, painted.width, painted.height, o.focus)
-  }
-  resize()
-
-  // drops on the water, in block coordinates: (x, y, landing time, strength); a ring buffer
-  const drops = new Float32Array(DROPS * 4)
-  let slot = 0
-  function drop(x: number, y: number, at: number, strength = 0.5 + Math.random() * 0.4) {
-    drops.set([x, y, at, strength], slot * 4)
-    slot = (slot + 1) % DROPS
-  }
-
-  // the clock pauses through main-thread stalls instead of skipping ahead
-  let raf = 0,
-    t = 0,
-    last = performance.now(),
-    enteredAt = -1,
-    paintedAt = -1,
-    nextDrop = 0.5,
-    lastStir = 0,
-    zoom = 1,
-    done = false
-  const paintTimer = setTimeout(() => {
-    painted = o.painting()
-    gl.bindTexture(gl.TEXTURE_2D, image)
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, painted)
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-    gl.generateMipmap(gl.TEXTURE_2D)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-    fit = coverFit(innerWidth, innerHeight, painted.width, painted.height, o.focus)
-    paintedAt = t
-  }, 400)
-
-  /** A client point on the water's surface, in block coordinates; null off the water. */
-  function waterAt(clientX: number, clientY: number): Vec2 | null {
-    const m = Math.min(innerWidth, innerHeight)
-    const q: Vec2 = [(clientX - innerWidth / 2) / m, (innerHeight / 2 - clientY) / m]
-    const z: Vec2 = [AT[0], AT[1] + H]
-    const l = onPlane([z[0] + (q[0] - z[0]) * zoom, z[1] + (q[1] - z[1]) * zoom], H)
-    return Math.max(Math.abs(l[0]), Math.abs(l[1])) < S ? l : null
-  }
-
-  type Uniform = (name: string) => WebGLUniformLocation | null
-  function shared(u: Uniform, w: number, h: number, sink: number) {
-    gl!.uniform2f(u('uRes'), w, h)
-    gl!.uniform1f(u('uTime'), t)
-    gl!.uniform3fv(u('uPaper'), light.paper)
-    gl!.uniform3fv(u('uWater'), light.water)
-    gl!.uniform3fv(u('uDeep'), light.deep)
-    gl!.uniform3fv(u('uLight'), light.light)
-    gl!.uniform3fv(u('uInk'), light.ink)
-    gl!.uniform2fv(u('uFrom'), light.from)
-    gl!.uniform1f(u('uSun'), light.sun)
-    gl!.uniform1i(u('uSky'), SKY[weather.sky])
-    gl!.uniform1i(u('uSeason'), SEASON[weather.season])
-    gl!.uniform1f(u('uStrength'), weather.strength)
-    gl!.uniform1f(u('uLean'), weather.lean)
-    gl!.uniform1f(u('uSink'), sink)
-    gl!.uniform1f(u('uZoom'), zoom)
-  }
-
-  function frame(now: number) {
-    raf = 0
-    if (document.hidden) return
-    t += frameDelta(now, last, 34) / 1000
-    last = now
-    const since = enteredAt < 0 ? -1 : t - enteredAt
-    if (weather.sky === 'rain' && t >= nextDrop && enteredAt < 0) {
-      drop((Math.random() * 2 - 1) * S * 0.95, (Math.random() * 2 - 1) * S * 0.95, t + FALL)
-      nextDrop = t + (0.2 - weather.strength * 0.1) * (0.5 + Math.random())
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+    rainGeo.setAttribute('uv', new THREE.BufferAttribute(rainUV, 2));
+    rainGeo.setAttribute('strength', new THREE.BufferAttribute(rainAlpha, 1));
+    const rainMaterial = new THREE.ShaderMaterial({ transparent: true, depthTest: true, depthWrite: false, side: THREE.DoubleSide, vertexShader: `attribute float strength;varying vec2 rainUv;varying float rainStrength;void main(){rainUv=uv;rainStrength=strength;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`, fragmentShader: `precision highp float;varying vec2 rainUv;varying float rainStrength;void main(){float width=smoothstep(0.,.28,rainUv.x)*(1.-smoothstep(.72,1.,rainUv.x));float tail=pow(1.-rainUv.y,.65);gl_FragColor=vec4(${snowing ? 'vec3(.92,.95,1.)' : 'vec3(.16,.27,.30)'},width*tail*rainStrength);}` });
+    const rainLines = new THREE.Mesh(rainGeo, rainMaterial);
+    rainLines.frustumCulled = false;
+    const rainScene = new THREE.Scene(), rainDepthMaterial = landMaterial.clone();
+    rainDepthMaterial.colorWrite = false;
+    rainDepthMaterial.transparent = false;
+    rainDepthMaterial.depthWrite = true;
+    rainScene.add(new THREE.Mesh(landGeometry, rainDepthMaterial));
+    rainScene.add(rainLines);
+    const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true }), rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true });
+    const postScene = new THREE.Scene(), postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const postMaterial = new THREE.ShaderMaterial({ uniforms: { image: { value: target.texture }, rainImage: { value: rainTarget.texture }, paper: { value: new THREE.Color(...light.paper).convertSRGBToLinear() }, tint: { value: new THREE.Vector3(...profile.tint) }, exposure: { value: profile.exposure }, mist: { value: profile.mist }, home: { value: homeTexture }, reveal: { value: 0 }, fitScale: { value: new THREE.Vector2(1, 1) }, fitOffset: { value: new THREE.Vector2() }, resolution: { value: new THREE.Vector2() }, painted: { value: 1 } }, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`, fragmentShader: `precision highp float;uniform sampler2D image;uniform sampler2D rainImage;uniform vec3 paper;uniform vec2 resolution;uniform float painted;uniform vec3 tint;uniform float exposure;uniform float mist;uniform sampler2D home;uniform float reveal;uniform vec2 fitScale;uniform vec2 fitOffset;varying vec2 vUv;${noiseGLSL}
+vec3 encode(vec3 c){return mix(c*12.92,1.055*pow(max(c,vec3(0.)),vec3(1./2.4))-.055,step(vec3(.0031308),c));}
+vec3 samplePaint(vec2 uv){vec4 p=texture2D(image,uv);return p.rgb/max(p.a,.0001);}
+void main(){vec4 raw=texture2D(image,vUv);float coverage=raw.a;vec3 col=raw.rgb/max(coverage,.0001);
+if(painted>.5&&coverage>.002){vec2 pixel=vUv*resolution;vec2 cell=floor(pixel/vec2(11.,7.));vec2 local=fract(pixel/vec2(11.,7.));float id=hash(cell),angle=(hash(cell+17.)-.5)*1.2;vec2 dir=vec2(cos(angle),sin(angle));float dab=smoothstep(0.,.20,local.x)*(1.-smoothstep(.75,1.,local.x))*smoothstep(0.,.25,local.y)*(1.-smoothstep(.65,1.,local.y));float selected=step(.36,id);vec3 neighbor=samplePaint(vUv+dir/resolution*(id-.5)*3.);col=mix(col,neighbor,dab*selected*.22);float broad=noise(pixel/vec2(39.,27.))-.5;col+=vec3(.012,.007,-.007)*(id-.5)*dab*selected+vec3(.009,.006,-.004)*broad;}
+col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,coverage);vec4 rain=texture2D(rainImage,vUv);combined=rain.rgb+combined*(1.-rain.a);vec3 homeColor=texture2D(home,vUv*fitScale+fitOffset).rgb;float wash=smoothstep(0.,1.,reveal);combined=mix(combined,homeColor,wash);gl_FragColor=vec4(encode(combined),1.);}` });
+    postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
+    let elapsed = 0, previous = performance.now(), raf = 0, destroyed = false, enteredAt: number | null = null, paintedAt: number | null = null, done = false, lastStir = 0;
+    let painted: HTMLCanvasElement | null = null;
+    function resize() {
+        const width = Math.max(1, innerWidth), h = Math.max(1, innerHeight);
+        renderer.setSize(width, h, false);
+        const span = viewSpan(width, h), vertical = span * h / width;
+        camera.left = -span / 2;
+        camera.right = span / 2;
+        camera.top = vertical * .44;
+        camera.bottom = -vertical * .56;
+        camera.updateProjectionMatrix();
+        const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+        target.setSize(size.x, size.y);
+        rainTarget.setSize(size.x, size.y);
+        postMaterial.uniforms.resolution.value.copy(size);
+        if (painted) {
+            const fit = coverFit(width, h, painted.width, painted.height, o.focus);
+            postMaterial.uniforms.fitScale.value.fromArray(fit.scale);
+            postMaterial.uniforms.fitOffset.value.fromArray(fit.offset);
+        }
     }
-    const sink = since < 0 ? 0 : span(since, [0, SINK])
-    const from = Math.max(enteredAt + REVEAL.AFTER, paintedAt),
-      reveal = since < 0 || paintedAt < 0 ? 0 : ease((t - from) / REVEAL.TAKES)
-    zoom = 1 - sink * 0.9
-
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo)
-    gl!.viewport(0, 0, sceneSize[0], sceneSize[1])
-    gl!.useProgram(scene.p)
-    shared(scene.at, sceneSize[0], sceneSize[1], sink)
-    gl!.uniform4fv(scene.at('uDrops'), drops)
-    gl!.drawArrays(gl!.TRIANGLES, 0, 3)
-
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null)
-    gl!.viewport(0, 0, canvas.width, canvas.height)
-    gl!.useProgram(brush.p)
-    gl!.activeTexture(gl!.TEXTURE1)
-    gl!.bindTexture(gl!.TEXTURE_2D, sceneTex)
-    gl!.uniform1i(brush.at('uScene'), 1)
-    gl!.activeTexture(gl!.TEXTURE0)
-    gl!.bindTexture(gl!.TEXTURE_2D, image)
-    gl!.uniform1i(brush.at('uImage'), 0)
-    gl!.uniform2fv(brush.at('uScale'), fit.scale)
-    gl!.uniform2fv(brush.at('uOffset'), fit.offset)
-    gl!.uniform1f(brush.at('uReveal'), reveal)
-    gl!.uniform4fv(brush.at('uDrops'), drops)
-    shared(brush.at, canvas.width, canvas.height, sink)
-    gl!.drawArrays(gl!.TRIANGLES, 0, 3)
-
-    if (sink >= 1 && reveal >= 1 && !done) {
-      done = true
-      o.onDone()
+    const paintTimer = setTimeout(() => { if (destroyed)
+        return; try {
+        painted = o.painting();
+        homeTexture.image = painted;
+        homeTexture.needsUpdate = true;
+        paintedAt = elapsed;
+        resize();
     }
-    raf = requestAnimationFrame(frame)
-  }
-  raf = requestAnimationFrame(frame)
-  const onVisibility = () => {
-    if (document.hidden) { cancelAnimationFrame(raf); raf = 0 }
-    else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame) }
-  }
-  document.addEventListener('visibilitychange', onVisibility)
-  addEventListener('resize', resize)
-
-  return {
-    enter() {
-      if (enteredAt >= 0) return
-      enteredAt = t
-      drop(0, 0, t, 1.2)
-    },
-    touch(clientX, clientY) {
-      const at = waterAt(clientX, clientY)
-      if (at && enteredAt < 0) drop(at[0], at[1], t, 1.1)
-    },
-    stir(clientX, clientY) {
-      if (t - lastStir < 0.14 || enteredAt >= 0) return
-      const at = waterAt(clientX, clientY)
-      if (!at) return
-      lastStir = t
-      drop(at[0], at[1], t, 0.3)
-    },
-    destroy() {
-      cancelAnimationFrame(raf)
-      clearTimeout(paintTimer)
-      removeEventListener('resize', resize)
-      document.removeEventListener('visibilitychange', onVisibility)
-      gl.deleteTexture(image)
-      gl.deleteTexture(sceneTex)
-      gl.deleteFramebuffer(fbo)
-      gl.deleteBuffer(buffer)
-      gl.deleteVertexArray(vao)
-      gl.deleteProgram(scene.p)
-      gl.deleteProgram(brush.p)
-      gl.getExtension('WEBGL_lose_context')?.loseContext()
-    },
-  }
+    catch {
+        done = true;
+        o.onDone();
+    } }, 400);
+    const raycaster = new THREE.Raycaster(), waterPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    function touch(x: number, y: number, strength = 1.8) { if (destroyed || enteredAt !== null)
+        return; const rect = canvas.getBoundingClientRect(); raycaster.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera); const hit = new THREE.Vector3(); if (raycaster.ray.intersectPlane(waterPlane, hit))
+        wavePool.add(hit.x, hit.z, elapsed, strength); }
+    let drag: {
+        x: number;
+        yaw: number;
+        id: number;
+    } | null = null;
+    const onDown = (e: PointerEvent) => { if (enteredAt !== null)
+        return; drag = { x: e.clientX, yaw: targetYaw, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); };
+    const onMove = (e: PointerEvent) => { if (drag && drag.id === e.pointerId)
+        targetYaw = drag.yaw + (e.clientX - drag.x) * .009; };
+    const onUp = () => { drag = null; };
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
+    canvas.addEventListener('lostpointercapture', onUp);
+    function frame(ms: number) {
+        raf = 0;
+        if (destroyed || document.hidden)
+            return;
+        const dt = Math.max(0, Math.min((ms - previous) / 1000, .05));
+        previous = ms;
+        const before = elapsed;
+        elapsed += dt;
+        const transition = transitionState(elapsed, enteredAt, paintedAt);
+        camera.zoom = 1 + transition.sink * 5;
+        camera.updateProjectionMatrix();
+        yaw += (targetYaw - yaw) * .15;
+        camera.position.set(Math.sin(yaw) * 12 * Math.cos(ELEVATION), 12 * Math.sin(ELEVATION), Math.cos(yaw) * 12 * Math.cos(ELEVATION));
+        camera.lookAt(0, 0, 0);
+        camera.updateMatrixWorld();
+        waterMaterial.uniforms.time.value = elapsed;
+        rainLines.visible = (raining || snowing) && enteredAt === null;
+        const waves = advanceRainWaves(wavePool, before, elapsed, rain, (raining || snowing) && enteredAt === null);
+        if (snowing) for (const wave of waves) if (wave.time > before) wave.strength *= .3;
+        if (weather.sky === 'wind' && Math.floor(before * 7) !== Math.floor(elapsed * 7)) {
+            const x = (random() - .5) * 5, z = (random() - .5) * 5;
+            wavePool.add(x, z, elapsed, .25 + profile.wind * .6);
+        }
+        for (let i = 0; i < drops.length; i++) {
+            const e = waves[i];
+            if (e)
+                drops[i].set(e.x, e.z, elapsed - e.time, e.strength);
+            else
+                drops[i].w = 0;
+        }
+        for (let i = 0; i < rain.length; i++) {
+            const r = rain[i], state = rainSample(elapsed, r), surface = -.015 + waveField(r.x, r.z, elapsed, waves).height, y = state.y + surface;
+            const across = new THREE.Vector3(Math.cos(yaw) * (snowing ? .018 : .008), 0, -Math.sin(yaw) * (snowing ? .018 : .008)), head = new THREE.Vector3(r.x - r.lean * state.y, y, r.z), tail = new THREE.Vector3(r.x - r.lean * (state.y + r.length), y + r.length, r.z);
+            const points = state.falling ? [head.clone().sub(across), head.clone().add(across), tail.clone().add(across), head.clone().sub(across), tail.clone().add(across), tail.clone().sub(across)] : Array.from({ length: 6 }, () => new THREE.Vector3(0, -100, 0));
+            points.forEach((v, j) => rainPositions.set(v.toArray(), i * 18 + j * 3));
+        }
+        rainGeo.attributes.position.needsUpdate = true;
+        postMaterial.uniforms.reveal.value = transition.reveal;
+        renderer.setClearColor(0x000000, 0);
+        renderer.setRenderTarget(target);
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(rainTarget);
+        renderer.render(rainScene, camera);
+        renderer.setRenderTarget(null);
+        renderer.setClearColor(0x000000, 1);
+        renderer.render(postScene, postCamera);
+        if (transition.done && !done) {
+            done = true;
+            o.onDone();
+        }
+        if (!destroyed)
+            raf = requestAnimationFrame(frame);
+    }
+    const onVisibility = () => { if (document.hidden) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+    }
+    else if (!destroyed && !raf) {
+        previous = performance.now();
+        raf = requestAnimationFrame(frame);
+    } };
+    document.addEventListener('visibilitychange', onVisibility);
+    addEventListener('resize', resize);
+    resize();
+    raf = requestAnimationFrame(frame);
+    return {
+        enter() { if (destroyed || enteredAt !== null)
+            return; enteredAt = elapsed; wavePool.add(0, 1, elapsed, 1.8); },
+        touch,
+        stir(x, y) { if (elapsed - lastStir < .14)
+            return; lastStir = elapsed; touch(x, y, .3); },
+        destroy() {
+            if (destroyed)
+                return;
+            destroyed = true;
+            canvas.style.touchAction = originalTouchAction;
+            cancelAnimationFrame(raf);
+            clearTimeout(paintTimer);
+            removeEventListener('resize', resize);
+            document.removeEventListener('visibilitychange', onVisibility);
+            canvas.removeEventListener('pointerdown', onDown);
+            canvas.removeEventListener('pointermove', onMove);
+            canvas.removeEventListener('pointerup', onUp);
+            canvas.removeEventListener('pointercancel', onUp);
+            canvas.removeEventListener('lostpointercapture', onUp);
+            if (drag && canvas.hasPointerCapture(drag.id))
+                canvas.releasePointerCapture(drag.id);
+            drag = null;
+            const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
+            for (const root of [scene, rainScene, postScene])
+                root.traverse(object => { if (object instanceof THREE.Mesh) {
+                    geometries.add(object.geometry);
+                    for (const material of Array.isArray(object.material) ? object.material : [object.material])
+                        materials.add(material);
+                } });
+            geometries.forEach(g => g.dispose());
+            materials.forEach(m => m.dispose());
+            homeTexture.dispose();
+            target.dispose();
+            rainTarget.dispose();
+            renderer.dispose();
+        }
+    };
 }

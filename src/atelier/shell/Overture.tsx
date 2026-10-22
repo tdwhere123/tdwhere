@@ -50,7 +50,8 @@ export default function Overture() {
     [],
   )
   const canvas = useRef<HTMLCanvasElement>(null),
-    handle = useRef<OvertureHandle | undefined>(undefined)
+    handle = useRef<OvertureHandle | undefined>(undefined),
+    enterRequested = useRef(false)
   // stays mounted through the fade, so the last frame holds while it leaves
   const shown = stage !== 'gone'
   // The overture draws its own home image while entering. Resume the actual
@@ -61,7 +62,11 @@ export default function Overture() {
     return () => paint('home', { type: 'suspend', value: false })
   }, [covered])
   useEffect(() => {
-    if (!shown || !canvas.current) return
+    if (!shown) {
+      enterRequested.current = false
+      return
+    }
+    if (!canvas.current) return
     try {
       sessionStorage.setItem(SEEN, '1')
     } catch {
@@ -84,8 +89,11 @@ export default function Overture() {
           focus: parseObjectPosition(heroFrame.focus),
           onDone: leave,
         })
+        if (enterRequested.current) handle.current.enter()
       })
-      .catch(() => setStage('gone'))
+      .catch(() => {
+        if (!cancelled) setStage('gone')
+      })
     const onPointer = (e: PointerEvent) => handle.current?.touch(e.clientX, e.clientY)
     const onMove = (e: PointerEvent) => handle.current?.stir(e.clientX, e.clientY)
     const onKey = (e: KeyboardEvent) => {
@@ -101,6 +109,7 @@ export default function Overture() {
       removeEventListener('keydown', onKey)
       html.style.overflow = overflow
       handle.current?.destroy()
+      handle.current = undefined
     }
   }, [shown, sky])
   useEffect(() => {
@@ -110,6 +119,7 @@ export default function Overture() {
   }, [stage])
   if (stage === 'gone') return null
   const enter = () => {
+    enterRequested.current = true
     handle.current?.enter()
     setStage((s) => (s === 'rest' ? 'enter' : s))
   }
