@@ -4,7 +4,8 @@ import type { Clock } from '../weather';
 import { rainSample, waterViewDirection } from './island/render-math';
 import { WATER_BRUSH_GLSL } from './island/surface-brush';
 import { CootWakeTrail, COOT_WAKE_SAMPLES, cootWakeGLSL } from './island/wakes';
-import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
+import { rainFlight, rainImpacts, rainHalfWidth, SplashPool, SPLASH_CAPACITY, SPLASH_TTL } from './island/rain';
+import { WavePool, waveField, WAVE_GLSL, landingsBetween } from './island/waves';
 import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
 import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots } from './island/aerator';
 import { greetBird, makeFlock, stepFlock } from './island/birds';
@@ -13,6 +14,7 @@ import { buildCoot } from './island/coot';
 import { disposeModelResources, lightIslandModel, type IslandModels } from './island/models';
 import { islandSky, viewSpan, transitionState } from './island/state';
 type RainDrop = {
+    id: number;
     x: number;
     z: number;
     phase: number;
@@ -101,7 +103,7 @@ export function mountOverture(o: {
     const drops = Array.from({ length: 48 }, () => new THREE.Vector4(0, 0, 10, 0));
     const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, viewDirection: { value: new THREE.Vector3() }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakeTrail.uniforms }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec3 viewDirection;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length * COOT_WAKE_SAMPLES}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}${WATER_BRUSH_GLSL}${cootWakeGLSL(flock.length)}
 void main(){vec2 p=vWorld.xz;vec2 u=p/vec2(1.2,.95);float a=atan(u.y,u.x),r=length(u);float bound=(2.9+.3*sin(2.*a+1.1)+.22*cos(3.*a-.4)+.12*sin(5.*a+.3)+.06*sin(7.*a+2.))*${WATER_SCALE.toFixed(3)};float rim=bound-r+(noise(p*7.)-.5)*.12;float edge=smoothstep(0.,.12,rim);if(edge<.004)discard;
-vec3 wave=waveField(p);vec2 rp=p*9.+vec2(time*.35,-time*.2);float e0=noise(rp),ex=noise(rp+vec2(.15,0.)),ez=noise(rp+vec2(0.,.15));vec3 n=normalize(vec3(-wave.y,1.,-wave.z)+vec3(e0-ex,0.,e0-ez)*(1.4+wind*1.6));
+vec3 wave=waveField(p);vec2 rp=p*9.+vec2(time*.35,-time*.2);float e0=noise(rp),ex=noise(rp+vec2(.15,0.)),ez=noise(rp+vec2(0.,.15));vec3 n=normalize(vec3(-wave.y,1.,-wave.z)+vec3(e0-ex,0.,e0-ez)*(.45+wind*.55));
 vec3 view=viewDirection,halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
 float depth=smoothstep(.1,2.2,rim);
 vec3 col=mix(shallow,deep,clamp(depth*.8+(noise(p*1.1)-.5)*.16+(noise(p*3.7+vec2(time*.04,0.))-.5)*.2,0.,1.));col*=.9+.18*nl;
@@ -135,25 +137,53 @@ gl_FragColor=vec4(linearize(col),edge*.92);}` });
             const x = (random() - .5) * 11, z = (random() - .5) * 9;
             if (!isOpenWater(x, z))
                 continue;
-            rain.push({ x, z, phase: random(), speed: (.8 + random() * .4) * (kind ? .25 : 1), length: kind ? .025 : .075 + random() * .13, alpha: .60 + random() * .24, kind, threshold: random() });
+            rain.push({ id: n, x, z, phase: random(), speed: (.8 + random() * .4) * (kind ? .25 : 1), length: kind ? .025 : .09 + random() * .05, alpha: .60 + random() * .24, kind, threshold: random() });
             n++;
         }
-    const rainPositions = new Float32Array(rain.length * 18), rainUV = new Float32Array(rain.length * 12), rainAlpha = new Float32Array(rain.length * 6), rainKind = new Float32Array(rain.length * 6), rainGeo = new THREE.BufferGeometry();
-    for (let i = 0; i < rain.length; i++) {
+    const particleCount = rain.length + SPLASH_CAPACITY, splashes = new SplashPool();
+    const rainPositions = new Float32Array(particleCount * 18), rainUV = new Float32Array(particleCount * 12), rainAlpha = new Float32Array(particleCount * 6), rainKind = new Float32Array(particleCount * 6), rainGeo = new THREE.BufferGeometry();
+    for (let i = 0; i < particleCount; i++) {
         rainUV.set([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], i * 12);
-        rainAlpha.fill(rain[i].alpha, i * 6, i * 6 + 6);
-        rainKind.fill(rain[i].kind, i * 6, i * 6 + 6);
+        rainAlpha.fill(rain[i]?.alpha ?? 0, i * 6, i * 6 + 6);
+        rainKind.fill(rain[i]?.kind ?? 2, i * 6, i * 6 + 6);
     }
     rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
     rainGeo.setAttribute('uv', new THREE.BufferAttribute(rainUV, 2));
     rainGeo.setAttribute('strength', new THREE.BufferAttribute(rainAlpha, 1));
     rainGeo.setAttribute('kind', new THREE.BufferAttribute(rainKind, 1));
-    const rainMaterial = new THREE.ShaderMaterial({ transparent: true, depthTest: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { ink: { value: palette.ink } }, vertexShader: `attribute float strength;attribute float kind;varying vec2 rainUv;varying float rainStrength;varying float rainKind;void main(){rainUv=uv;rainStrength=strength;rainKind=kind;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`, fragmentShader: `precision highp float;uniform vec3 ink;varying vec2 rainUv;varying float rainStrength;varying float rainKind;void main(){float width=smoothstep(0.,.28,rainUv.x)*(1.-smoothstep(.72,1.,rainUv.x));float tail=pow(1.-rainUv.y,.65);gl_FragColor=vec4(mix(ink,vec3(.92,.95,1.),rainKind),width*tail*rainStrength);}` });
+    // @anchor:rain-occlusion Same-camera resolved depth keeps final-pass rain behind opaque models, not transparent brush cards.
+    const sceneDepth = new THREE.DepthTexture(2, 2, THREE.UnsignedIntType);
+    const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true, depthTexture: sceneDepth, samples: 4, resolveDepthBuffer: true });
+    const rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: false });
+    const rainMaterial = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
+        uniforms: { ink: { value: palette.ink }, foam: { value: palette.foam }, sceneDepth: { value: sceneDepth }, resolution: { value: new THREE.Vector2() } },
+        vertexShader: `attribute float strength;attribute float kind;varying vec2 rainUv;varying float rainStrength;varying float rainKind;void main(){rainUv=uv;rainStrength=strength;rainKind=kind;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+        fragmentShader: `precision highp float;uniform vec3 ink;uniform vec3 foam;uniform sampler2D sceneDepth;uniform vec2 resolution;varying vec2 rainUv;varying float rainStrength;varying float rainKind;
+        vec3 linearize(vec3 c){return mix(c/12.92,pow((max(c,vec3(0.))+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}
+        void main(){
+          if(gl_FragCoord.z>texture2D(sceneDepth,gl_FragCoord.xy/resolution).r+.00002)discard;
+          vec3 color;float alpha;
+          if(rainKind>1.5){
+            vec2 p=rainUv*2.-1.;float r=length(p);
+            float broken=.5+.5*sin(atan(p.y,p.x)*5.+r*13.);
+            float ring=(1.-smoothstep(.07,.2,abs(r-.72)))*(.4+.6*broken);
+            color=mix(foam,ink,.18);alpha=ring*rainStrength;
+          }else if(rainKind>.5){
+            float width=smoothstep(0.,.28,rainUv.x)*(1.-smoothstep(.72,1.,rainUv.x));
+            color=vec3(.92,.95,1.);alpha=width*pow(1.-rainUv.y,.65)*rainStrength;
+          }else{
+            float taper=mix(1.,.32,rainUv.y),side=abs(rainUv.x-.5)*2./taper;
+            float edge=1.-smoothstep(.25,1.,side),tail=pow(1.-rainUv.y,.7);
+            float core=(1.-smoothstep(.0,.35,side))*.5;
+            color=mix(ink,foam,.32+core);
+            alpha=edge*tail*rainStrength;
+          }
+          gl_FragColor=vec4(linearize(color),alpha);
+        }` });
     const rainLines = new THREE.Mesh(rainGeo, rainMaterial);
     rainLines.frustumCulled = false;
     const rainScene = new THREE.Scene();
     rainScene.add(rainLines);
-    const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true, samples: 4 }), rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true });
     const postScene = new THREE.Scene(), postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     // @anchor:surface-paint Water pigment and authored model UVs stay on their surfaces.
     // Screen-space brushwork is reserved for the flat home painting during entry.
@@ -184,6 +214,7 @@ gl_FragColor=vec4(col,1.);}` });
         const size = renderer.getDrawingBufferSize(new THREE.Vector2());
         target.setSize(size.x, size.y);
         rainTarget.setSize(size.x, size.y);
+        rainMaterial.uniforms.resolution.value.copy(size);
         postMaterial.uniforms.resolution.value.copy(size);
         if (painted) {
             const fit = coverFit(width, h, painted.width, painted.height, o.focus);
@@ -350,8 +381,17 @@ gl_FragColor=vec4(col,1.);}` });
         postMaterial.uniforms.time.value = elapsed;
         const { profile } = sky, falling = (r: RainDrop) => r.threshold < (r.kind ? profile.snow : profile.rain);
         rainLines.visible = enteredAt === null;
-        advanceRainWaves(wavePool, before, elapsed, rain.filter(r => r.kind && falling(r)), enteredAt === null, .3);
-        const waves = advanceRainWaves(wavePool, before, elapsed, rain.filter(r => !r.kind && falling(r)), enteredAt === null);
+        if (enteredAt === null) {
+            const impacts = rain.filter(falling).flatMap(r => r.kind
+                ? landingsBetween(before, elapsed, r).map(time => ({ x: r.x, z: r.z, time, snow: true }))
+                : rainImpacts(before, elapsed, r).map(impact => ({ ...impact, snow: false })));
+            impacts.sort((a, b) => a.time - b.time);
+            for (const impact of impacts) {
+                if (!impact.snow) splashes.add(impact);
+                wavePool.addRain(impact.x, impact.z, impact.time, impact.snow ? .3 : 1);
+            }
+        }
+        const waves = wavePool.active(elapsed);
         running += ((on ? 1 : 0) - running) * Math.min(1, dt * (on ? .9 : .6));
         if (running > .1 && elapsed - lastChurn > .22 / running) {
             lastChurn = elapsed;
@@ -369,13 +409,29 @@ gl_FragColor=vec4(col,1.);}` });
             else
                 drops[i].w = 0;
         }
+        const halfWidth = rainHalfWidth((camera.right - camera.left) / camera.zoom, canvas.clientWidth);
+        const writeQuad = (index: number, x: number, y: number, z: number, tx: number, ty: number, tz: number, ax: number, az: number) => {
+            const offset = index * 18;
+            rainPositions.set([x-ax,y,z-az,x+ax,y,z+az,tx+ax,ty,tz+az,x-ax,y,z-az,tx+ax,ty,tz+az,tx-ax,ty,tz-az], offset);
+        };
         for (let i = 0; i < rain.length; i++) {
-            const r = rain[i], state = rainSample(elapsed, r), surface = -.015 + waveField(r.x, r.z, elapsed, waves).height, y = state.y + surface, lean = profile.lean, wide = r.kind ? .018 : .008;
-            const across = new THREE.Vector3(Math.cos(yaw) * wide, 0, -Math.sin(yaw) * wide), head = new THREE.Vector3(r.x - lean * state.y, y, r.z), tail = new THREE.Vector3(r.x - lean * (state.y + r.length), y + r.length, r.z);
-            const points = state.falling && falling(r) ? [head.clone().sub(across), head.clone().add(across), tail.clone().add(across), head.clone().sub(across), tail.clone().add(across), tail.clone().sub(across)] : Array.from({ length: 6 }, () => new THREE.Vector3(0, -100, 0));
-            points.forEach((v, j) => rainPositions.set(v.toArray(), i * 18 + j * 3));
+            const r = rain[i], state = r.kind ? { ...rainSample(elapsed, r), x: r.x, z: r.z } : rainFlight(elapsed, r);
+            if (!state.falling || !falling(r)) { rainPositions.fill(0, i * 18, i * 18 + 18); continue; }
+            const surface = -.015 + waveField(state.x, state.z, elapsed, waves).height, y = state.y + surface;
+            const wide = r.kind ? .018 : halfWidth, length = r.kind ? r.length : r.length * r.speed;
+            writeQuad(i, state.x-profile.lean*state.y,y,state.z,state.x-profile.lean*(state.y+length),y+length,state.z,Math.cos(yaw)*wide,-Math.sin(yaw)*wide);
+        }
+        const contacts = splashes.active(elapsed);
+        for (let i = 0; i < SPLASH_CAPACITY; i++) {
+            const index = rain.length + i, contact = contacts[i];
+            if (!contact) { rainPositions.fill(0,index*18,index*18+18); rainAlpha.fill(0,index*6,index*6+6); continue; }
+            const age = elapsed-contact.time, life = age/SPLASH_TTL, radius = .025 + age*.42;
+            const y = -.012 + waveField(contact.x,contact.z,elapsed,waves).height;
+            writeQuad(index,contact.x,y,contact.z-radius,contact.x,y,contact.z+radius,radius,0);
+            rainAlpha.fill(.7*Math.sin(Math.PI*Math.sqrt(life))*(1-life),index*6,index*6+6);
         }
         rainGeo.attributes.position.needsUpdate = true;
+        rainGeo.attributes.strength.needsUpdate = true;
         aerator.update(elapsed, dt, running, rideOn(dt));
         for (const spot of waterMaterial.uniforms.wheels.value as THREE.Vector3[]) spot.z = running;
         aerator.group.localToWorld(lampAt.value.set(...LAMP));
