@@ -15,6 +15,8 @@ import {
 } from '../paint/presets'
 import { onPaint } from '../paint/bus'
 import type { FilmFrame } from '../film'
+import { loadPainting, type PaintImage } from '../paint/images'
+import { emergencyGround } from '../paint/emergency'
 
 function whenIdle(fn: () => void, soon: boolean) {
   if ('requestIdleCallback' in window) {
@@ -40,10 +42,13 @@ export function Art({
   channel,
   intensity = 'full',
   still = false,
+  prepared,
 }: {
   name?: ArtName
   /** Paints this film frame instead of `name`, cropped at its focus. */
   frame?: FilmFrame
+  /** An authored, prepainted image: immediate still and the live engine's source. */
+  prepared?: string
   /** Always the still image, for paintings that are only glimpsed. */
   still?: boolean
   className?: string
@@ -52,59 +57,103 @@ export function Art({
   channel?: string
   intensity?: PaintIntensity
 }) {
-  const portrait = useNarrow(),
+  const portrait = useNarrow() && !frame,
     quiet = useQuiet()
   const canvas = useRef<HTMLCanvasElement>(null)
-  const [mode, setMode] = useState<'pending' | 'live' | 'still'>('pending')
+  const [mode, setMode] = useState<'pending' | 'live' | 'still' | 'failed'>('pending')
   const [stills, setStills] = useState<string[]>([])
   const [scene, setScene] = useState(0)
   const key = `${frame ? `frame:${frame.id}` : name}:${portrait}:${quiet}`
   useEffect(() => {
     let handle: { destroy(): void } | undefined,
-      cancelled = false
+      cancelIdle: (() => void) | undefined,
+      cancelled = false,
+      visible = eager || !('IntersectionObserver' in window),
+      suspended = false,
+      departing = false,
+      started = false
     const surface = canvas.current?.parentElement
-    const cancelIdle = whenIdle(async () => {
-      const painter = await import('../paint/painter')
-      if (frame) await painter.loadFrame(frame).catch(() => (cancelled = true))
+    const fail = (error: unknown) => {
       if (cancelled) return
-      const fallBack = () =>
-        (frame
-          ? painter.paintedFrameStill(frame).then((url) => [url])
-          : painter.paintedStills(name, portrait)
-        ).then((urls) => {
-          if (cancelled) return
-          setStills(urls)
-          setMode('still')
-        })
+      // A nonessential illustration must not crash the page, or silently vanish.
+      console.error(`Painting unavailable: ${frame?.id ?? name}`, error)
+      setStills(previous => previous.length ? previous : [emergencyGround(presetFor(frame ? 'film' : name, intensity))])
+      setMode('failed')
+    }
+    const start = async () => {
+      let source: PaintImage | undefined
+      let painter: typeof import('../paint/painter') | undefined
+      if (prepared) source = await loadPainting(prepared).catch(() => undefined)
+      if (cancelled) return
+      if (!source) {
+        painter = await import('../paint/painter')
+        if (frame) await painter.loadFrame(frame)
+      }
+      if (cancelled) return
+      // An overlay or departure may have arrived while an import/image was in flight.
+      if (suspended || departing) { started = false; return }
+      const fallBack = async () => {
+        const urls = source && prepared ? [prepared] : frame
+          ? [await painter!.paintedFrameStill(frame)]
+          : await painter!.paintedStills(name, portrait)
+        if (cancelled) return
+        setStills(urls)
+        setMode('still')
+      }
       if (still || quiet || !canvas.current || !surface) return fallBack()
       try {
         const { mountPaint } = await import('../paint/engine')
         if (cancelled || !canvas.current) return
+        if (suspended || departing) { started = false; return }
         handle = mountPaint({
           canvas: canvas.current,
-          layers: frame ? 1 : painter.layerCount(name),
-          layer: frame
-            ? () => painter.paintedFrame(frame)
-            : (i) => painter.paintedSource(name, portrait, i),
+          layers: source || frame ? 1 : painter!.layerCount(name),
+          layer: source ? () => source! : frame
+            ? () => painter!.paintedFrame(frame)
+            : (i) => painter!.paintedSource(name, portrait, i),
           preset: presetFor(frame ? 'film' : name, intensity),
           surface,
           channel,
-          onLost: () => void fallBack(),
+          onReady: () => { if (!cancelled) setMode('live') },
+          onLost: () => { void fallBack().catch(fail) },
         })
-        setMode('live')
       } catch {
         await fallBack()
       }
-    }, eager)
+    }
+    const schedule = () => {
+      if (cancelled || started || cancelIdle || suspended || departing || !visible) return
+      cancelIdle = whenIdle(() => {
+        cancelIdle = undefined
+        if (cancelled || suspended || departing || !visible) return
+        started = true
+        void start().catch(fail)
+      }, eager)
+    }
+    // Demand is checked before painting or allocating a graphics context, not just before animation.
+    const off = channel ? onPaint(channel, (signal) => {
+      if (signal.type === 'suspend') suspended = signal.value
+      else if (signal.type === 'part') departing = signal.y !== null
+      else return
+      if (suspended || departing) { cancelIdle?.(); cancelIdle = undefined }
+      else schedule()
+    }) : undefined
+    const observer = !eager && 'IntersectionObserver' in window && canvas.current
+      ? new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; schedule() }, { rootMargin: '160px' })
+      : undefined
+    if (canvas.current) observer?.observe(canvas.current)
+    schedule()
     return () => {
       cancelled = true
-      cancelIdle()
+      cancelIdle?.()
+      observer?.disconnect()
+      off?.()
       handle?.destroy()
       setMode('pending')
     }
-  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still])
+  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still, prepared])
   const focus = frame ? { objectPosition: frame.focus } : undefined
-  const layered = mode === 'still' && stills.length > 1
+  const layered = mode !== 'live' && stills.length > 1
   useEffect(() => {
     if (!layered || !channel) return
     return onPaint(channel, (signal) => {
@@ -113,25 +162,24 @@ export function Art({
   }, [layered, channel])
   return (
     <>
-      {mode !== 'still' && (
+      {prepared && !stills.length && (
+        <img className={`a-art a-still ${className}`} src={prepared} style={{ ...focus, opacity: mode === 'live' ? 0 : 1 }} alt="" aria-hidden="true" draggable={false} fetchPriority={eager ? 'high' : 'auto'} />
+      )}
+      {/* Keep the observed target mounted through fallback and responsive restarts. */}
         <canvas
           key={key}
           ref={canvas}
           className={`a-art a-paint ${className}`}
-          style={focus}
+          style={{ ...focus, opacity: mode === 'live' ? 1 : 0 }}
           data-stage={mode}
           aria-hidden="true"
         />
-      )}
-      {mode === 'still' &&
-        stills.map((src, i) => (
+      {stills.map((src, i) => (
           <img
             key={src}
             className={`a-art a-still ${className}`}
             src={src}
-            style={
-              i ? { ...focus, opacity: Math.min(1, Math.max(0, scene - i + 1)) } : focus
-            }
+            style={{ ...focus, opacity: mode === 'live' ? 0 : i ? Math.min(1, Math.max(0, scene - i + 1)) : 1 }}
             alt=""
             aria-hidden="true"
             draggable={false}

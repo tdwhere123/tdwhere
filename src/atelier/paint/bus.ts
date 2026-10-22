@@ -1,4 +1,5 @@
 import type { Rgb } from './presets'
+import type { PaintLight } from './light'
 
 /** Client-space coordinates, so scenes need not know where the painting sits. */
 export type PaintSignal =
@@ -9,10 +10,12 @@ export type PaintSignal =
   /** A wet brush dragged along a path: smears pigment instead of scraping it. */
   | { type: 'drag'; x0: number; y0: number; x1: number; y1: number }
   | { type: 'glaze'; color: Rgb | null }
+  /** Retained sky illumination, independent of pointer and scene color washes. */
+  | { type: 'light'; value: PaintLight }
   /** Position in a layered series painting: 0 is the first layer, 1.5 halfway into the third. */
   | { type: 'scene'; at: number }
-  /** A palette knife drawn across at height y, then the paint parted wide open along it. */
-  | { type: 'part'; y: number }
+  /** A palette knife drawn across at height y; null restores the whole painting on a return home. */
+  | { type: 'part'; y: number | null }
   | {
       type: 'mark'
       id: string
@@ -23,9 +26,9 @@ export type PaintSignal =
     }
 
 type Listener = (signal: PaintSignal) => void
-type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' | 'suspend' }>
+type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' | 'suspend' | 'light' }>
 const channels = new Map<string, Set<Listener>>()
-/** Last glaze, scene and suspension per channel, so an engine that mounts after the signal still receives them. */
+/** Last persistent state per channel, including for engines mounted after an overlay leaves. */
 const held = new Map<string, Map<Held['type'], Held>>()
 
 export function onPaint(channel: string, listener: Listener) {
@@ -39,9 +42,9 @@ export function onPaint(channel: string, listener: Listener) {
   }
 }
 
-/** Ignored when no engine is mounted (static fallback, reduced motion), except glaze, scene and suspension, which are kept. */
+/** Transient gestures are ignored without an engine; persistent appearance and suspension are kept. */
 export function paint(channel: string, signal: PaintSignal) {
-  if (signal.type === 'glaze' || signal.type === 'scene' || signal.type === 'suspend') {
+  if (signal.type === 'glaze' || signal.type === 'scene' || signal.type === 'suspend' || signal.type === 'light') {
     let kept = held.get(channel)
     if (!kept) held.set(channel, (kept = new Map()))
     kept.set(signal.type, signal)

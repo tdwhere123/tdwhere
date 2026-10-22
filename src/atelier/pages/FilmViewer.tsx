@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useWords } from '../hooks'
 import { Art } from '../components/Primitives'
-import { rolls } from '../film'
+import { filmImage, rolls } from '../film'
 
 /**
  * One frame, full screen and nothing else: the roll's strip along the
@@ -23,17 +23,24 @@ export default function FilmViewer() {
   useEffect(() => {
     if (!frame) return
     let live = true
-    const image = new Image()
-    image.src = frame.src
-    image
-      .decode()
-      .then(() => live && setRatio(image.naturalWidth / image.naturalHeight))
-      .catch(() => {
-        /* the image element shows the failure; keep the last proportions */
-      })
+    // Generated metadata avoids decoding the original just to measure its aspect ratio.
+    if (!frame.width || !frame.height) {
+      const image = new Image()
+      image.src = frame.src
+      image
+        .decode()
+        .then(() => live && setRatio(image.naturalWidth / image.naturalHeight))
+        .catch(() => {
+          /* the image element shows the failure; keep the last proportions */
+        })
+    }
     strip.current
       ?.querySelector('[aria-current]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+      ?.scrollIntoView({
+        block: 'nearest',
+        inline: 'center',
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
     return () => {
       live = false
     }
@@ -56,7 +63,7 @@ export default function FilmViewer() {
   if (!roll || !frame) return <Navigate to="/film" replace />
   const alt = w(frame.alt.zh, frame.alt.en)
   return (
-    <div className="a-viewer" style={{ '--a-ratio': ratio } as CSSProperties}>
+    <div className="a-viewer" style={{ '--a-ratio': frame.width && frame.height ? frame.width / frame.height : ratio } as CSSProperties}>
       <div className="a-viewer-bar">
         <Link to="/film" className="a-viewer-close" aria-label={w('回到胶片集', 'Back to the collection')}>
           <X size={20} aria-hidden="true" />
@@ -97,7 +104,14 @@ export default function FilmViewer() {
               aria-current={i === at ? 'true' : undefined}
               aria-label={w(`第 ${i + 1} 格`, `Frame ${i + 1}`)}
             >
-              <img src={f.src} alt="" loading="lazy" draggable={false} />
+              <img
+                {...filmImage(f, 'thumbnail')}
+                style={{ objectPosition: f.focus }}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+              />
             </Link>
           </li>
         ))}

@@ -27,6 +27,18 @@ describe('paint bus scenes', () => {
   })
 })
 
+describe('paint bus light', () => {
+  it('replays the sky independently from glaze and suspension', () => {
+    const light = { direction: [0.4, 0.8] as [number, number], tint: [1, .9, .8] as [number, number, number], shade: [.4, .6, .8] as [number, number, number], exposure: 1, sun: .8 }
+    paint('sky-replay', { type: 'light', value: light })
+    paint('sky-replay', { type: 'suspend', value: true })
+    const heard: unknown[] = []
+    const off = onPaint('sky-replay', (signal) => heard.push(signal))
+    expect(heard).toEqual([{ type: 'light', value: light }, { type: 'suspend', value: true }])
+    off()
+  })
+})
+
 describe('paint bus occlusion', () => {
   it('replays suspension to a late-mounted home painting and releases it', () => {
     paint('home-occlusion', { type: 'suspend', value: true })

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useWords } from '../hooks'
-import { heroFrame } from '../film'
+import { heroFrame } from '../grounds'
+import homePainting from '@/assets/ground/home-painted.webp'
 import { caption, lightAt, sessionClock, weatherNow } from '../weather'
 import type { OvertureHandle, PondFeedback } from '../paint/overture'
 import { onReplay } from './overtureCue'
@@ -95,13 +96,16 @@ export default function Overture() {
     html.style.overflow = 'hidden'
     let cancelled = false
     const leave = () => setStage((s) => (s === 'gone' ? s : 'leave'))
-    Promise.all([import('../paint/overture'), import('../paint/painter'), import('../paint/presets'), import('../paint/island/models')])
-      .then(async ([{ mountOverture }, painter, { parseObjectPosition }, { loadIslandModels, disposeModelResources }]) => {
-        await painter.loadFrame(heroFrame)
+    Promise.all([import('../paint/overture'), import('../paint/images'), import('../paint/presets'), import('../paint/island/models')])
+      .then(async ([{ mountOverture }, { loadPainting }, { parseObjectPosition }, { loadIslandModels, disposeModelResources }]) => {
         if (cancelled || !canvas.current) return
-        const models = await loadIslandModels()
-        if (cancelled || !canvas.current) {
+        // Neither model fetch waits for the photograph/painting to decode.
+        const [painting, models] = await Promise.all([
+          loadPainting(homePainting).catch(() => null), loadIslandModels(),
+        ])
+        if (cancelled || !canvas.current || !painting) {
           disposeModelResources(models.coot, models.aerator)
+          if (!cancelled && !painting) setStage('gone')
           return
         }
         try {
@@ -109,7 +113,8 @@ export default function Overture() {
             models,
             canvas: canvas.current,
             clock: sessionClock(),
-            painting: () => painter.paintedFrame(heroFrame),
+            painting: () => painting,
+            onReady: () => { if (!cancelled) setReady(true) },
             focus: parseObjectPosition(heroFrame.focus),
             onDone: leave,
             onFeedback: (value) => {
@@ -123,7 +128,6 @@ export default function Overture() {
           disposeModelResources(models.coot, models.aerator)
           throw error
         }
-        setReady(true)
         if (enterRequested.current) handle.current.enter()
       })
       .catch(() => {

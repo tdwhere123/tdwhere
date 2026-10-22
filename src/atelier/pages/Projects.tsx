@@ -56,16 +56,21 @@ const projects: ({ to: string; name: string; kind: Words; line: Words } & ({ art
 export default function Projects() {
   const w = useWords()
   const [shown, setShown] = useState<number | null>(null)
+  const [visited, setVisited] = useState<number[]>([])
+  const show = (index: number) => {
+    setShown(index)
+    setVisited((seen) => seen.includes(index) ? seen : [...seen, index])
+  }
   return (
     <div className="a-index">
       <div className="a-index-art" aria-hidden="true">
         {projects.map((p, i) => (
           <div key={p.to} data-on={shown === i ? '' : undefined}>
-            {'image' in p ? (
+            {visited.includes(i) && ('image' in p ? (
               <img className="a-art a-index-picture" src={p.image} alt="" draggable={false} />
             ) : (
               <Art name={p.art} still />
-            )}
+            ))}
           </div>
         ))}
       </div>
@@ -83,9 +88,9 @@ export default function Projects() {
           <li key={p.to}>
             <Link
               to={p.to}
-              onPointerEnter={() => setShown(i)}
+              onPointerEnter={() => show(i)}
               onPointerLeave={() => setShown(null)}
-              onFocus={() => setShown(i)}
+              onFocus={() => show(i)}
               onBlur={() => setShown(null)}
             >
               <span className="a-index-n">{String(i + 1).padStart(2, '0')}</span>

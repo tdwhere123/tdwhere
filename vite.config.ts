@@ -2,6 +2,7 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { inspectAttr } from 'plugin-inspect-react-code'
+import { filmAssets } from './scripts/film-assets'
 
 // https://vite.dev/config/
 // Production base matches the GitHub Pages project URL:
@@ -14,6 +15,7 @@ export default defineConfig(({ command, isPreview }) => {
     plugins: [
       ...(isDevServe ? [inspectAttr()] : []),
       react(),
+      filmAssets(),
     ],
     server: {
       port: 3000,

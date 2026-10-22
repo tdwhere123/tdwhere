@@ -13,18 +13,22 @@ import {
   type Vec2,
 } from './presets'
 import { onPaint, type PaintSignal } from './bus'
+import type { PaintImage } from './images'
+import type { PaintLight } from './light'
 
 export type PaintOptions = {
   canvas: HTMLCanvasElement
   /** Number of layers in the painting; a series has one per scene. */
   layers: number
   /** Paints (or returns the cached) layer; layers after the first are requested when idle. */
-  layer: (index: number) => HTMLCanvasElement
+  layer: (index: number) => PaintImage
   preset: PaintPreset
   /** Element that receives the pointer; usually the section around the art. */
   surface: Element
   channel?: string
   onLost: () => void
+  /** Called only after the first actual draw, never merely after context creation. */
+  onReady?: () => void
 }
 
 type Target = { tex: WebGLTexture; fbo: WebGLFramebuffer }
@@ -98,7 +102,7 @@ export function mountPaint(o: PaintOptions) {
   // one texture per layer, so adding a layer only builds its own mipmaps
   const layerTex: WebGLTexture[] = []
   let loaded = 0
-  function upload(image: HTMLCanvasElement) {
+  function upload(image: PaintImage) {
     const tex = gl!.createTexture()!
     gl!.bindTexture(gl!.TEXTURE_2D, tex)
     gl!.pixelStorei(gl!.UNPACK_FLIP_Y_WEBGL, true)
@@ -158,7 +162,9 @@ export function mountPaint(o: PaintOptions) {
     dirty = true,
     visible = false,
     suspended = false,
-    destroyed = false
+    destroyed = false,
+    presented = false
+  let illumination: PaintLight | undefined
   let brush: { p0: Vec2; p1: Vec2 } | null = null,
     lastPointer: Vec2 | null = null
   const pulses: [number, number, number, number][] = []
@@ -270,6 +276,12 @@ export function mountPaint(o: PaintOptions) {
     gl!.uniform1f(u('uImpasto'), preset.impasto)
     gl!.uniform1f(u('uDab'), preset.dabScale)
     gl!.uniform2f(u('uLight'), light[0] + nudge[0], light[1] + nudge[1])
+    gl!.uniform1f(u('uSky'), illumination ? 1 : 0)
+    if (illumination) {
+      gl!.uniform3fv(u('uLightTint'), illumination.tint)
+      gl!.uniform3fv(u('uSkyShade'), illumination.shade)
+      gl!.uniform2f(u('uDay'), illumination.exposure, illumination.sun)
+    }
     const dusk = Math.min(1, Math.max(0, (progress - 0.45) / 0.5))
     const tone = mixRgb([1, 1, 1], preset.scrollGlaze, dusk)
     gl!.uniform3f(u('uGlaze'), glaze[0] * tone[0], glaze[1] * tone[1], glaze[2] * tone[2])
@@ -331,7 +343,7 @@ export function mountPaint(o: PaintOptions) {
       moving = true
     }
     if (part && performance.now() - part.at < KNIFE_MS + OPEN_MS + 100) moving = true
-    const target = mixVec2(preset.lightFrom, preset.lightTo, progress)
+    const target = illumination?.direction ?? mixVec2(preset.lightFrom, preset.lightTo, progress)
     light = mixVec2(light, target, 1 - Math.exp(-dt / 400))
     if (Math.hypot(light[0] - target[0], light[1] - target[1]) > 0.003) moving = true
     return moving
@@ -362,6 +374,7 @@ export function mountPaint(o: PaintOptions) {
     if (drift) time += (dt / 1000) * preset.drift
     if (busy || dirty || (drift && now - lastPaint > 33)) {
       paintFrame()
+      if (!presented) { presented = true; o.onReady?.() }
       lastPaint = now
       dirty = false
     }
@@ -413,6 +426,12 @@ export function mountPaint(o: PaintOptions) {
       else { dirty = true; wake() }
       return
     }
+    if (signal.type === 'light') {
+      illumination = signal.value
+      dirty = true
+      wake()
+      return
+    }
     if (signal.type === 'pulse') {
       const p = toUv(signal.x, signal.y)
       if (pulses.length < MAX_PULSES)
@@ -437,7 +456,8 @@ export function mountPaint(o: PaintOptions) {
       while (loaded < o.layers && sceneTarget > loaded - 0.98 && !destroyed && !gl!.isContextLost())
         loadNext()
     } else if (signal.type === 'part') {
-      part = { y: toUv(0, signal.y)[1], at: performance.now() }
+      part = signal.y === null ? null : { y: toUv(0, signal.y)[1], at: performance.now() }
+      dirty = true
     } else if (signal.type === 'glaze') {
       glazeTarget = [...(signal.color ?? preset.glaze)]
     } else {

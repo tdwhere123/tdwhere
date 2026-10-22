@@ -3,7 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useWords } from '../hooks'
 import { Art } from '../components/Primitives'
 import { Canister } from '../components/Canister'
-import { filmBackdrop, rolls } from '../film'
+import { filmImage, rolls } from '../film'
+import { filmBackdrop } from '../grounds'
 
 /** The dim painting the collection is laid out over. */
 const backdrop = filmBackdrop
@@ -18,7 +19,10 @@ export default function Film() {
   const open = rolls.find((r) => r.id === params.get('roll'))
   const strip = useRef<HTMLElement>(null)
   useEffect(() => {
-    if (open) strip.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (open) strip.current?.scrollIntoView({
+      block: 'nearest',
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
   }, [open])
   const choose = (id: string) =>
     setParams(open?.id === id ? {} : { roll: id }, { replace: true, preventScrollReset: true })
@@ -83,7 +87,14 @@ export default function Film() {
             {open.frames.map((frame, i) => (
               <li key={frame.id} style={{ animationDelay: `${i * 60}ms` }}>
                 <Link to={`/film/${open.id}/${frame.name}`} aria-label={w(frame.alt.zh, frame.alt.en)}>
-                  <img src={frame.src} alt="" loading="lazy" draggable={false} />
+                  <img
+                    {...filmImage(frame, 'preview')}
+                    style={{ objectPosition: frame.focus }}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                  />
                 </Link>
                 <span className="a-edge-print" aria-hidden="true">
                   ▸ {String(i + 1).padStart(2, '0')}

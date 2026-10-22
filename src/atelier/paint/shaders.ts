@@ -1,3 +1,5 @@
+import { PAINT_LIGHT_GLSL } from './light'
+
 /** Value noise shared by the paint and overture shaders. */
 export const noise = `float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -111,6 +113,10 @@ uniform float uLen;
 uniform float uImpasto;
 uniform float uDab;
 uniform vec2 uLight;
+uniform float uSky;
+uniform vec3 uLightTint;
+uniform vec3 uSkyShade;
+uniform vec2 uDay;
 uniform vec3 uGlaze;
 uniform vec3 uAccent;
 uniform vec3 uGround;
@@ -123,6 +129,7 @@ in vec2 vUv;
 out vec4 outColor;
 
 ${noise}
+${PAINT_LIGHT_GLSL}
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 // share of the next layer at this fragment; set once the dab cell is known
 float gMix = 0.0;
@@ -227,7 +234,8 @@ void main() {
   col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.012;
 
   float bristle = vnoise(vec2(sp.x * 0.6, sp.y * 7.0) + h1 * 10.0);
-  float height = relief * 0.75 + bristle * 0.2 + dabEdge * 0.03 + pile * bristle * 0.4;
+  float height = relief * mix(0.75, 0.25, uSky) + bristle * mix(0.2, 0.38, uSky)
+    + dabEdge * mix(0.03, 0.16, uSky) + pile * bristle * 0.4;
   vec2 dH = vec2(dFdx(height), dFdy(height));
   vec3 N = normalize(vec3(-dH * uImpasto * 4.0 * (uRes.y / 800.0), 1.0));
   vec3 L = normalize(vec3(uLight, 0.9));
@@ -235,6 +243,12 @@ void main() {
   float spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0);
   col *= 0.86 + dot(N, L) * 0.2;
   col += spec * (0.04 + wet * 0.2);
+  if (uSky > 0.5) {
+    col = lightPigment(col, uLightTint, uSkyShade, uDay.x, uDay.y);
+    // A few warm, level dabs catch the light already present in the photograph.
+    float glint = smoothstep(.58, .9, relief) * smoothstep(.65, .92, h2) * dabEdge;
+    col += uLightTint * glint * (.025 + uDay.y * .055);
+  }
 
   float scrape = f.w;
   for (int i = 0; i < 4; i++) {

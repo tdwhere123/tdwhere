@@ -424,7 +424,7 @@ function pixels(image: CanvasImageSource, w: number, h: number) {
  * does), small strokes only where there is detail, a scatter of broken-color
  * dots, and thick dabs of light wherever the film caught a highlight.
  */
-function paintPhoto(image: HTMLImageElement, seed: number, width: number, height: number) {
+function paintPhoto(image: HTMLImageElement, seed: number, width: number, height: number, airy = false) {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -451,19 +451,27 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
   const color = (rgb: [number, number, number], amount: number) => {
     const c = hslOf(...rgb)
     // painters push color a little past what the film recorded
+    if (airy) {
+      // Colored shadows and pearl lights, not an exposure wash over the photograph.
+      const shadow = 1 - smooth(0.12, 0.58, c[2])
+      const blue = c[0] > 150 && c[0] < 290
+      const hue = blue ? c[0] + (208 - c[0]) * shadow * 0.35 : c[0]
+      return shift([hue, Math.min(0.78, c[1] * 1.12 + 0.045),
+        Math.min(0.96, c[2] + 0.045 + shadow * 0.075)], r, amount)
+    }
     return shift([c[0], Math.min(1, c[1] * 1.18 + 0.03), c[2]], r, amount)
   }
   const photoPasses = [
     { width: 54, length: 210, count: 520, alpha: 0.45, jitter: 0.6, source: coarse, detailed: false },
     { width: 22, length: 100, count: 2800, alpha: 0.7, jitter: 0.8, source: middle, detailed: false },
-    { width: 8, length: 36, count: 11000, alpha: 0.88, jitter: 0.7, source: fine, detailed: true },
+    { width: airy ? 11 : 8, length: airy ? 48 : 36, count: airy ? 8000 : 11000, alpha: 0.88, jitter: 0.7, source: fine, detailed: true },
   ]
   for (const pass of photoPasses)
     for (let i = 0; i < Math.round(pass.count * area); i++) {
       const x = r(),
         y = r()
       const f = flow(x, y)
-      if (pass.detailed && r() > 0.2 + f.detail * 0.8) continue
+      if (pass.detailed && r() > (airy ? 0.1 : 0.2) + f.detail * 0.8) continue
       // calm passages lie level, as water does; edges are followed
       const level = (r() - 0.5) * 0.22,
         follow = smooth(0.2, 0.6, f.detail)
@@ -495,10 +503,11 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
     const x = r(),
       y = r()
     const l = fine.lum(x, y)
-    if (l < 0.74 || r() > (l - 0.74) * 4) continue
+    const threshold = airy ? 0.64 : 0.74
+    if (l < threshold || r() > (l - threshold) * 4) continue
     const c = color(fine.rgb(x, y), 0.4)
     const lit: Hsl = [c[0] < 90 || c[0] > 300 ? 46 : c[0], c[1] * 0.6, Math.min(0.97, c[2] + 0.1)]
-    const size = (4 + r() * 6) * unit
+    const size = (airy ? 5 + r() * 9 : 4 + r() * 6) * unit
     stroke(ctx, x * width, y * height, (r() - 0.5) * 0.3, size * 2.6, size * 0.6, lit, 0.9, r)
     if (l > 0.92 && r() < 0.12) {
       stroke(ctx, x * width, y * height, 0, size * 3.6, size * 0.2, lit, 0.7, r)
@@ -506,6 +515,13 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
     }
   }
   return canvas
+}
+
+/** Authoring-only: bake this once with scripts/bake-home.mjs, not on a visitor's main thread. */
+export function paintHome(frame: FilmFrame) {
+  const image = decoded.get(frame.id)
+  if (!image) throw new Error(`frame ${frame.id} is not loaded`)
+  return paintPhoto(image, 1931, 1600, Math.round(1600 * image.naturalHeight / image.naturalWidth), true)
 }
 
 const frames = new Map<string, HTMLCanvasElement>()

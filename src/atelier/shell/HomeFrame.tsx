@@ -1,15 +1,35 @@
+import { useEffect, useRef } from 'react'
 import { Art } from '../components/Primitives'
-import { heroFrame } from '../film'
+import { heroFrame } from '../grounds'
+import homePainting from '@/assets/ground/home-painted.webp'
+import { paint } from '../paint/bus'
+import { paintingLight } from '../paint/light'
+import { islandSky } from '../paint/island/state'
+import { sessionClock } from '../weather'
 
 /**
  * The home painting. It lives in the shell, not the home page, so that when a
  * visitor leaves home it can stay over the page that has just arrived and be
  * parted by the palette knife to show it.
  */
-export default function HomeFrame({ parting }: { parting: boolean }) {
+export default function HomeFrame({ parting, covering }: { parting: boolean; covering: boolean }) {
+  const frame = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const clock = sessionClock()
+    const tick = () => {
+      if (document.hidden) return
+      const value = paintingLight(islandSky(clock, Date.now()))
+      paint('home', { type: 'light', value })
+      frame.current?.style.setProperty('--a-home-exposure', String(value.exposure))
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
+    document.addEventListener('visibilitychange', tick)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', tick) }
+  }, [])
   return (
-    <div className="a-frame" data-parting={parting ? '' : undefined} aria-hidden="true">
-      <Art frame={heroFrame} eager channel="home" className="a-frame-art" />
+    <div ref={frame} className="a-frame" data-covering={covering ? '' : undefined} data-parting={parting ? '' : undefined} aria-hidden="true">
+      <Art frame={heroFrame} prepared={homePainting} eager channel="home" className="a-frame-art" />
       <div className="a-frame-haze" />
       <div className="a-frame-veil" />
     </div>

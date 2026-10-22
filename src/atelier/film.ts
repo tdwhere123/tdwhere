@@ -13,9 +13,6 @@
  * The home painting and the shelf's backdrop live in src/assets/ground/,
  * outside this folder, so they are not rolls.
  */
-import homeStill from '../assets/ground/home.jpg'
-import filmStill from '../assets/ground/film.jpg'
-
 export type Words = { zh: string; en: string }
 
 export type RollNote = {
@@ -27,13 +24,20 @@ export type RollNote = {
   frames?: Record<string, { alt?: Words; focus?: string }>
 }
 
-export type FilmFrame = {
+export type FilmImage = { src: string; width?: number; height?: number }
+
+export type FilmAsset = FilmImage & {
+  /** Uncropped build/dev derivatives; identity and painting always use the original src. */
+  thumbnail?: FilmImage
+  preview?: FilmImage
+}
+
+export type FilmFrame = FilmAsset & {
   /** `roll/name`, unique across the collection. */
   id: string
   roll: string
   /** File name without extension; also the frame's place in the viewer URL. */
   name: string
-  src: string
   /** Where a crop holds when the frame is cover-fit, as a CSS object-position. */
   focus: string
   alt: Words
@@ -51,15 +55,21 @@ export type FilmRoll = Omit<RollNote, 'frames' | 'title'> & {
 
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })
 
-/** Builds the collection from file paths (…/<roll>/<file>) to image URLs, and each roll's notes. */
-export function collect(images: Record<string, string>, notes: Record<string, RollNote>): FilmRoll[] {
-  const files = new Map<string, [string, string][]>(),
+/** Original-only assets (including grounds) stay usable when derivatives are unavailable. */
+export function filmImage(frame: FilmAsset, use: 'thumbnail' | 'preview'): FilmImage {
+  return frame[use] ?? { src: frame.src, width: frame.width, height: frame.height }
+}
+
+/** Builds the collection from file paths (…/<roll>/<file>) to assets, and each roll's notes. */
+export function collect(images: Record<string, string | FilmAsset>, notes: Record<string, RollNote>): FilmRoll[] {
+  const files = new Map<string, [string, FilmAsset][]>(),
     canisters = new Map<string, string>()
-  for (const [path, src] of Object.entries(images)) {
+  for (const [path, image] of Object.entries(images)) {
     const [roll, file] = path.split('/').slice(-2)
     const name = file.replace(/\.[^.]+$/, '')
-    if (name.toLowerCase() === 'canister') canisters.set(roll, src)
-    else files.set(roll, [...(files.get(roll) ?? []), [name, src]])
+    const asset = typeof image === 'string' ? { src: image } : image
+    if (name.toLowerCase() === 'canister') canisters.set(roll, asset.src)
+    else files.set(roll, [...(files.get(roll) ?? []), [name, asset]])
   }
   const noteOf = (roll: string) =>
     Object.entries(notes).find(([path]) => path.split('/').slice(-2)[0] === roll)?.[1] ?? {}
@@ -76,11 +86,11 @@ export function collect(images: Record<string, string>, notes: Record<string, Ro
       title: words,
       frames: list
         .sort(([a], [b]) => byName(a, b))
-        .map(([frame, src], i) => ({
+        .map(([frame, asset], i) => ({
+          ...asset,
           id: `${id}/${frame}`,
           roll: id,
           name: frame,
-          src,
           focus: perFrame[frame]?.focus ?? '50% 50%',
           alt: perFrame[frame]?.alt ?? {
             zh: `${words.zh}，第 ${i + 1} 格`,
@@ -95,29 +105,13 @@ export function collect(images: Record<string, string>, notes: Record<string, Ro
 }
 
 export const rolls = collect(
-  import.meta.glob<string>('../assets/film/*/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG}', {
+  import.meta.glob<string | FilmAsset>('../assets/film/*/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP,AVIF}', {
     eager: true,
     import: 'default',
+    query: '?film-asset',
   }),
   import.meta.glob<RollNote>('../assets/film/*/roll.json', { eager: true, import: 'default' }),
 )
 
 export const frameById = (id: string) =>
   rolls.flatMap((r) => r.frames).find((f) => f.id === id)
-
-/** A frame kept for painting, outside the shelf. */
-function ground(name: string, src: string, focus: string, alt: Words): FilmFrame {
-  return { id: `ground/${name}`, roll: 'ground', name, src, focus, alt }
-}
-
-/** The home page and the overture. Not a roll. */
-export const heroFrame = ground('home', homeStill, '64% 50%', {
-  zh: '逆光的水面碎成一片波光，几只水鸟游过一台黄色的增氧机。',
-  en: 'Backlit water broken into glitter; a few water birds swim past a yellow aerator.',
-})
-
-/** The dim painting behind the film shelf. Not a roll. */
-export const filmBackdrop = ground('film', filmStill, '38% 50%', {
-  zh: '蓝调时分的江面，橙色栏杆的船梯下，远处一线灯火。',
-  en: 'A river at blue hour, seen from under an orange-railed gangway; a line of lights far off.',
-})

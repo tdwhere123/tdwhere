@@ -1,7 +1,7 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import WetTrail from '../components/WetTrail'
-import { useQuiet } from '../hooks'
+import { useQuiet, useWords } from '../hooks'
 import { paint } from '../paint/bus'
 import Navigation from './Navigation'
 import Footer from './Footer'
@@ -17,9 +17,17 @@ const dark = (path: string) => path === '/alaya' || path === '/film' || path.sta
 /** The knife crosses and the paint parts (KNIFE_MS + OPEN_MS in paint/engine.ts). */
 const PART_MS = 1600
 
+/** This effect commits only when the route's Suspense content is actually ready. */
+function PageReady({ path, report }: { path: string; report: (path: string) => void }) {
+  useLayoutEffect(() => report(path), [path, report])
+  return null
+}
+
 export default function Shell() {
   const { pathname } = useLocation(),
     quiet = useQuiet()
+  const w = useWords()
+  const [arrived, setArrived] = useState(pathname)
   const [override, setTone] = useState<Tone | null>(null)
   const tone = override ?? (dark(pathname) ? 'night' : 'paper')
   // Leaving home by any way at all keeps the painting up for one more moment,
@@ -28,14 +36,16 @@ export default function Shell() {
     [last, setLast] = useState(pathname)
   if (last !== pathname) {
     setLast(pathname)
-    if (last === '/' && !quiet) setParting(true)
+    setParting(last === '/' && pathname !== '/' && !quiet)
   }
+  const opening = parting && arrived === pathname
   useEffect(() => {
-    if (!parting) return
+    if (pathname === '/') paint('home', { type: 'part', y: null })
+    if (!opening) return
     paint('home', { type: 'part', y: innerHeight / 2 })
     const timer = setTimeout(() => setParting(false), PART_MS)
     return () => clearTimeout(timer)
-  }, [parting])
+  }, [opening, pathname])
   return (
     <div
       className="a-shell"
@@ -43,11 +53,12 @@ export default function Shell() {
       data-page={pathname === '/' ? 'home' : pathname.startsWith('/film/') ? 'viewer' : undefined}
     >
       <Overture />
-      {(pathname === '/' || parting) && <HomeFrame parting={parting} />}
+      {(pathname === '/' || parting) && <HomeFrame covering={parting} parting={opening} />}
+      {parting && !opening && <p className="a-route-wait" role="status">{w('正在展开…', 'Unfolding…')}</p>}
       <WetTrail tone={tone} />
       <Navigation key={pathname} />
       {/* entered through the home painting: the page settles like fresh paint */}
-      <main id="content" tabIndex={-1} data-arrival={parting ? 'parted' : undefined}>
+      <main id="content" tabIndex={-1} data-arrival={opening ? 'parted' : undefined} aria-busy={parting && !opening}>
         <Suspense
           fallback={
             <div className="a-loading">
@@ -56,6 +67,7 @@ export default function Shell() {
           }
         >
           <Outlet context={{ setTone } satisfies ShellContext} />
+          <PageReady path={pathname} report={setArrived} />
         </Suspense>
       </main>
       <Footer />

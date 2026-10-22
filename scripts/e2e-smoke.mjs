@@ -8,7 +8,7 @@ import puppeteer from 'puppeteer-core'
 
 const BASE = process.argv[2] || 'http://localhost:4173/tdwhere/'
 const ROUTES = ['', 'projects', 'film', 'alaya', 'do-it', 'sentinel', 'blog', 'about', 'playground', 'no-such-route']
-const HERO = new Set(['', 'projects', 'alaya', 'do-it', 'sentinel', 'blog', 'about', 'playground', 'no-such-route'])
+const HERO = new Set(['', 'alaya', 'do-it', 'blog', 'about', 'playground', 'no-such-route'])
 const WEBGL_NOISE = /WebGL|WEBGL|createWebGLContext|getContext/i
 
 function findChrome() {
@@ -55,13 +55,16 @@ async function clickLang(page, label) {
 }
 
 async function main() {
-  const browser = await puppeteer.launch({
+  const remote = process.env.CHROME_DEBUG_URL
+  const browser = remote ? await puppeteer.connect({ browserURL: remote }) : await puppeteer.launch({
     executablePath: findChrome(),
     headless: true,
     args: ['--no-sandbox', '--disable-gpu', '--window-size=1280,900'],
     defaultViewport: { width: 1280, height: 900 },
   })
-  const page = await browser.newPage()
+  const context = await browser.createBrowserContext()
+  const page = await context.newPage()
+  await page.setViewport({ width: 1280, height: 900 })
   page.setDefaultTimeout(30000)
 
   await page.setRequestInterception(true)
@@ -84,7 +87,7 @@ async function main() {
 
       await page.waitForSelector('main#content', { timeout: 15000 })
       await page.waitForFunction(
-        () => (document.querySelector('main#content')?.innerText || '').trim().length > 0,
+        () => !document.querySelector('main#content > .a-loading') && (document.querySelector('main#content')?.innerText || '').trim().length > 0,
         { timeout: 15000 },
       )
       const label = route || 'home'
@@ -98,6 +101,21 @@ async function main() {
         ok(`${label} · hero art`)
       }
 
+      // SENTINEL's illustration is the machine, not an Art field.
+      if (route === 'sentinel') {
+        await page.waitForSelector('.a-machine-stage canvas, .a-machine-stage[data-flat]')
+        await page.waitForSelector('.a-machine-power')
+        ok('sentinel · machine and power control')
+      }
+      if (route === 'projects') {
+        await page.waitForSelector('.a-index-list a')
+        const initial = await page.$$eval('.a-index-art .a-art', (els) => els.length)
+        if (initial === 0) ok('projects · no unused background generation')
+        else fail('projects · unused backgrounds', String(initial))
+        await page.hover('.a-index-list a')
+        await page.waitForSelector('.a-index-art img.a-still')
+        ok('projects · background on demand')
+      }
       await wait(200)
       const realErrors = pageErrors.filter((e) => !WEBGL_NOISE.test(e))
       if (realErrors.length) fail(`${label} · page errors`, realErrors.slice(0, 3).join(' | '))
@@ -119,7 +137,9 @@ async function main() {
   } catch (e) {
     fail('suite crashed', String(e))
   } finally {
-    await browser.close()
+    await context.close()
+    if (remote) await browser.disconnect()
+    else await browser.close()
   }
 
   const failed = results.filter((r) => !r.pass)
