@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { caption, lightAt, seasonOf, weatherAt } from './weather'
+import { DAY_MS, SPELL_HOURS, caption, clockFrom, islandAt, lightAt, seasonOf, weatherNow } from './weather'
+
+// 15:00 on an October afternoon
+const clock = clockFrom(new Date(2026, 9, 22, 15, 0).getTime())
+const after = (hours: number) => clock.start + (hours / 24) * DAY_MS
 
 describe('weather', () => {
   it('reads the season from the month', () => {
@@ -9,15 +13,32 @@ describe('weather', () => {
     expect(seasonOf(9)).toBe('autumn')
     expect(seasonOf(11)).toBe('winter')
   })
-  it('gives one sky for the whole of a day', () => {
-    const morning = weatherAt(new Date(2026, 9, 17, 8, 0)),
-      night = weatherAt(new Date(2026, 9, 17, 23, 30))
-    expect(night.sky).toBe(morning.sky)
-    expect(night.hour).toBeCloseTo(23.5)
+  it('starts at the visitor’s hour and season and runs a day in twenty minutes', () => {
+    expect(weatherNow(clock, clock.start).hour).toBeCloseTo(15)
+    expect(weatherNow(clock, clock.start).season).toBe('autumn')
+    expect(weatherNow(clock, clock.start + DAY_MS / 2).hour).toBeCloseTo(3)
+    expect(weatherNow(clock, clock.start + DAY_MS).hour).toBeCloseTo(15)
+  })
+  it('brings the next season with each island day, a year in eighty minutes', () => {
+    expect(weatherNow(clock, after(10)).season).toBe('winter')
+    expect(weatherNow(clock, after(34)).season).toBe('spring')
+    expect(weatherNow(clock, after(58)).season).toBe('summer')
+    expect(weatherNow(clock, clock.start + 4 * DAY_MS).season).toBe('autumn')
+  })
+  it('holds a spell, then eases it into the next', () => {
+    const middle = islandAt(clock, after(SPELL_HOURS - 15 + SPELL_HOURS / 2))
+    expect(middle.turn).toBe(0)
+    const end = islandAt(clock, after(SPELL_HOURS * 5 - 15 - 0.01))
+    expect(end.turn).toBeGreaterThan(0.99)
+  })
+  it('changes the sky within a day', () => {
+    const skies = new Set<string>()
+    for (let h = 0; h < 24; h += SPELL_HOURS) skies.add(weatherNow(clock, after(h)).sky)
+    expect(skies.size).toBeGreaterThan(1)
   })
   it('only snows in winter', () => {
-    for (let d = 1; d <= 300; d++) {
-      const w = weatherAt(new Date(2026, 0, d))
+    for (let h = 0; h < 24 * 40; h += 1) {
+      const w = weatherNow(clock, after(h))
       if (w.sky === 'snow') expect(w.season).toBe('winter')
     }
   })
@@ -33,10 +54,14 @@ describe('weather', () => {
     const base = { season: 'spring', hour: 13, strength: 1, lean: 0 } as const
     expect(lightAt({ ...base, sky: 'rain' }).sun).toBeLessThan(lightAt({ ...base, sky: 'sun' }).sun)
   })
-  it('names the hour and the weather', () => {
+  it('names the season, the hour and the weather', () => {
     expect(caption({ season: 'autumn', sky: 'rain', hour: 18, strength: 0.5, lean: 0 })).toEqual([
-      '傍晚，在下雨。',
-      'Evening, raining.',
+      '秋日傍晚，在下雨。',
+      'Autumn evening, raining.',
+    ])
+    expect(caption({ season: 'winter', sky: 'sun', hour: 23, strength: 0.5, lean: 0 })).toEqual([
+      '冬夜，天很清。',
+      'Winter night, clear.',
     ])
   })
 })

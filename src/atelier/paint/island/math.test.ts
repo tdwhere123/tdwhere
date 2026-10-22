@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { project, waterPoint, height, normal, diffuse, LIGHT, waterField, landField, ELEVATION, CAMERA_RADIUS, randomSource, shadow, isOpenWater, waterSpecular, waterNormal } from './math'
+import { project, waterPoint, waterField, ELEVATION, CAMERA_RADIUS, randomSource, isOpenWater, waterSpecular, waterNormal } from './math'
 import { PAPER_SRGB, compositePaper, rainSample } from './render-math'
 
-describe('accepted island model', () => {
-  it('picks water across the full 22 degree orbit', () => {
-    expect(ELEVATION).toBe(22 * Math.PI / 180)
+describe('the block of water', () => {
+  it('picks water across the full 30 degree orbit', () => {
+    expect(ELEVATION).toBe(30 * Math.PI / 180)
     expect(CAMERA_RADIUS).toBe(12)
     for (const yaw of [0, .5, Math.PI, Math.PI * 2]) for (const p of [[1, 0, 2], [-.4, 0, .7], [0, 0, 0]]) {
       const s = project(p, yaw, 100, 500, 400), back = waterPoint(s[0], s[1], yaw, 100, 500, 400)
@@ -12,37 +12,21 @@ describe('accepted island model', () => {
     }
     expect(project([1, .3, .5], 0, 100, 0, 0).map(Math.round)).toEqual(project([1, .3, .5], Math.PI * 2, 100, 0, 0).map(Math.round))
   })
-  it('preserves low canopy, seeded marks, and geometry-driven occlusion', () => {
-    expect(height(0, 0)).toBeGreaterThan(.05)
-    expect(height(0, 0)).toBeLessThan(.2)
-    expect(height(2, 0)).toBe(0)
-    expect(shadow(-.5, 0, -.1)).toBe(1)
+  it('keeps seeded marks repeatable', () => {
     const a = randomSource(), b = randomSource()
     for (let i = 0; i < 100; i++) expect(a()).toBe(b())
-    const n = normal(-.3, -.1), shade = diffuse(n), fixed = [...LIGHT]
-    expect(Math.hypot(...n)).toBeCloseTo(1, 12)
-    for (const yaw of [0, 1, 2, 3]) {
-      project([-.3, height(-.3, -.1), -.1], yaw, 100, 0, 0)
-      expect(diffuse(n)).toBe(shade)
-      expect(LIGHT).toEqual(fixed)
-    }
-    expect(LIGHT[1]).toBeGreaterThan(.2)
-    expect(LIGHT[1]).toBeLessThan(.3)
   })
-  it('excludes land and paper from all seeded rain impacts', () => {
+  it('keeps every seeded rain impact on the water, off the paper', () => {
     expect(waterField(2, 0)).toBeGreaterThan(0)
-    expect(waterField(4, 0)).toBeLessThan(0)
-    expect(landField(1, .5)).toBeLessThan(0)
-    expect(isOpenWater(0, 0)).toBe(false)
-    expect(isOpenWater(4, 4)).toBe(false)
-    expect(isOpenWater(2, 0)).toBe(true)
+    expect(waterField(5.5, 0)).toBeLessThan(0)
+    expect(isOpenWater(0, 0)).toBe(true)
+    expect(isOpenWater(5, 5)).toBe(false)
     let accepted = 0
     const rng = randomSource()
     for (let i = 0; i < 1000 && accepted < 80; i++) {
-      const x = (rng() - .5) * 6.2, z = (rng() - .5) * 6.2
+      const x = (rng() - .5) * 9, z = (rng() - .5) * 9
       if (isOpenWater(x, z)) {
         expect(waterField(x, z)).toBeGreaterThan(.1)
-        expect(landField(x, z)).toBeLessThan(-.05)
         accepted++
       }
     }

@@ -224,7 +224,9 @@
   inset: 0;
   z-index: 80;
   color: #2c3a40;
-  transition: opacity 0.9s var(--a-ease);
+  transition:
+    opacity 0.9s var(--a-ease),
+    color 2s;
 }
 .a-overture[data-dark] {
   color: #e6e2d8;
@@ -263,6 +265,10 @@
   color: inherit;
   font: 400 11px/1.6 var(--a-mono);
   letter-spacing: 0.24em;
+}
+/* the underline drawn full width is its focus mark */
+.a-overture .a-overture-foot button:focus-visible {
+  outline: none;
 }
 .a-overture-foot button::after {
   content: '';

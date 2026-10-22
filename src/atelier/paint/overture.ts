@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import { coverFit, type Vec2 } from './presets';
-import type { Light, Weather } from '../weather';
+import type { Clock } from '../weather';
 import { rainSample } from './island/render-math';
 import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
-import { height, normal, landField, isOpenWater, randomSource, ELEVATION } from './island/math';
-import { weatherProfile, viewSpan, transitionState, sunVector } from './island/state';
+import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
+import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots, type Finish } from './island/aerator';
+import { makeFlock, startle, stepFlock } from './island/birds';
+import { buildCoot } from './island/coot';
+import { islandSky, viewSpan, transitionState } from './island/state';
 type RainDrop = {
     x: number;
     z: number;
@@ -12,7 +15,10 @@ type RainDrop = {
     speed: number;
     length: number;
     alpha: number;
-    lean: number;
+    /** 0 rain, 1 snow. */
+    kind: number;
+    /** The drop falls once the spell's rain or snow is heavier than this. */
+    threshold: number;
 };
 export type OvertureHandle = {
     enter(): void;
@@ -22,13 +28,13 @@ export type OvertureHandle = {
 };
 export function mountOverture(o: {
     canvas: HTMLCanvasElement;
-    weather: Weather;
-    light: Light;
+    clock: Clock;
     painting: () => HTMLCanvasElement;
     focus: Vec2;
     onDone: () => void;
 }): OvertureHandle {
-    const { canvas, weather, light } = o, profile = weatherProfile(weather, light);
+    const { canvas, clock } = o;
+    let sky = islandSky(clock, Date.now());
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
     const originalTouchAction = canvas.style.touchAction;
     canvas.style.touchAction = 'none';
@@ -41,76 +47,141 @@ export function mountOverture(o: {
     scene.background = null;
     const camera = new THREE.OrthographicCamera(-8, 8, 5, -5, .1, 40);
     let yaw = -.35, targetYaw = yaw;
-    const raining = profile.rain, snowing = profile.snow;
-    const sunDirection = new THREE.Vector3(...sunVector(weather, light)), sun = new THREE.DirectionalLight(0xffecc9, 2.1);
-    sun.position.copy(sunDirection).multiplyScalar(10);
-    scene.add(sun);
-    scene.add(new THREE.HemisphereLight(0xe3f0ed, 0x6d9894, 2));
+    const sunDirection = new THREE.Vector3(...sky.sun);
+    const rgb = () => new THREE.Vector3();
+    const palette = { lit: rgb(), shallow: rgb(), deep: rgb(), foam: rgb(), ink: rgb() };
     const random = randomSource();
-    const noiseGLSL = `float gaussH(vec2 p,vec2 c,vec2 r){vec2 q=(p-c)/r;return exp(-dot(q,q));}float sceneHeight(vec2 p){float x=p.x,z=p.y;float nx=x/1.35,nz=(z+.10*sin(x*3.))/.62;float f=1.-nx*nx-nz*nz-.32*gaussH(p,vec2(.28,.38),vec2(.32,.24))+.10*sin(x*5.-z*4.)+.055*sin(z*12.+x*6.);if(f<=0.)return 0.;float ground=.004+.035*pow(f,1.1)+.025*gaussH(p,vec2(-.50,-.10),vec2(.5,.35));float a=gaussH(p,vec2(-.55,-.13),vec2(.54,.34)),b=gaussH(p,vec2(-.04,-.21),vec2(.40,.25));return ground+max(0.,.29*pow(a,1.3)+.21*pow(b,1.5)-.045)*(1.+.025*sin(x*12.+z*9.));}float landOcclusion(vec3 p,vec3 sun){float shade=0.;for(int i=1;i<=24;i++){float t=float(i)*.10;vec3 q=p+sun*t;shade=max(shade,smoothstep(.004,.055,sceneHeight(q.xz)-q.y));}return shade;}vec3 linearize(vec3 c){return mix(c/12.92,pow((max(c,vec3(0.))+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}`;
-    const worldVertex = `varying vec3 vWorld;varying vec3 vNormal;void main(){vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`;
-    const landMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: true, side: THREE.DoubleSide, uniforms: { sun: { value: sunDirection } }, vertexShader: worldVertex, fragmentShader: `precision highp float;uniform vec3 sun;varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}void main(){float d=max(dot(normalize(vNormal),sun),0.);float canopy=smoothstep(.015,.10,vWorld.y);float shade=landOcclusion(vWorld+vec3(0.,.018,0.),sun);vec3 shadow=vec3(.34,.53,.54),mid=vec3(.55,.69,.62),light=vec3(.91,.78,.60);vec3 col=mix(shadow,mid,smoothstep(.02,.32,d));col=mix(col,light,smoothstep(.25,.75,d)*.78);col=mix(col,shadow,shade*.40);col+=vec3(.020,.012,-.008)*(noise(vWorld.xz*14.)-.5);float alpha=mix(.22,.96,canopy);gl_FragColor=vec4(linearize(col),alpha);}` });
-    const vertices: number[] = [], normals: number[] = [];
-    const step = .045;
-    for (let x = -1.5; x < 1.5; x += step)
-        for (let z = -.85; z < .85; z += step) {
-            if (landField(x + step / 2, z + step / 2) <= 0)
-                continue;
-            for (const [a, b] of [[x, z], [x + step, z], [x + step, z + step], [x, z], [x + step, z + step], [x, z + step]]) {
-                vertices.push(a, height(a, b), b);
-                normals.push(...normal(a, b));
-            }
+    const noiseGLSL = `vec3 linearize(vec3 c){return mix(c/12.92,pow((max(c,vec3(0.))+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}`;
+    // Backlit, as in the photograph: the sides toward the visitor take the sky's light from above and
+    // the water's from below, the yellow paddles glow where the sun comes through them, and after
+    // dusk the mast's lamp warms whatever is near it.
+    const night = { value: 0 }, daylight = { value: sky.light.sun }, lampAt = { value: new THREE.Vector3() };
+    const snowCover = { value: sky.profile.snow > 0 ? .6 : 0 };
+    const shared = { sun: { value: sunDirection }, shade: { value: palette.deep }, lit: { value: palette.lit }, day: daylight, night, lampAt, snowCover };
+    const paint = (color: THREE.ColorRepresentation, finish: Finish = {}) => new THREE.ShaderMaterial({ side: THREE.DoubleSide, uniforms: { ...shared, color: { value: new THREE.Color(color) }, glow: { value: finish.glow ?? 0 }, shine: { value: finish.shine ?? 0 }, holes: { value: finish.holes ? 1 : 0 }, lamp: { value: finish.lamp ? 1 : 0 }, bare: { value: finish.bare ? 1 : 0 } }, vertexShader: `varying vec3 vWorld;varying vec3 vNormal;varying vec2 vUv;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform vec3 color;uniform float glow;uniform float shine;uniform float holes;uniform float lamp;uniform vec3 sun;uniform vec3 shade;uniform vec3 lit;uniform float day;uniform float night;uniform vec3 lampAt;uniform float snowCover;uniform float bare;varying vec3 vWorld;varying vec3 vNormal;varying vec2 vUv;${noiseGLSL}
+void main(){if(holes>.5){vec2 g=fract(vUv*vec2(5.,4.))-.5;if(length(g)<.27&&vUv.x>.08&&vUv.x<.92&&vUv.y>.1&&vUv.y<.9)discard;}
+vec3 c=color;if(lamp>.5){gl_FragColor=vec4(c*(.2+7.*night),1.);return;}
+vec3 n=normalize(vNormal);if(!gl_FrontFacing)n=-n;vec3 view=normalize(cameraPosition-vWorld);vec3 L=linearize(lit)*(.2+.8*day);
+float d=max(dot(n,sun),0.),through=max(dot(-n,sun),0.);vec3 ambient=mix(linearize(shade)*1.4,linearize(lit),.5+.5*n.y);
+vec3 col=c*ambient*(.18+.32*day)+c*d*L*.85+c*through*glow*L;col+=L*pow(max(dot(n,normalize(sun+view)),0.),48.)*shine*.6;col+=L*pow(1.-max(dot(n,view),0.),3.)*.1*day;
+float settled=snowCover*(1.-bare)*smoothstep(.45,.85,n.y)*smoothstep(.3,.6,noise(vWorld.xz*60.));col=mix(col,vec3(.93,.95,1.)*(ambient*(.3+.4*day)+L*d*.6),settled);
+vec3 toLamp=lampAt-vWorld;col+=c*vec3(1.,.72,.38)*night*2.4*max(dot(n,normalize(toLamp)),.15)/(1.+dot(toLamp,toLamp)*22.);
+gl_FragColor=vec4(col,1.);}` });
+    const aerator = buildAerator(paint);
+    scene.add(aerator.group);
+    let on = true, running = 1;
+    const flock = makeFlock(randomSource(clock.start % 2147483647 || 1), [AERATOR.x + 1.1, AERATOR.z + .7]), coots = flock.map(() => buildCoot(paint));
+    for (const coot of coots) {
+        coot.group.rotation.order = 'YXZ';
+        scene.add(coot.group);
+    }
+    const perchAt = PERCHES.map(() => new THREE.Vector3()), wakes = flock.map(() => new THREE.Vector4());
+    // after dusk: a scatter of lights along the far shore, as across the river behind the film shelf
+    const shore: { x: number; z: number; y: number; warm: number; phase: number }[] = [];
+    for (const group of [-2.3, -1.75, -.9, -.3, .25]) {
+        const lights = 2 + Math.floor(random() * 3);
+        for (let k = 0; k < lights; k++) {
+            const a = group + (random() - .5) * .16;
+            let r = 1;
+            while (waterField(Math.cos(a) * r, Math.sin(a) * r) > 0 && r < 9) r += .05;
+            shore.push({ x: Math.cos(a) * (r + .25 + random() * .3), z: Math.sin(a) * (r + .25 + random() * .3), y: .03 + random() * .08, warm: random() < .75 ? 1 : 0, phase: random() * 10 });
         }
-    const landGeometry = new THREE.BufferGeometry();
-    landGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    landGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-    const land = new THREE.Mesh(landGeometry, landMaterial);
-    scene.add(land);
+    }
+    const lightCount = shore.length + 1, lightPositions = new Float32Array(lightCount * 3), lightColors = new Float32Array(lightCount * 3), lightSizes = new Float32Array(lightCount).fill(1);
+    lightSizes[shore.length] = 2.2;
+    shore.forEach((l, k) => { lightPositions.set([l.x, l.y, l.z], k * 3); lightColors.set(l.warm ? [1, .72, .4] : [.92, .94, 1], k * 3); });
+    lightColors.set([1, .78, .45], shore.length * 3);
+    const lightGeometry = new THREE.BufferGeometry();
+    lightGeometry.setAttribute('position', new THREE.BufferAttribute(lightPositions, 3));
+    lightGeometry.setAttribute('tone', new THREE.BufferAttribute(lightColors, 3));
+    lightGeometry.setAttribute('big', new THREE.BufferAttribute(lightSizes, 1));
+    const lightMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { night, size: { value: 10 }, time: { value: 0 } }, vertexShader: `uniform float size;uniform float time;attribute vec3 tone;attribute float big;varying vec3 vTone;varying float vFlicker;void main(){vTone=tone;vFlicker=.85+.15*sin(time*2.3+position.x*17.+position.z*9.);gl_PointSize=size*big;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`, fragmentShader: `precision highp float;uniform float night;varying vec3 vTone;varying float vFlicker;void main(){float r=length(gl_PointCoord-.5)*2.;float core=smoothstep(.2,.04,r),halo=exp(-r*r*6.)*.6;float a=min(1.,(core+halo)*night*vFlicker);if(a<.004)discard;gl_FragColor=vec4(vTone*(1.+core*3.),a);}` });
+    const lights = new THREE.Points(lightGeometry, lightMaterial);
+    lights.frustumCulled = false;
+    scene.add(lights);
     const wavePool = new WavePool();
     const drops = Array.from({ length: 48 }, () => new THREE.Vector4(0, 0, 10, 0));
-    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: profile.glint }, glintTint: { value: new THREE.Vector3(...profile.glintTint) }, sun: { value: sunDirection }, drops: { value: drops } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
-void main(){vec2 p=vWorld.xz;float a=atan(p.y,p.x),r=length(p);float bound=2.75+.34*sin(3.*a+.5)+.25*cos(5.*a-1.)+.15*sin(7.*a);float edge=smoothstep(0.,.6,bound-r+(noise(p*7.)-.5)*.16);if(edge<.004)discard;
-vec3 wave=waveField(p);vec3 n=normalize(vec3(-wave.y,1.,-wave.z));
+    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakes }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
+void main(){vec2 p=vWorld.xz;vec2 u=p/vec2(1.2,.95);float a=atan(u.y,u.x),r=length(u);float bound=(2.9+.3*sin(2.*a+1.1)+.22*cos(3.*a-.4)+.12*sin(5.*a+.3)+.06*sin(7.*a+2.))*${WATER_SCALE.toFixed(3)};float rim=bound-r+(noise(p*7.)-.5)*.12;float edge=smoothstep(0.,.12,rim);if(edge<.004)discard;
+vec3 wave=waveField(p);vec2 rp=p*9.+vec2(time*.35,-time*.2);float e0=noise(rp),ex=noise(rp+vec2(.15,0.)),ez=noise(rp+vec2(0.,.15));vec3 n=normalize(vec3(-wave.y,1.,-wave.z)+vec3(e0-ex,0.,e0-ez)*(1.4+wind*1.6));
 vec3 view=normalize(cameraPosition-vWorld),halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
-vec3 col=mix(vec3(.71,.83,.85),vec3(.86,.90,.85),noise(p*1.1));float shade=landOcclusion(vWorld+vec3(0.,.033,0.),sun);col=mix(col,vec3(.50,.67,.72),shade*.28);col=mix(col,glintTint,rough*.54*glint*(1.-shade*.90));float broken=smoothstep(.65,.88,noise(p*vec2(8.,13.)))*smoothstep(.24,.50,rough);col+=glintTint*fine*broken*.24*glint*(1.-shade);
-vec2 reflected=(p-vec2(-.4,.25))/vec2(.65,.32);float reflection=exp(-dot(reflected,reflected));col=mix(col,vec3(.56,.72,.67),reflection*.14);
-gl_FragColor=vec4(linearize(col),edge*.88);}` });
-    const waterGeo = new THREE.PlaneGeometry(7.5, 7.5, 128, 128);
+float depth=smoothstep(.1,2.2,rim);
+vec3 col=mix(shallow,deep,clamp(depth*.8+(noise(p*1.1)-.5)*.16+(noise(p*3.7+vec2(time*.04,0.))-.5)*.2,0.,1.));col*=.9+.18*nl;
+float paws=smoothstep(.56,.82,noise(p*vec2(1.4,3.4)+vec2(time*.45,time*.1)))*wind;col=mix(col,deep,paws*.24);
+col=mix(col,deep,(1.-smoothstep(0.,.16,rim))*.32);
+float churn=0.;for(int i=0;i<4;i++){vec2 d=p-wheels[i].xy;float al=dot(d,wake),ac=dot(d,vec2(wake.y,-wake.x));churn+=exp(-ac*ac/.006)*smoothstep(-.16,-.04,al)*exp(-max(al,0.)*3.)*wheels[i].z;}churn=clamp(churn,0.,1.)*(.4+.6*noise(p*34.-wake*time*3.));
+const float S=${AERATOR.size.toFixed(2)};vec2 rel=p-aer;vec2 toCam=normalize(cameraPosition.xz-aer),side=vec2(toCam.y,-toCam.x);float along=dot(rel,toCam)/S,across=dot(rel,side)+wave.y*.8+(e0-.5)*.06,spread=dot(aerAxis,side)*S;
+float yel=0.;for(int i=0;i<4;i++)yel=max(yel,exp(-pow((across-dot(wheels[i].xy-aer,side))/(.07*S),2.)));
+float wht=max(exp(-pow((across-.3*spread)/(.08*S),2.)),exp(-pow((across+.3*spread)/(.08*S),2.))),nav=exp(-pow(across/(.09*S),2.));
+float reach=.55*abs(spread)+.12*S;float mirrored=smoothstep(reach,reach-.1,abs(across))*smoothstep(-.04,.04,along)*(1.-smoothstep(.12,.48,along));
+vec3 image=mix(deep*.7,vec3(.95,.76,.12),yel);image=mix(image,vec3(.86,.87,.85),wht*(1.-yel));image=mix(image,vec3(.16,.22,.34),nav);
+col=mix(col,image,mirrored*(.45+.35*noise(vec2(across*20.,along*9.-time*.7)))*(1.-churn*.6));
+col=mix(col,glintTint,rough*.3*glint);
+vec2 g=p-glitter;float zone=exp(-pow(dot(g,vec2(.94,.34))/1.7,2.)-pow(dot(g,vec2(-.34,.94))/1.1,2.));col=mix(col,mix(glintTint,shallow,.35),zone*.42*glitterGain);
+float spark=smoothstep(.7,.9,noise(p*vec2(12.,18.)+vec2(time*.8,-time*.6)))*smoothstep(.35,.75,noise(p*4.5+vec2(-time*.35,time*.25)));col+=glintTint*spark*smoothstep(.05,.6,zone)*glitterGain*2.6;
+float wake=0.;for(int i=0;i<${flock.length};i++){vec4 w=wakes[i];if(w.w<=0.)continue;vec2 f=vec2(cos(w.z),sin(w.z)),d=p-w.xy;float behind=-dot(d,f),off=abs(dot(d,vec2(-f.y,f.x)));wake+=exp(-pow((off-behind*.36)/(.01+behind*.03),2.))*smoothstep(.0,.06,behind)*exp(-behind*2.2)*w.w;}col=mix(col,mix(foamC,glintTint,.4),clamp(wake,0.,1.)*(.42-.28*night));
+vec2 lampFoot=lampAt.xz;float la=dot(p-lampFoot,toCam),lx=dot(p-lampFoot,side)+wave.y*1.4+(e0-.5)*.05;float lampTrail=exp(-lx*lx/.0012)*smoothstep(-.02,.08,la)*exp(-max(la,0.)*1.3)*(.55+.45*noise(vec2(lx*60.,la*16.-time*1.2)));vec2 under=p-lampFoot;col+=vec3(1.,.62,.3)*night*(lampTrail*2.6+.4*exp(-dot(under,under)*7.)*(.75+.25*noise(p*9.+time*.3)));
+for(int i=0;i<${shore.length};i++){vec4 l=shore[i];float sa=dot(p-l.xy,toCam),sx=dot(p-l.xy,side)+wave.y*1.6+(e0-.5)*.06;float trail=exp(-sx*sx/(.0012+max(sa,0.)*.004))*smoothstep(.0,.2,sa)*exp(-sa*1.7)*smoothstep(.3,.75,noise(vec2(sx*30.+l.w,sa*18.-time*.9)));col+=mix(vec3(.88,.92,1.),vec3(1.,.68,.36),l.z)*trail*night*1.35;}
+col=mix(col,foamC,churn*.85);
+gl_FragColor=vec4(linearize(col),edge*.92);}` });
+    const waterGeo = new THREE.PlaneGeometry(13, 13, 200, 200);
     waterGeo.rotateX(-Math.PI / 2);
     const water = new THREE.Mesh(waterGeo, waterMaterial);
     water.position.y = -.015;
     scene.add(water);
+    // a pool for the heaviest rain and one for the heaviest snow; a spell lets as many fall as it needs
     const rain: RainDrop[] = [];
-    while (rain.length < Math.round(40 + weather.strength * 40)) {
-        const x = (random() - .5) * 6.4, z = (random() - .5) * 6.4;
-        if (isOpenWater(x, z))
-            rain.push({ x, z, phase: random(), speed: (.8 + random() * .4) * profile.precipitationSpeed, length: snowing ? .025 : .075 + random() * .13, alpha: .60 + random() * .24, lean: weather.lean });
-    }
-    const rainPositions = new Float32Array(rain.length * 18), rainUV = new Float32Array(rain.length * 12), rainAlpha = new Float32Array(rain.length * 6), rainGeo = new THREE.BufferGeometry();
+    for (const kind of [0, 1])
+        for (let n = 0; n < 140;) {
+            const x = (random() - .5) * 11, z = (random() - .5) * 9;
+            if (!isOpenWater(x, z))
+                continue;
+            rain.push({ x, z, phase: random(), speed: (.8 + random() * .4) * (kind ? .25 : 1), length: kind ? .025 : .075 + random() * .13, alpha: .60 + random() * .24, kind, threshold: random() });
+            n++;
+        }
+    const rainPositions = new Float32Array(rain.length * 18), rainUV = new Float32Array(rain.length * 12), rainAlpha = new Float32Array(rain.length * 6), rainKind = new Float32Array(rain.length * 6), rainGeo = new THREE.BufferGeometry();
     for (let i = 0; i < rain.length; i++) {
         rainUV.set([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], i * 12);
         rainAlpha.fill(rain[i].alpha, i * 6, i * 6 + 6);
+        rainKind.fill(rain[i].kind, i * 6, i * 6 + 6);
     }
     rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
     rainGeo.setAttribute('uv', new THREE.BufferAttribute(rainUV, 2));
     rainGeo.setAttribute('strength', new THREE.BufferAttribute(rainAlpha, 1));
-    const rainMaterial = new THREE.ShaderMaterial({ transparent: true, depthTest: true, depthWrite: false, side: THREE.DoubleSide, vertexShader: `attribute float strength;varying vec2 rainUv;varying float rainStrength;void main(){rainUv=uv;rainStrength=strength;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`, fragmentShader: `precision highp float;varying vec2 rainUv;varying float rainStrength;void main(){float width=smoothstep(0.,.28,rainUv.x)*(1.-smoothstep(.72,1.,rainUv.x));float tail=pow(1.-rainUv.y,.65);gl_FragColor=vec4(${snowing ? 'vec3(.92,.95,1.)' : 'vec3(.16,.27,.30)'},width*tail*rainStrength);}` });
+    rainGeo.setAttribute('kind', new THREE.BufferAttribute(rainKind, 1));
+    const rainMaterial = new THREE.ShaderMaterial({ transparent: true, depthTest: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { ink: { value: palette.ink } }, vertexShader: `attribute float strength;attribute float kind;varying vec2 rainUv;varying float rainStrength;varying float rainKind;void main(){rainUv=uv;rainStrength=strength;rainKind=kind;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`, fragmentShader: `precision highp float;uniform vec3 ink;varying vec2 rainUv;varying float rainStrength;varying float rainKind;void main(){float width=smoothstep(0.,.28,rainUv.x)*(1.-smoothstep(.72,1.,rainUv.x));float tail=pow(1.-rainUv.y,.65);gl_FragColor=vec4(mix(ink,vec3(.92,.95,1.),rainKind),width*tail*rainStrength);}` });
     const rainLines = new THREE.Mesh(rainGeo, rainMaterial);
     rainLines.frustumCulled = false;
-    const rainScene = new THREE.Scene(), rainDepthMaterial = landMaterial.clone();
-    rainDepthMaterial.colorWrite = false;
-    rainDepthMaterial.transparent = false;
-    rainDepthMaterial.depthWrite = true;
-    rainScene.add(new THREE.Mesh(landGeometry, rainDepthMaterial));
+    const rainScene = new THREE.Scene();
     rainScene.add(rainLines);
-    const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true }), rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true });
+    const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true, samples: 4 }), rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true });
     const postScene = new THREE.Scene(), postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const postMaterial = new THREE.ShaderMaterial({ uniforms: { image: { value: target.texture }, rainImage: { value: rainTarget.texture }, paper: { value: new THREE.Color(...light.paper).convertSRGBToLinear() }, tint: { value: new THREE.Vector3(...profile.tint) }, exposure: { value: profile.exposure }, mist: { value: profile.mist }, home: { value: homeTexture }, reveal: { value: 0 }, fitScale: { value: new THREE.Vector2(1, 1) }, fitOffset: { value: new THREE.Vector2() }, resolution: { value: new THREE.Vector2() }, painted: { value: 1 } }, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`, fragmentShader: `precision highp float;uniform sampler2D image;uniform sampler2D rainImage;uniform vec3 paper;uniform vec2 resolution;uniform float painted;uniform vec3 tint;uniform float exposure;uniform float mist;uniform sampler2D home;uniform float reveal;uniform vec2 fitScale;uniform vec2 fitOffset;varying vec2 vUv;${noiseGLSL}
+    // Brushwork over everything, so paper, water and aerator share one hand: each pixel is smeared
+    // along a stroke, each dab leans a little toward cyan or blue, and the paint has a body the
+    // light catches. On entering, the home painting is laid down stroke by stroke.
+    const postMaterial = new THREE.ShaderMaterial({ uniforms: { image: { value: target.texture }, rainImage: { value: rainTarget.texture }, paper: { value: new THREE.Color(...sky.light.paper).convertSRGBToLinear() }, tint: { value: new THREE.Vector3(...sky.profile.tint) }, exposure: { value: sky.profile.exposure }, mist: { value: sky.profile.mist }, haze: { value: new THREE.Color() }, glows: { value: Array.from({ length: lightCount }, () => new THREE.Vector4()) }, glowTones: { value: Array.from({ length: lightCount }, (_, k) => new THREE.Vector3(lightColors[k * 3], lightColors[k * 3 + 1], lightColors[k * 3 + 2])) }, home: { value: homeTexture }, reveal: { value: 0 }, fitScale: { value: new THREE.Vector2(1, 1) }, fitOffset: { value: new THREE.Vector2() }, resolution: { value: new THREE.Vector2() }, from: { value: new THREE.Vector2(...sky.light.from) }, time: { value: 0 } }, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`, fragmentShader: `precision highp float;uniform sampler2D image;uniform sampler2D rainImage;uniform vec3 paper;uniform vec2 resolution;uniform vec3 tint;uniform float exposure;uniform float mist;uniform vec3 haze;uniform vec4 glows[${lightCount}];uniform vec3 glowTones[${lightCount}];uniform sampler2D home;uniform float reveal;uniform vec2 fitScale;uniform vec2 fitOffset;uniform vec2 from;uniform float time;varying vec2 vUv;${noiseGLSL}
 vec3 encode(vec3 c){return mix(c*12.92,1.055*pow(max(c,vec3(0.)),vec3(1./2.4))-.055,step(vec3(.0031308),c));}
-vec3 samplePaint(vec2 uv){vec4 p=texture2D(image,uv);return p.rgb/max(p.a,.0001);}
-void main(){vec4 raw=texture2D(image,vUv);float coverage=raw.a;vec3 col=raw.rgb/max(coverage,.0001);
-if(painted>.5&&coverage>.002){vec2 pixel=vUv*resolution;vec2 cell=floor(pixel/vec2(11.,7.));vec2 local=fract(pixel/vec2(11.,7.));float id=hash(cell),angle=(hash(cell+17.)-.5)*1.2;vec2 dir=vec2(cos(angle),sin(angle));float dab=smoothstep(0.,.20,local.x)*(1.-smoothstep(.75,1.,local.x))*smoothstep(0.,.25,local.y)*(1.-smoothstep(.65,1.,local.y));float selected=step(.36,id);vec3 neighbor=samplePaint(vUv+dir/resolution*(id-.5)*3.);col=mix(col,neighbor,dab*selected*.22);float broad=noise(pixel/vec2(39.,27.))-.5;col+=vec3(.012,.007,-.007)*(id-.5)*dab*selected+vec3(.009,.006,-.004)*broad;}
-col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,coverage);vec4 rain=texture2D(rainImage,vUv);combined=rain.rgb+combined*(1.-rain.a);vec3 homeColor=texture2D(home,vUv*fitScale+fitOffset).rgb;float wash=smoothstep(0.,1.,reveal);combined=mix(combined,homeColor,wash);gl_FragColor=vec4(encode(combined),1.);}` });
+float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
+vec4 ground(vec2 uv){vec4 raw=texture2D(image,uv);vec3 col=raw.rgb/max(raw.a,.0001);col*=tint*exposure;col=mix(col,haze,mist*(.22+.36*uv.y));return vec4(encode(mix(paper,col,raw.a)),raw.a);}
+vec3 painting(vec2 uv){return encode(texture2D(home,clamp(uv,vec2(.001),vec2(.999))*fitScale+fitOffset).rgb);}
+float dab(vec2 q,vec2 dir,vec2 scale,float seed,out vec3 lean,out float bristle){vec2 perp=vec2(-dir.y,dir.x);vec2 sp=vec2(dot(q,dir),dot(q,perp))*scale+seed;sp.x+=hash(vec2(floor(sp.y),3.1+seed))*7.;vec2 cell=floor(sp),l=fract(sp);float h1=hash(cell+seed),h2=hash(cell+17.3),h3=hash(cell+5.1);float len=.62+h1*.34;float shape=1.-smoothstep(.5,1.,length(vec2((l.x-.5)/(len*.5),(l.y-.5)/.42)));lean=(h2-.5)*vec3(-.35,.5,.2)+(h3-.5)*.6;bristle=noise(vec2(sp.x*.6,sp.y*2.2)+h1*10.)*shape;return shape;}
+void main(){float m=min(resolution.x,resolution.y);vec2 q=(vUv-.5)*resolution/m;vec2 toUv=m/resolution;
+vec4 here=ground(vUv);float worked=mix(.08,1.,smoothstep(.02,.3,here.a));
+float a=.04+(noise(q*2.6+time*.02)-.5)*.8;vec2 dir=vec2(cos(a),sin(a)),perp=vec2(-dir.y,dir.x);
+vec3 leanA,leanB;float bristleA,bristleB;float dabA=dab(q,dir,vec2(28.,96.),0.,leanA,bristleA);float b=a+.3;float dabB=dab(q+.013,vec2(cos(b),sin(b)),vec2(24.,84.),11.3,leanB,bristleB)*(1.-dabA);
+vec3 lean=leanA*dabA+leanB*dabB;float bristle=bristleA+bristleB*(1.-dabA);
+vec2 along=dir*toUv*.008*(.55+noise(q*9.)*.9);vec3 col=vec3(0.);float wsum=0.;
+for(int i=-2;i<=2;i++){float k=float(i)/2.,w=1.-abs(k)*.5;col+=ground(vUv+along*k).rgb*w;wsum+=w;}
+vec3 sharp=here.rgb;col=mix(col/wsum,sharp,.4);
+float laid=0.;if(reveal>0.){float due=length(q)*.45+noise(q*3.)*.22+noise(vec2(dot(q,dir)*5.,dot(q,perp)*34.))*.22;due=clamp(due*.85,.06,.94);laid=smoothstep(due-.07,due+.07,reveal*1.25-.1);vec3 paint=vec3(0.);for(int i=-2;i<=2;i++)paint+=painting(vUv+dir*toUv*float(i)*.005);col=mix(col,paint/5.,laid);sharp=mix(sharp,painting(vUv),laid);}
+vec3 glow=vec3(0.);for(int i=0;i<${lightCount};i++){vec4 g=glows[i];if(g.w<=0.)continue;vec2 d=(vUv-g.xy)*resolution/m;float r2=dot(d,d)/(g.z*g.z);glow+=glowTones[i]*g.w*(exp(-r2)*.6+exp(-r2*.15)*.1);}
+col=encode(linearize(col)+glow*(1.-laid)*(.9+.2*bristle));
+col+=lean*.075*worked*(1.-laid);
+float height=lum(sharp)*.75+bristle*.2*worked;
+vec2 dH=vec2(dFdx(height),dFdy(height));vec3 N=normalize(vec3(-dH*4.*(resolution.y/800.),1.));vec3 L=normalize(vec3(from,.9));
+col*=.86+dot(N,L)*.2;col+=pow(max(dot(reflect(-L,N),vec3(0.,0.,1.)),0.),20.)*.05;
+vec4 rain=texture2D(rainImage,vUv);col=encode(rain.rgb*(1.-laid)+linearize(clamp(col,0.,1.))*(1.-rain.a*(1.-laid)));
+gl_FragColor=vec4(col,1.);}` });
     postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
     let elapsed = 0, previous = performance.now(), raf = 0, destroyed = false, enteredAt: number | null = null, paintedAt: number | null = null, done = false, lastStir = 0;
     let painted: HTMLCanvasElement | null = null;
@@ -147,8 +218,17 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
     } }, 400);
     const raycaster = new THREE.Raycaster(), waterPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     function touch(x: number, y: number, strength = 1.8) { if (destroyed || enteredAt !== null)
-        return; const rect = canvas.getBoundingClientRect(); raycaster.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera); const hit = new THREE.Vector3(); if (raycaster.ray.intersectPlane(waterPlane, hit))
-        wavePool.add(hit.x, hit.z, elapsed, strength); }
+        return; const rect = canvas.getBoundingClientRect(); raycaster.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera);
+        // a touch on the machine switches it off or on; a touch on the water rings it and scatters the birds near
+        if (strength > 1 && aerator.hit(raycaster)) {
+            on = !on;
+            return;
+        }
+        const hit = new THREE.Vector3(); if (!raycaster.ray.intersectPlane(waterPlane, hit))
+        return; wavePool.add(hit.x, hit.z, elapsed, strength); if (strength > 1)
+        startle(flock, hit.x, hit.z, random);
+    else
+        startle(flock, hit.x, hit.z, random, .35, false); }
     let drag: {
         x: number;
         yaw: number;
@@ -164,6 +244,87 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
     canvas.addEventListener('pointerup', onUp);
     canvas.addEventListener('pointercancel', onUp);
     canvas.addEventListener('lostpointercapture', onUp);
+    const sinkAt: [number, number, number] = [AERATOR.x + aeratorAxis[0] * 1.1, 0, AERATOR.z + aeratorAxis[1] * 1.1];
+    let lastChurn = 0;
+    // The aerator rides the long swell only, never its own ripples or the rain's, and eases into
+    // each new attitude, so it rocks slowly instead of trembling.
+    const ride = { height: 0, pitch: 0, roll: 0 }, span = .5 * AERATOR.size;
+    function rideOn(dt: number) {
+        const at = (u: number, w: number) => waveField(AERATOR.x + (aeratorAxis[0] * u + aeratorWake[0] * w) * span, AERATOR.z + (aeratorAxis[1] * u + aeratorWake[1] * w) * span, elapsed).height;
+        const k = Math.min(1, dt * 2.5);
+        ride.height += (at(0, 0) - ride.height) * k;
+        ride.roll += (Math.atan((at(1, 0) - at(-1, 0)) / (2 * span)) * .7 - ride.roll) * k;
+        ride.pitch += (-Math.atan((at(0, 1) - at(0, -1)) / (2 * span)) * .7 - ride.pitch) * k;
+        return ride;
+    }
+    const lift = new THREE.Vector3(), glowAt = new THREE.Vector3();
+    /** Steps the coots and sets each one on the water, under it, or up on a pontoon. */
+    function moveFlock(dt: number) {
+        PERCHES.forEach((_, i) => aerator.perch(i, perchAt[i]));
+        const splashes = stepFlock(flock, dt, { random, running, wheels: wheelSpots, center: [AERATOR.x, AERATOR.z], perches: perchAt.map(v => [v.x, v.z] as [number, number]) });
+        for (const s of splashes)
+            wavePool.add(s.x, s.z, elapsed, s.strength);
+        flock.forEach((b, i) => {
+            const { group, head } = coots[i], w = waveField(b.x, b.z, elapsed), afloat = w.height - .015;
+            group.visible = true;
+            group.rotation.set(w.dz * .8, -b.heading, -w.dx * .8);
+            group.position.set(b.x, afloat, b.z);
+            head.position.x = .062 + Math.sin(elapsed * 9 + b.phase) * .006 * Math.min(2, b.speed / .07);
+            wakes[i].set(b.x, b.z, b.heading, b.mode === 'swim' || b.mode === 'flee' || b.mode === 'board' ? Math.min(1.4, b.speed / .08) : 0);
+            if (b.mode === 'dive') {
+                // tips forward and goes under, and is gone until it comes up
+                const down = Math.min(1, b.t / .3);
+                group.rotation.z += down * .9;
+                group.position.y = afloat - down * .1;
+                group.visible = b.t < .3;
+            }
+            else if (b.mode === 'perch')
+                group.position.copy(perchAt[b.perch]);
+            else if (b.mode === 'hop' || b.mode === 'leave') {
+                const k = Math.min(1, b.t / .35), up = b.mode === 'hop' ? k : 1 - k, top = perchAt[b.perch];
+                lift.set(b.x, afloat, b.z).lerp(top, up);
+                lift.y += Math.sin(k * Math.PI) * .08;
+                group.position.copy(lift);
+            }
+        });
+    }
+    const gusts = () => Math.max(0, Math.min(1, (sky.profile.wind - .25) / 1.75));
+    /** Carries the island's sky into the uniforms. */
+    function setSky(dt = 0) {
+        const { light, profile } = sky;
+        sunDirection.set(...sky.sun);
+        palette.lit.set(...light.light);
+        palette.shallow.set(...light.water);
+        palette.deep.set(...light.deep);
+        palette.foam.set(...light.water).lerp(new THREE.Vector3(...light.light), .6);
+        palette.ink.set(...light.ink);
+        const water = waterMaterial.uniforms;
+        water.glint.value = profile.glint;
+        water.glintTint.value.set(...profile.glintTint);
+        water.wind.value = gusts();
+        // after dusk the lamps come on; the sun's glitter gives way to the moon's, and cloud puts out both
+        const dark = Math.max(0, Math.min(1, (.6 - light.sun) / .45));
+        night.value = dark * dark * (3 - 2 * dark);
+        daylight.value = light.sun;
+        const clear = Math.max(0, 1 - (profile.rain + profile.snow + profile.mist) * 1.4);
+        // a low sun lays the brightest path of all, so the glitter keeps its strength as the sun goes down
+        water.glitterGain.value = clear * Math.max(Math.min(1, profile.glint * 1.15), night.value * .4) * (1 - night.value * .6);
+        const post = postMaterial.uniforms;
+        post.paper.value.setRGB(...light.paper).convertSRGBToLinear();
+        post.tint.value.set(...profile.tint);
+        post.exposure.value = profile.exposure;
+        post.mist.value = profile.mist;
+        // fog is lit from within: a little lighter than the paper, and warmer where lamps shine in it
+        post.haze.value.setRGB(...light.paper).lerp(new THREE.Color(...light.light), .1 + night.value * .1).convertSRGBToLinear();
+        snowCover.value = Math.max(0, Math.min(1, snowCover.value + dt * (profile.snow > .05 ? profile.snow * .03 : -.012)));
+        post.from.value.set(...light.from);
+        // the sun's glitter lies on the far water and crosses it from left to right through the day
+        const hour = sky.weather.hour, moon = hour < 5 || hour >= 21.5, arc = Math.max(0, Math.min(1, (hour - 6) / 13)), right = moon ? 1.4 : -1.6 + arc * 4.4;
+        // screen right is (.94, .34) on the water at the usual view, and far is (.34, -.94)
+        waterMaterial.uniforms.glitter.value.set(.94 * right + .34 * 1.1, .34 * right - .94 * 1.1);
+        aerator.sprayMaterial.uniforms.foam.value.copy(palette.foam);
+    }
+    setSky();
     function frame(ms: number) {
         raf = 0;
         if (destroyed || document.hidden)
@@ -173,18 +334,30 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
         const before = elapsed;
         elapsed += dt;
         const transition = transitionState(elapsed, enteredAt, paintedAt);
+        sky = islandSky(clock, Date.now());
+        setSky(dt);
         camera.zoom = 1 + transition.sink * 5;
         camera.updateProjectionMatrix();
         yaw += (targetYaw - yaw) * .15;
-        camera.position.set(Math.sin(yaw) * 12 * Math.cos(ELEVATION), 12 * Math.sin(ELEVATION), Math.cos(yaw) * 12 * Math.cos(ELEVATION));
-        camera.lookAt(0, 0, 0);
+        // entering sinks toward the glitter beside the aerator, where the photograph was taken
+        const look = new THREE.Vector3(...sinkAt).multiplyScalar(transition.sink);
+        camera.position.set(Math.sin(yaw) * 12 * Math.cos(ELEVATION), 12 * Math.sin(ELEVATION), Math.cos(yaw) * 12 * Math.cos(ELEVATION)).add(look);
+        camera.lookAt(look);
         camera.updateMatrixWorld();
         waterMaterial.uniforms.time.value = elapsed;
-        rainLines.visible = (raining || snowing) && enteredAt === null;
-        const waves = advanceRainWaves(wavePool, before, elapsed, rain, (raining || snowing) && enteredAt === null);
-        if (snowing) for (const wave of waves) if (wave.time > before) wave.strength *= .3;
-        if (weather.sky === 'wind' && Math.floor(before * 7) !== Math.floor(elapsed * 7)) {
-            const x = (random() - .5) * 5, z = (random() - .5) * 5;
+        postMaterial.uniforms.time.value = elapsed;
+        const { profile } = sky, falling = (r: RainDrop) => r.threshold < (r.kind ? profile.snow : profile.rain);
+        rainLines.visible = enteredAt === null;
+        advanceRainWaves(wavePool, before, elapsed, rain.filter(r => r.kind && falling(r)), enteredAt === null, .3);
+        const waves = advanceRainWaves(wavePool, before, elapsed, rain.filter(r => !r.kind && falling(r)), enteredAt === null);
+        running += ((on ? 1 : 0) - running) * Math.min(1, dt * (on ? .9 : .6));
+        if (running > .1 && elapsed - lastChurn > .22 / running) {
+            lastChurn = elapsed;
+            const [x, z] = wheelSpots[Math.floor(random() * wheelSpots.length)];
+            wavePool.add(x + aeratorWake[0] * .08, z + aeratorWake[1] * .08, elapsed, .35 * running);
+        }
+        if (random() < dt * 9 * gusts()) {
+            const x = (random() - .5) * 7, z = (random() - .5) * 7;
             wavePool.add(x, z, elapsed, .25 + profile.wind * .6);
         }
         for (let i = 0; i < drops.length; i++) {
@@ -195,12 +368,28 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
                 drops[i].w = 0;
         }
         for (let i = 0; i < rain.length; i++) {
-            const r = rain[i], state = rainSample(elapsed, r), surface = -.015 + waveField(r.x, r.z, elapsed, waves).height, y = state.y + surface;
-            const across = new THREE.Vector3(Math.cos(yaw) * (snowing ? .018 : .008), 0, -Math.sin(yaw) * (snowing ? .018 : .008)), head = new THREE.Vector3(r.x - r.lean * state.y, y, r.z), tail = new THREE.Vector3(r.x - r.lean * (state.y + r.length), y + r.length, r.z);
-            const points = state.falling ? [head.clone().sub(across), head.clone().add(across), tail.clone().add(across), head.clone().sub(across), tail.clone().add(across), tail.clone().sub(across)] : Array.from({ length: 6 }, () => new THREE.Vector3(0, -100, 0));
+            const r = rain[i], state = rainSample(elapsed, r), surface = -.015 + waveField(r.x, r.z, elapsed, waves).height, y = state.y + surface, lean = profile.lean, wide = r.kind ? .018 : .008;
+            const across = new THREE.Vector3(Math.cos(yaw) * wide, 0, -Math.sin(yaw) * wide), head = new THREE.Vector3(r.x - lean * state.y, y, r.z), tail = new THREE.Vector3(r.x - lean * (state.y + r.length), y + r.length, r.z);
+            const points = state.falling && falling(r) ? [head.clone().sub(across), head.clone().add(across), tail.clone().add(across), head.clone().sub(across), tail.clone().add(across), tail.clone().sub(across)] : Array.from({ length: 6 }, () => new THREE.Vector3(0, -100, 0));
             points.forEach((v, j) => rainPositions.set(v.toArray(), i * 18 + j * 3));
         }
         rainGeo.attributes.position.needsUpdate = true;
+        aerator.update(elapsed, dt, running, rideOn(dt));
+        for (const spot of waterMaterial.uniforms.wheels.value as THREE.Vector3[]) spot.z = running;
+        aerator.group.localToWorld(lampAt.value.set(...LAMP));
+        lightPositions.set(lampAt.value.toArray(), shore.length * 3);
+        lightGeometry.attributes.position.needsUpdate = true;
+        // each light's glow, washed over whatever lies around it on the page; fog spreads it wider
+        const glows = postMaterial.uniforms.glows.value as THREE.Vector4[];
+        for (let k = 0; k < lightCount; k++) {
+            const at = glowAt.set(lightPositions[k * 3], lightPositions[k * 3 + 1], lightPositions[k * 3 + 2]).project(camera), lamp = k === shore.length;
+            const flicker = lamp ? 1 : .85 + .15 * Math.sin(elapsed * 2.3 + lightPositions[k * 3] * 17 + lightPositions[k * 3 + 2] * 9);
+            glows[k].set(at.x * .5 + .5, at.y * .5 + .5, (lamp ? .045 : .011) * camera.zoom * (1 + profile.mist * 1.5), night.value * flicker * (lamp ? .42 : .16));
+        }
+        lightMaterial.uniforms.time.value = elapsed;
+        lightMaterial.uniforms.size.value = 12 * (1 + sky.profile.mist * 1.4) * renderer.getPixelRatio() * camera.zoom;
+        moveFlock(dt);
+        aerator.sprayMaterial.uniforms.size.value = 4 * renderer.getPixelRatio() * camera.zoom;
         postMaterial.uniforms.reveal.value = transition.reveal;
         renderer.setClearColor(0x000000, 0);
         renderer.setRenderTarget(target);
@@ -231,7 +420,7 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
     raf = requestAnimationFrame(frame);
     return {
         enter() { if (destroyed || enteredAt !== null)
-            return; enteredAt = elapsed; wavePool.add(0, 1, elapsed, 1.8); },
+            return; enteredAt = elapsed; wavePool.add(sinkAt[0], sinkAt[2], elapsed, 1.8); },
         touch,
         stir(x, y) { if (elapsed - lastStir < .14)
             return; lastStir = elapsed; touch(x, y, .3); },
@@ -254,7 +443,7 @@ col*=tint*exposure;col=mix(col,paper,mist*.35);vec3 combined=mix(paper,col,cover
             drag = null;
             const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
             for (const root of [scene, rainScene, postScene])
-                root.traverse(object => { if (object instanceof THREE.Mesh) {
+                root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
                     geometries.add(object.geometry);
                     for (const material of Array.isArray(object.material) ? object.material : [object.material])
                         materials.add(material);

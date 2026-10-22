@@ -23,10 +23,9 @@ describe('shared rain and displaced water field', () => {
     advanceRainWaves(off, 1, 1.1, [r], true)
     expect(off.events).toHaveLength(0)
   })
-  it('rejects land and outside water, bounds the CPU/GPU event pool', () => {
+  it('rejects the paper outside the water, bounds the CPU/GPU event pool', () => {
     const pool = new WavePool()
-    expect(pool.add(0, 0, 1)).toBe(false)
-    expect(pool.add(4, 4, 1)).toBe(false)
+    expect(pool.add(5, 5, 1)).toBe(false)
     for (let i = 0; i < 100; i++) pool.add(2, 0, i / 100)
     expect(pool.events).toHaveLength(48)
     expect(pool.events.at(-1)?.time).toBe(.99)

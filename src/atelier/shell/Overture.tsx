@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useWords } from '../hooks'
 import { heroFrame } from '../film'
-import { caption, lightAt, weatherAt } from '../weather'
+import { caption, lightAt, sessionClock, weatherNow } from '../weather'
 import type { OvertureHandle } from '../paint/overture'
 import { onReplay } from './overtureCue'
 import { paint } from '../paint/bus'
@@ -22,9 +22,10 @@ function shouldPlay(pathname: string) {
 const css = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round(v * 255)).join(' ')})`
 
 /**
- * A block of water on paper under the visitor's own sky: the hour sets the
- * light, the date picks the weather. Shown once per session when a visit
- * begins on the home page. Touching the water rings it; the line beneath
+ * A block of water on paper under the island's own sky: its clock starts at
+ * the visitor's hour and season and runs a day in twenty minutes, the weather
+ * turning every few island hours. Shown once per session when a visit begins
+ * on the home page. Touching the water rings it; the line beneath
  * lets the visitor in, sinking into the water onto the home painting.
  * Escape skips straight to the page. The home page can ask for it again.
  */
@@ -34,17 +35,12 @@ export default function Overture() {
   const [stage, setStage] = useState<'rest' | 'enter' | 'leave' | 'gone'>(() =>
     shouldPlay(pathname) ? 'rest' : 'gone',
   )
-  const now = () => {
-    const weather = weatherAt(new Date())
-    return { weather, light: lightAt(weather) }
-  }
-  const [sky, setSky] = useState(now)
-  // asked for again from the home page: under the sky as it is now
+  const [weather, setWeather] = useState(() => weatherNow(sessionClock()))
+  // asked for again from the home page: the island has gone on meanwhile
   useEffect(
     () =>
       onReplay(() => {
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-        setSky(now())
         setStage((s) => (s === 'gone' ? 'rest' : s))
       }),
     [],
@@ -54,6 +50,14 @@ export default function Overture() {
     enterRequested = useRef(false)
   // stays mounted through the fade, so the last frame holds while it leaves
   const shown = stage !== 'gone'
+  // the line beneath keeps up with the island's hour and weather
+  useEffect(() => {
+    if (!shown) return
+    const tick = () => setWeather(weatherNow(sessionClock()))
+    tick()
+    const timer = setInterval(tick, 1000)
+    return () => clearInterval(timer)
+  }, [shown])
   // The overture draws its own home image while entering. Resume the actual
   // home canvas before the overlay fades, not while it is fully occluded.
   const covered = stage === 'rest' || stage === 'enter'
@@ -83,8 +87,7 @@ export default function Overture() {
         if (cancelled || !canvas.current) return
         handle.current = mountOverture({
           canvas: canvas.current,
-          weather: sky.weather,
-          light: sky.light,
+          clock: sessionClock(),
           painting: () => painter.paintedFrame(heroFrame),
           focus: parseObjectPosition(heroFrame.focus),
           onDone: leave,
@@ -111,7 +114,7 @@ export default function Overture() {
       handle.current?.destroy()
       handle.current = undefined
     }
-  }, [shown, sky])
+  }, [shown])
   useEffect(() => {
     if (stage !== 'leave') return
     const timer = setTimeout(() => setStage('gone'), 900)
@@ -123,8 +126,8 @@ export default function Overture() {
     handle.current?.enter()
     setStage((s) => (s === 'rest' ? 'enter' : s))
   }
-  const [zh, en] = caption(sky.weather)
-  const p = sky.light.paper
+  const [zh, en] = caption(weather)
+  const p = lightAt(weather).paper
   return (
     <div
       className="a-overture"

@@ -10,8 +10,8 @@ export class WavePool{
  active(time: number){this.events=this.events.filter(e=>time-e.time<WAVE_TTL);return this.events.filter(e=>time>=e.time);}
 }
 export function landingsBetween(before: number,now: number,r: RainTiming){const rate=.45*r.speed,first=Math.floor(before*rate+r.phase-.25)+1,last=Math.floor(now*rate+r.phase-.25),out=[];for(let i=first;i<=last;i++)out.push((i+.25-r.phase)/rate);return out;}
-export function advanceRainWaves(pool: WavePool,before: number,now: number,rain: readonly RainDrop[],enabled: boolean){
- if(enabled)for(const r of rain)for(const time of landingsBetween(before,now,r))pool.add(r.x,r.z,time);
+export function advanceRainWaves(pool: WavePool,before: number,now: number,rain: readonly RainDrop[],enabled: boolean,strength=1){
+ if(enabled)for(const r of rain)for(const time of landingsBetween(before,now,r))pool.add(r.x,r.z,time,strength);
  return pool.active(now);
 }
 export function waveField(x: number,z: number,time: number,events: readonly WaveEvent[]=[]){

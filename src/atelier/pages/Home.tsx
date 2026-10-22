@@ -1,8 +1,8 @@
-import { useEffect, type PointerEvent } from 'react'
+import { useEffect, useState, type PointerEvent } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useWords } from '../hooks'
 import { centerOf, paint } from '../paint/bus'
-import { caption, weatherAt } from '../weather'
+import { caption, sessionClock, weatherNow } from '../weather'
 import { replayOverture } from '../shell/overtureCue'
 import type { ShellContext } from '../shell/Shell'
 
@@ -16,7 +16,8 @@ const doors = [
 /**
  * A name and four ways in, over the home painting (shell/HomeFrame.tsx).
  * Leaving parts the painting with a palette knife; the shell does that. The
- * weather in the corner goes back to the block of water, to watch a while.
+ * weather in the corner is the island's, as it is now, and goes back to the
+ * block of water to watch a while.
  */
 export default function Home() {
   const w = useWords(),
@@ -29,7 +30,12 @@ export default function Home() {
     const at = centerOf(e.currentTarget)
     if (at) paint('home', { type: 'pulse', ...at, radius: 0.06, amount: 0.4 })
   }
-  const [zh, en] = caption(weatherAt(new Date()))
+  const [weather, setWeather] = useState(() => weatherNow(sessionClock()))
+  useEffect(() => {
+    const timer = setInterval(() => setWeather(weatherNow(sessionClock())), 5000)
+    return () => clearInterval(timer)
+  }, [])
+  const [zh, en] = caption(weather)
   return (
     <div className="a-home">
       <h1 className="a-signature">

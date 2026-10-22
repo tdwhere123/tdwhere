@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { lightAt, type Sky, type Weather } from '../../weather'
-import { sunVector, transitionState, viewSpan, weatherProfile } from './state'
+import { DAY_MS, clockFrom, islandAt, lightAt, type Sky, type Weather } from '../../weather'
+import { PULL_BACK, islandSky, sunVector, transitionState, viewSpan, weatherProfile } from './state'
 
 const weather = (sky: Sky, hour = 13): Weather => ({ sky, hour, season: 'spring', strength: 0.8, lean: 0.1 })
 const profile = (sky: Sky, hour = 13) => {
@@ -11,11 +11,9 @@ const profile = (sky: Sky, hour = 13) => {
 describe('local weather rendered by the island', () => {
   it('keeps rain and snow distinct without precipitation in other skies', () => {
     for (const sky of ['rain', 'sun', 'wind', 'mist', 'snow'] as const) {
-      expect(profile(sky).rain).toBe(sky === 'rain')
-      expect(profile(sky).snow).toBe(sky === 'snow')
+      expect(profile(sky).rain > 0).toBe(sky === 'rain')
+      expect(profile(sky).snow > 0).toBe(sky === 'snow')
     }
-    expect(profile('snow').precipitationSpeed).toBe(0.25)
-    expect(profile('rain').precipitationSpeed).toBe(1)
   })
   it('reserves haze for mist and strengthens wind on windy days', () => {
     expect(profile('mist').mist).toBe(0.8)
@@ -24,7 +22,7 @@ describe('local weather rendered by the island', () => {
     expect(profile('wind').wind).toBeGreaterThan(profile('sun').wind)
   })
   it('dims night without losing the scene and warms evening tint', () => {
-    expect(profile('sun', 0).exposure).toBeCloseTo(0.45)
+    expect(profile('sun', 0).exposure).toBeCloseTo(0.55)
     expect(profile('sun', 13).exposure).toBeCloseTo(1)
     const evening = profile('sun', 18.5).tint
     expect(evening[0]).toBeGreaterThan(evening[2])
@@ -33,12 +31,12 @@ describe('local weather rendered by the island', () => {
 })
 
 describe('responsive scene footprint', () => {
-  it('enlarges the accepted desktop and phone model by 28 percent', () => {
-    expect(viewSpan(1440, 900)).toBeCloseTo(17.3 / 1.28)
-    expect(viewSpan(390, 844)).toBeCloseTo(12 / 1.28)
+  it('frames the accepted desktop and phone model, pulled back to leave the water a quarter of the screen', () => {
+    expect(viewSpan(1440, 900)).toBeCloseTo((17.3 / 1.28) * PULL_BACK)
+    expect(viewSpan(390, 844)).toBeCloseTo((12 / 1.28) * PULL_BACK)
   })
   it('reserves a vertical safe area above the original footer on short screens', () => {
-    expect(viewSpan(1000, 300) / (1000 / 300)).toBeGreaterThanOrEqual(5.6)
+    expect(viewSpan(1000, 300) / (1000 / 300)).toBeCloseTo(7.8)
   })
 })
 
@@ -85,5 +83,26 @@ describe('world-space time illumination', () => {
     expect(profile('sun', 0).glint).toBeCloseTo(0.1)
     expect(profile('sun', 13).glint).toBeCloseTo(1)
     expect(profile('sun', 18.5).glintTint[0]).toBeGreaterThan(profile('sun', 18.5).glintTint[2])
+  })
+})
+
+describe('the island sky through a turn of weather', () => {
+  it('passes from one spell to the next without a jump', () => {
+    const clock = clockFrom(new Date(2026, 9, 22, 15, 0).getTime())
+    let before = islandSky(clock, clock.start)
+    for (let ms = 0; ms <= DAY_MS; ms += 2000) {
+      const now = islandSky(clock, clock.start + ms)
+      expect(Math.abs(now.light.paper[0] - before.light.paper[0])).toBeLessThan(0.1)
+      expect(Math.abs(now.profile.rain - before.profile.rain)).toBeLessThan(0.1)
+      expect(Math.abs(now.profile.mist - before.profile.mist)).toBeLessThan(0.1)
+      before = now
+    }
+  })
+  it('shows the spell that is more than half in', () => {
+    const clock = clockFrom(new Date(2026, 9, 22, 15, 0).getTime())
+    for (let ms = 0; ms <= DAY_MS; ms += 5000) {
+      const { weather, next, turn } = islandAt(clock, clock.start + ms)
+      expect(islandSky(clock, clock.start + ms).weather.sky).toBe((turn < 0.5 ? weather : next).sky)
+    }
   })
 })
