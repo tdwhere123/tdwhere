@@ -81,17 +81,28 @@ export default function Overture() {
     html.style.overflow = 'hidden'
     let cancelled = false
     const leave = () => setStage((s) => (s === 'gone' ? s : 'leave'))
-    Promise.all([import('../paint/overture'), import('../paint/painter'), import('../paint/presets')])
-      .then(async ([{ mountOverture }, painter, { parseObjectPosition }]) => {
+    Promise.all([import('../paint/overture'), import('../paint/painter'), import('../paint/presets'), import('../paint/island/models')])
+      .then(async ([{ mountOverture }, painter, { parseObjectPosition }, { loadIslandModels, disposeModelResources }]) => {
         await painter.loadFrame(heroFrame)
         if (cancelled || !canvas.current) return
-        handle.current = mountOverture({
-          canvas: canvas.current,
-          clock: sessionClock(),
-          painting: () => painter.paintedFrame(heroFrame),
-          focus: parseObjectPosition(heroFrame.focus),
-          onDone: leave,
-        })
+        const models = await loadIslandModels()
+        if (cancelled || !canvas.current) {
+          disposeModelResources(models.coot, models.aerator)
+          return
+        }
+        try {
+          handle.current = mountOverture({
+            models,
+            canvas: canvas.current,
+            clock: sessionClock(),
+            painting: () => painter.paintedFrame(heroFrame),
+            focus: parseObjectPosition(heroFrame.focus),
+            onDone: leave,
+          })
+        } catch (error) {
+          disposeModelResources(models.coot, models.aerator)
+          throw error
+        }
         if (enterRequested.current) handle.current.enter()
       })
       .catch(() => {

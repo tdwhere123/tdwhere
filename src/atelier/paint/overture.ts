@@ -4,9 +4,10 @@ import type { Clock } from '../weather';
 import { rainSample } from './island/render-math';
 import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
 import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
-import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots, type Finish } from './island/aerator';
+import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots } from './island/aerator';
 import { makeFlock, startle, stepFlock } from './island/birds';
 import { buildCoot } from './island/coot';
+import { disposeModelResources, lightIslandModel, type IslandModels } from './island/models';
 import { islandSky, viewSpan, transitionState } from './island/state';
 type RainDrop = {
     x: number;
@@ -32,17 +33,10 @@ export function mountOverture(o: {
     painting: () => HTMLCanvasElement;
     focus: Vec2;
     onDone: () => void;
+    models: IslandModels;
 }): OvertureHandle {
     const { canvas, clock } = o;
     let sky = islandSky(clock, Date.now());
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-    const originalTouchAction = canvas.style.touchAction;
-    canvas.style.touchAction = 'none';
-    const homeTexture = new THREE.Texture();
-    homeTexture.colorSpace = THREE.SRGBColorSpace;
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-    renderer.setClearColor('#faf9f4');
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
     const scene = new THREE.Scene();
     scene.background = null;
     const camera = new THREE.OrthographicCamera(-8, 8, 5, -5, .1, 40);
@@ -53,28 +47,28 @@ export function mountOverture(o: {
     const random = randomSource();
     const noiseGLSL = `vec3 linearize(vec3 c){return mix(c/12.92,pow((max(c,vec3(0.))+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}`;
     // Backlit, as in the photograph: the sides toward the visitor take the sky's light from above and
-    // the water's from below, the yellow paddles glow where the sun comes through them, and after
-    // dusk the mast's lamp warms whatever is near it.
+    // the water's from below; after dusk the mast's lamp warms whatever is near it.
     const night = { value: 0 }, daylight = { value: sky.light.sun }, lampAt = { value: new THREE.Vector3() };
     const snowCover = { value: sky.profile.snow > 0 ? .6 : 0 };
     const shared = { sun: { value: sunDirection }, shade: { value: palette.deep }, lit: { value: palette.lit }, day: daylight, night, lampAt, snowCover };
-    const paint = (color: THREE.ColorRepresentation, finish: Finish = {}) => new THREE.ShaderMaterial({ side: THREE.DoubleSide, uniforms: { ...shared, color: { value: new THREE.Color(color) }, glow: { value: finish.glow ?? 0 }, shine: { value: finish.shine ?? 0 }, holes: { value: finish.holes ? 1 : 0 }, lamp: { value: finish.lamp ? 1 : 0 }, bare: { value: finish.bare ? 1 : 0 } }, vertexShader: `varying vec3 vWorld;varying vec3 vNormal;varying vec2 vUv;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);vWorld=w.xyz;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform vec3 color;uniform float glow;uniform float shine;uniform float holes;uniform float lamp;uniform vec3 sun;uniform vec3 shade;uniform vec3 lit;uniform float day;uniform float night;uniform vec3 lampAt;uniform float snowCover;uniform float bare;varying vec3 vWorld;varying vec3 vNormal;varying vec2 vUv;${noiseGLSL}
-void main(){if(holes>.5){vec2 g=fract(vUv*vec2(5.,4.))-.5;if(length(g)<.27&&vUv.x>.08&&vUv.x<.92&&vUv.y>.1&&vUv.y<.9)discard;}
-vec3 c=color;if(lamp>.5){gl_FragColor=vec4(c*(.2+7.*night),1.);return;}
-vec3 n=normalize(vNormal);if(!gl_FrontFacing)n=-n;vec3 view=normalize(cameraPosition-vWorld);vec3 L=linearize(lit)*(.2+.8*day);
-float d=max(dot(n,sun),0.),through=max(dot(-n,sun),0.);vec3 ambient=mix(linearize(shade)*1.4,linearize(lit),.5+.5*n.y);
-vec3 col=c*ambient*(.18+.32*day)+c*d*L*.85+c*through*glow*L;col+=L*pow(max(dot(n,normalize(sun+view)),0.),48.)*shine*.6;col+=L*pow(1.-max(dot(n,view),0.),3.)*.1*day;
-float settled=snowCover*(1.-bare)*smoothstep(.45,.85,n.y)*smoothstep(.3,.6,noise(vWorld.xz*60.));col=mix(col,vec3(.93,.95,1.)*(ambient*(.3+.4*day)+L*d*.6),settled);
-vec3 toLamp=lampAt-vWorld;col+=c*vec3(1.,.72,.38)*night*2.4*max(dot(n,normalize(toLamp)),.15)/(1.+dot(toLamp,toLamp)*22.);
-gl_FragColor=vec4(col,1.);}` });
-    const aerator = buildAerator(paint);
+    lightIslandModel(o.models.coot, shared, true);
+    lightIslandModel(o.models.aerator, shared, false);
+    const aerator = buildAerator(o.models.aerator);
     scene.add(aerator.group);
     let on = true, running = 1;
-    const flock = makeFlock(randomSource(clock.start % 2147483647 || 1), [AERATOR.x + 1.1, AERATOR.z + .7]), coots = flock.map(() => buildCoot(paint));
+    const flock = makeFlock(randomSource(clock.start % 2147483647 || 1), [AERATOR.x + 1.1, AERATOR.z + .7]), coots = flock.map(() => buildCoot(o.models.coot));
     for (const coot of coots) {
         coot.group.rotation.order = 'YXZ';
         scene.add(coot.group);
     }
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const originalTouchAction = canvas.style.touchAction;
+    canvas.style.touchAction = 'none';
+    const homeTexture = new THREE.Texture();
+    homeTexture.colorSpace = THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    renderer.setClearColor('#faf9f4');
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     const perchAt = PERCHES.map(() => new THREE.Vector3()), wakes = flock.map(() => new THREE.Vector4());
     // after dusk: a scatter of lights along the far shore, as across the river behind the film shelf
     const shore: { x: number; z: number; y: number; warm: number; phase: number }[] = [];
@@ -257,7 +251,7 @@ gl_FragColor=vec4(col,1.);}` });
         ride.pitch += (-Math.atan((at(0, 1) - at(0, -1)) / (2 * span)) * .7 - ride.pitch) * k;
         return ride;
     }
-    const lift = new THREE.Vector3(), glowAt = new THREE.Vector3();
+    const glowAt = new THREE.Vector3();
     /** Steps the coots and sets each one on the water, under it, or up on a pontoon. */
     function moveFlock(dt: number) {
         PERCHES.forEach((_, i) => aerator.perch(i, perchAt[i]));
@@ -265,27 +259,8 @@ gl_FragColor=vec4(col,1.);}` });
         for (const s of splashes)
             wavePool.add(s.x, s.z, elapsed, s.strength);
         flock.forEach((b, i) => {
-            const { group, head } = coots[i], w = waveField(b.x, b.z, elapsed), afloat = w.height - .015;
-            group.visible = true;
-            group.rotation.set(w.dz * .8, -b.heading, -w.dx * .8);
-            group.position.set(b.x, afloat, b.z);
-            head.position.x = .062 + Math.sin(elapsed * 9 + b.phase) * .006 * Math.min(2, b.speed / .07);
+            coots[i].update(b, elapsed, waveField(b.x, b.z, elapsed), perchAt);
             wakes[i].set(b.x, b.z, b.heading, b.mode === 'swim' || b.mode === 'flee' || b.mode === 'board' ? Math.min(1.4, b.speed / .08) : 0);
-            if (b.mode === 'dive') {
-                // tips forward and goes under, and is gone until it comes up
-                const down = Math.min(1, b.t / .3);
-                group.rotation.z += down * .9;
-                group.position.y = afloat - down * .1;
-                group.visible = b.t < .3;
-            }
-            else if (b.mode === 'perch')
-                group.position.copy(perchAt[b.perch]);
-            else if (b.mode === 'hop' || b.mode === 'leave') {
-                const k = Math.min(1, b.t / .35), up = b.mode === 'hop' ? k : 1 - k, top = perchAt[b.perch];
-                lift.set(b.x, afloat, b.z).lerp(top, up);
-                lift.y += Math.sin(k * Math.PI) * .08;
-                group.position.copy(lift);
-            }
         });
     }
     const gusts = () => Math.max(0, Math.min(1, (sky.profile.wind - .25) / 1.75));
@@ -441,15 +416,7 @@ gl_FragColor=vec4(col,1.);}` });
             if (drag && canvas.hasPointerCapture(drag.id))
                 canvas.releasePointerCapture(drag.id);
             drag = null;
-            const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
-            for (const root of [scene, rainScene, postScene])
-                root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
-                    geometries.add(object.geometry);
-                    for (const material of Array.isArray(object.material) ? object.material : [object.material])
-                        materials.add(material);
-                } });
-            geometries.forEach(g => g.dispose());
-            materials.forEach(m => m.dispose());
+            disposeModelResources(scene, rainScene, postScene, o.models.coot);
             homeTexture.dispose();
             target.dispose();
             rainTarget.dispose();

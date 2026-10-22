@@ -1,36 +1,42 @@
 import * as THREE from 'three'
-import type { Finish } from './aerator'
+import { clone } from 'three/addons/utils/SkeletonUtils.js'
+import type { Bird } from './birds'
 
-/** Water units from tail to bill. */
+/** Water units from tail to bill; the authored model is approximately this length. */
 export const COOT_LENGTH = 0.25
 
-/**
- * A coot as it sits on the water: a low black body, its tail cocked, the
- * head held up on a short neck with the white bill and shield. Faces +x.
- */
-export function buildCoot(paint: (color: THREE.ColorRepresentation, finish?: Finish) => THREE.Material) {
-  const group = new THREE.Group(),
-    black = paint('#16191c', { shine: 0.25, bare: true }),
-    white = paint('#ecebe4', { shine: 0.4, bare: true })
-  const blob = (r: [number, number, number], at: [number, number, number], material: THREE.Material, parent: THREE.Object3D = group) => {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), material)
-    mesh.scale.set(...r)
-    mesh.position.set(...at)
-    parent.add(mesh)
-    return mesh
+export function buildCoot(model: THREE.Group) {
+  const group = new THREE.Group(), visual = clone(model)
+  group.rotation.order = 'YXZ'
+  group.add(visual)
+  const head = visual.getObjectByName('head_pivot')
+  if (!head?.parent) throw new Error('Missing coot head_pivot')
+  group.updateMatrixWorld(true)
+  const restHead = head.position.clone()
+  const headForward = new THREE.Vector3(1, 0, 0).applyMatrix3(new THREE.Matrix3().setFromMatrix4(head.parent.matrixWorld.clone().invert()))
+  const lift = new THREE.Vector3()
+  return {
+    group,
+    update(bird: Bird, elapsed: number, wave: { height: number; dx: number; dz: number }, perches: THREE.Vector3[]) {
+      const afloat = wave.height - .015
+      group.visible = true
+      group.rotation.set(wave.dz * .8, -bird.heading, -wave.dx * .8)
+      group.position.set(bird.x, afloat, bird.z)
+      head.position.copy(restHead).addScaledVector(headForward, Math.sin(elapsed * 9 + bird.phase) * .006 * Math.min(2, bird.speed / .07))
+      if (bird.mode === 'dive') {
+        const down = Math.min(1, bird.t / .3)
+        // invariant: +X is the bill; negative Z pitch lowers it into the water.
+        group.rotation.z -= down * .9
+        group.position.y = afloat - down * .1
+        group.visible = bird.t < .3
+      } else if (bird.mode === 'perch') {
+        group.position.copy(perches[bird.perch])
+      } else if (bird.mode === 'hop' || bird.mode === 'leave') {
+        const k = Math.min(1, bird.t / .35), up = bird.mode === 'hop' ? k : 1 - k
+        lift.set(bird.x, afloat, bird.z).lerp(perches[bird.perch], up)
+        lift.y += Math.sin(k * Math.PI) * .08
+        group.position.copy(lift)
+      }
+    },
   }
-  blob([0.085, 0.042, 0.05], [0, 0.012, 0], black)
-  blob([0.034, 0.024, 0.034], [-0.07, 0.03, 0], black).rotation.z = 0.5
-  const head = new THREE.Group()
-  head.position.set(0.062, 0.03, 0)
-  group.add(head)
-  blob([0.02, 0.034, 0.018], [0, 0.02, 0], black, head).rotation.z = -0.4
-  blob([0.027, 0.025, 0.024], [0.014, 0.05, 0], black, head)
-  const bill = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.032, 10), white)
-  bill.rotation.z = -Math.PI / 2 - 0.15
-  bill.position.set(0.052, 0.044, 0)
-  head.add(bill)
-  blob([0.008, 0.013, 0.007], [0.037, 0.06, 0], white, head)
-  group.scale.setScalar(COOT_LENGTH / 0.2)
-  return { group, head }
 }
