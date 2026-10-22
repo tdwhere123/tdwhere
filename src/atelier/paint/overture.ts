@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { coverFit, type Vec2 } from './presets';
 import type { Clock } from '../weather';
 import { rainSample, waterViewDirection } from './island/render-math';
+import { WATER_BRUSH_GLSL } from './island/surface-brush';
+import { CootWakeTrail, COOT_WAKE_SAMPLES, cootWakeGLSL } from './island/wakes';
 import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
 import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
 import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots } from './island/aerator';
@@ -71,7 +73,7 @@ export function mountOverture(o: {
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setClearColor('#faf9f4');
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    const perchAt = PERCHES.map(() => new THREE.Vector3()), wakes = flock.map(() => new THREE.Vector4());
+    const perchAt = PERCHES.map(() => new THREE.Vector3()), wakeTrail = new CootWakeTrail(flock.length);
     // after dusk: a scatter of lights along the far shore, as across the river behind the film shelf
     const shore: { x: number; z: number; y: number; warm: number; phase: number }[] = [];
     for (const group of [-2.3, -1.75, -.9, -.3, .25]) {
@@ -97,7 +99,7 @@ export function mountOverture(o: {
     scene.add(lights);
     const wavePool = new WavePool();
     const drops = Array.from({ length: 48 }, () => new THREE.Vector4(0, 0, 10, 0));
-    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, viewDirection: { value: new THREE.Vector3() }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakes }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec3 viewDirection;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
+    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, viewDirection: { value: new THREE.Vector3() }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakeTrail.uniforms }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec3 viewDirection;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length * COOT_WAKE_SAMPLES}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}${WATER_BRUSH_GLSL}${cootWakeGLSL(flock.length)}
 void main(){vec2 p=vWorld.xz;vec2 u=p/vec2(1.2,.95);float a=atan(u.y,u.x),r=length(u);float bound=(2.9+.3*sin(2.*a+1.1)+.22*cos(3.*a-.4)+.12*sin(5.*a+.3)+.06*sin(7.*a+2.))*${WATER_SCALE.toFixed(3)};float rim=bound-r+(noise(p*7.)-.5)*.12;float edge=smoothstep(0.,.12,rim);if(edge<.004)discard;
 vec3 wave=waveField(p);vec2 rp=p*9.+vec2(time*.35,-time*.2);float e0=noise(rp),ex=noise(rp+vec2(.15,0.)),ez=noise(rp+vec2(0.,.15));vec3 n=normalize(vec3(-wave.y,1.,-wave.z)+vec3(e0-ex,0.,e0-ez)*(1.4+wind*1.6));
 vec3 view=viewDirection,halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
@@ -115,10 +117,11 @@ col=mix(col,image,mirrored*(.45+.35*noise(vec2(across*20.,along*9.-time*.7)))*(1
 col=mix(col,glintTint,rough*.3*glint);
 vec2 g=p-glitter;float zone=exp(-pow(dot(g,vec2(.94,.34))/1.7,2.)-pow(dot(g,vec2(-.34,.94))/1.1,2.));col=mix(col,mix(glintTint,shallow,.35),zone*.42*glitterGain);
 float spark=smoothstep(.7,.9,noise(p*vec2(12.,18.)+vec2(time*.8,-time*.6)))*smoothstep(.35,.75,noise(p*4.5+vec2(-time*.35,time*.25)));col+=glintTint*spark*smoothstep(.05,.6,zone)*glitterGain*2.6;
-float wake=0.;for(int i=0;i<${flock.length};i++){vec4 w=wakes[i];if(w.w<=0.)continue;vec2 f=vec2(cos(w.z),sin(w.z)),d=p-w.xy;float behind=-dot(d,f),off=abs(dot(d,vec2(-f.y,f.x)));wake+=exp(-pow((off-behind*.36)/(.01+behind*.03),2.))*smoothstep(.0,.06,behind)*exp(-behind*2.2)*w.w;}col=mix(col,mix(foamC,glintTint,.4),clamp(wake,0.,1.)*(.42-.28*night));
+col=mix(col,mix(shallow,glintTint,.12),cootWake(p)*(1.-.45*night));
 vec2 lampFoot=lampAt.xz;float la=dot(p-lampFoot,toCam),lx=dot(p-lampFoot,side)+wave.y*1.4+(e0-.5)*.05;float lampTrail=exp(-lx*lx/.0012)*smoothstep(-.02,.08,la)*exp(-max(la,0.)*1.3)*(.55+.45*noise(vec2(lx*60.,la*16.-time*1.2)));vec2 under=p-lampFoot;col+=vec3(1.,.62,.3)*night*(lampTrail*2.6+.4*exp(-dot(under,under)*7.)*(.75+.25*noise(p*9.+time*.3)));
 for(int i=0;i<${shore.length};i++){vec4 l=shore[i];float sa=dot(p-l.xy,toCam),sx=dot(p-l.xy,side)+wave.y*1.6+(e0-.5)*.06;float trail=exp(-sx*sx/(.0012+max(sa,0.)*.004))*smoothstep(.0,.2,sa)*exp(-sa*1.7)*smoothstep(.3,.75,noise(vec2(sx*30.+l.w,sa*18.-time*.9)));col+=mix(vec3(.88,.92,1.),vec3(1.,.68,.36),l.z)*trail*night*1.35;}
 col=mix(col,foamC,churn*.85);
+col+=waterBrush(vWorld.xz);
 gl_FragColor=vec4(linearize(col),edge*.92);}` });
     const waterGeo = new THREE.PlaneGeometry(13, 13, 200, 200);
     waterGeo.rotateX(-Math.PI / 2);
@@ -152,30 +155,18 @@ gl_FragColor=vec4(linearize(col),edge*.92);}` });
     rainScene.add(rainLines);
     const target = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true, samples: 4 }), rainTarget = new THREE.WebGLRenderTarget(2, 2, { depthBuffer: true });
     const postScene = new THREE.Scene(), postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    // Brushwork over everything, so paper, water and aerator share one hand: each pixel is smeared
-    // along a stroke, each dab leans a little toward cyan or blue, and the paint has a body the
-    // light catches. On entering, the home painting is laid down stroke by stroke.
-    const postMaterial = new THREE.ShaderMaterial({ uniforms: { image: { value: target.texture }, rainImage: { value: rainTarget.texture }, paper: { value: new THREE.Color(...sky.light.paper).convertSRGBToLinear() }, tint: { value: new THREE.Vector3(...sky.profile.tint) }, exposure: { value: sky.profile.exposure }, mist: { value: sky.profile.mist }, haze: { value: new THREE.Color() }, glows: { value: Array.from({ length: lightCount }, () => new THREE.Vector4()) }, glowTones: { value: Array.from({ length: lightCount }, (_, k) => new THREE.Vector3(lightColors[k * 3], lightColors[k * 3 + 1], lightColors[k * 3 + 2])) }, home: { value: homeTexture }, reveal: { value: 0 }, fitScale: { value: new THREE.Vector2(1, 1) }, fitOffset: { value: new THREE.Vector2() }, resolution: { value: new THREE.Vector2() }, from: { value: new THREE.Vector2(...sky.light.from) }, time: { value: 0 } }, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`, fragmentShader: `precision highp float;uniform sampler2D image;uniform sampler2D rainImage;uniform vec3 paper;uniform vec2 resolution;uniform vec3 tint;uniform float exposure;uniform float mist;uniform vec3 haze;uniform vec4 glows[${lightCount}];uniform vec3 glowTones[${lightCount}];uniform sampler2D home;uniform float reveal;uniform vec2 fitScale;uniform vec2 fitOffset;uniform vec2 from;uniform float time;varying vec2 vUv;${noiseGLSL}
+    // @anchor:surface-paint Water pigment and authored model UVs stay on their surfaces.
+    // Screen-space brushwork is reserved for the flat home painting during entry.
+    const postMaterial = new THREE.ShaderMaterial({ uniforms: { image: { value: target.texture }, rainImage: { value: rainTarget.texture }, paper: { value: new THREE.Color(...sky.light.paper).convertSRGBToLinear() }, tint: { value: new THREE.Vector3(...sky.profile.tint) }, exposure: { value: sky.profile.exposure }, mist: { value: sky.profile.mist }, haze: { value: new THREE.Color() }, glows: { value: Array.from({ length: lightCount }, () => new THREE.Vector4()) }, glowTones: { value: Array.from({ length: lightCount }, (_, k) => new THREE.Vector3(lightColors[k * 3], lightColors[k * 3 + 1], lightColors[k * 3 + 2])) }, home: { value: homeTexture }, reveal: { value: 0 }, fitScale: { value: new THREE.Vector2(1, 1) }, fitOffset: { value: new THREE.Vector2() }, resolution: { value: new THREE.Vector2() }, time: { value: 0 } }, vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`, fragmentShader: `precision highp float;uniform sampler2D image;uniform sampler2D rainImage;uniform vec3 paper;uniform vec2 resolution;uniform vec3 tint;uniform float exposure;uniform float mist;uniform vec3 haze;uniform vec4 glows[${lightCount}];uniform vec3 glowTones[${lightCount}];uniform sampler2D home;uniform float reveal;uniform vec2 fitScale;uniform vec2 fitOffset;uniform float time;varying vec2 vUv;${noiseGLSL}
 vec3 encode(vec3 c){return mix(c*12.92,1.055*pow(max(c,vec3(0.)),vec3(1./2.4))-.055,step(vec3(.0031308),c));}
-float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
 vec4 ground(vec2 uv){vec4 raw=texture2D(image,uv);vec3 col=raw.rgb/max(raw.a,.0001);col*=tint*exposure;col=mix(col,haze,mist*(.22+.36*uv.y));return vec4(encode(mix(paper,col,raw.a)),raw.a);}
 vec3 painting(vec2 uv){return encode(texture2D(home,clamp(uv,vec2(.001),vec2(.999))*fitScale+fitOffset).rgb);}
-float dab(vec2 q,vec2 dir,vec2 scale,float seed,out vec3 lean,out float bristle){vec2 perp=vec2(-dir.y,dir.x);vec2 sp=vec2(dot(q,dir),dot(q,perp))*scale+seed;sp.x+=hash(vec2(floor(sp.y),3.1+seed))*7.;vec2 cell=floor(sp),l=fract(sp);float h1=hash(cell+seed),h2=hash(cell+17.3),h3=hash(cell+5.1);float len=.62+h1*.34;float shape=1.-smoothstep(.5,1.,length(vec2((l.x-.5)/(len*.5),(l.y-.5)/.42)));lean=(h2-.5)*vec3(-.35,.5,.2)+(h3-.5)*.6;bristle=noise(vec2(sp.x*.6,sp.y*2.2)+h1*10.)*shape;return shape;}
 void main(){float m=min(resolution.x,resolution.y);vec2 q=(vUv-.5)*resolution/m;vec2 toUv=m/resolution;
-vec4 here=ground(vUv);float worked=mix(.08,1.,smoothstep(.02,.3,here.a));
+vec3 col=ground(vUv).rgb;
 float a=.04+(noise(q*2.6+time*.02)-.5)*.8;vec2 dir=vec2(cos(a),sin(a)),perp=vec2(-dir.y,dir.x);
-vec3 leanA,leanB;float bristleA,bristleB;float dabA=dab(q,dir,vec2(28.,96.),0.,leanA,bristleA);float b=a+.3;float dabB=dab(q+.013,vec2(cos(b),sin(b)),vec2(24.,84.),11.3,leanB,bristleB)*(1.-dabA);
-vec3 lean=leanA*dabA+leanB*dabB;float bristle=bristleA+bristleB*(1.-dabA);
-vec2 along=dir*toUv*.008*(.55+noise(q*9.)*.9);vec3 col=vec3(0.);float wsum=0.;
-for(int i=-2;i<=2;i++){float k=float(i)/2.,w=1.-abs(k)*.5;col+=ground(vUv+along*k).rgb*w;wsum+=w;}
-vec3 sharp=here.rgb;col=mix(col/wsum,sharp,.4);
-float laid=0.;if(reveal>0.){float due=length(q)*.45+noise(q*3.)*.22+noise(vec2(dot(q,dir)*5.,dot(q,perp)*34.))*.22;due=clamp(due*.85,.06,.94);laid=smoothstep(due-.07,due+.07,reveal*1.25-.1);vec3 paint=vec3(0.);for(int i=-2;i<=2;i++)paint+=painting(vUv+dir*toUv*float(i)*.005);col=mix(col,paint/5.,laid);sharp=mix(sharp,painting(vUv),laid);}
+float laid=0.;if(reveal>0.){float due=length(q)*.45+noise(q*3.)*.22+noise(vec2(dot(q,dir)*5.,dot(q,perp)*34.))*.22;due=clamp(due*.85,.06,.94);laid=smoothstep(due-.07,due+.07,reveal*1.25-.1);vec3 paint=vec3(0.);for(int i=-2;i<=2;i++)paint+=painting(vUv+dir*toUv*float(i)*.005);col=mix(col,paint/5.,laid);}
 vec3 glow=vec3(0.);for(int i=0;i<${lightCount};i++){vec4 g=glows[i];if(g.w<=0.)continue;vec2 d=(vUv-g.xy)*resolution/m;float r2=dot(d,d)/(g.z*g.z);glow+=glowTones[i]*g.w*(exp(-r2)*.6+exp(-r2*.15)*.1);}
-col=encode(linearize(col)+glow*(1.-laid)*(.9+.2*bristle));
-col+=lean*.075*worked*(1.-laid);
-float height=lum(sharp)*.75+bristle*.2*worked;
-vec2 dH=vec2(dFdx(height),dFdy(height));vec3 N=normalize(vec3(-dH*4.*(resolution.y/800.),1.));vec3 L=normalize(vec3(from,.9));
-col*=.86+dot(N,L)*.2;col+=pow(max(dot(reflect(-L,N),vec3(0.,0.,1.)),0.),20.)*.05;
+col=encode(linearize(col)+glow*(1.-laid));
 vec4 rain=texture2D(rainImage,vUv);col=encode(rain.rgb*(1.-laid)+linearize(clamp(col,0.,1.))*(1.-rain.a*(1.-laid)));
 gl_FragColor=vec4(col,1.);}` });
     postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial));
@@ -296,8 +287,8 @@ gl_FragColor=vec4(col,1.);}` });
             wavePool.add(s.x, s.z, elapsed, s.strength);
         flock.forEach((b, i) => {
             coots[i].update(b, elapsed, waveField(b.x, b.z, elapsed), perchAt);
-            wakes[i].set(b.x, b.z, b.heading, b.mode === 'swim' || b.mode === 'greet' || b.mode === 'flee' || b.mode === 'board' ? Math.min(1.4, b.speed / .08) : 0);
         });
+        wakeTrail.update(flock, elapsed);
     }
     const gusts = () => Math.max(0, Math.min(1, (sky.profile.wind - .25) / 1.75));
     /** Carries the island's sky into the uniforms. */
@@ -328,7 +319,6 @@ gl_FragColor=vec4(col,1.);}` });
         // fog is lit from within: a little lighter than the paper, and warmer where lamps shine in it
         post.haze.value.setRGB(...light.paper).lerp(new THREE.Color(...light.light), .1 + night.value * .1).convertSRGBToLinear();
         snowCover.value = Math.max(0, Math.min(1, snowCover.value + dt * (profile.snow > .05 ? profile.snow * .03 : -.012)));
-        post.from.value.set(...light.from);
         // the sun's glitter lies on the far water and crosses it from left to right through the day
         const hour = sky.weather.hour, moon = hour < 5 || hour >= 21.5, arc = Math.max(0, Math.min(1, (hour - 6) / 13)), right = moon ? 1.4 : -1.6 + arc * 4.4;
         // screen right is (.94, .34) on the water at the usual view, and far is (.34, -.94)
