@@ -180,12 +180,10 @@ export default function Overture() {
       style={{ background: css(p) }}
     >
       <canvas ref={canvas} aria-hidden="true" />
-      <div className="a-pond-tools">
-        <div className="a-pond-actions" role="group" aria-label={w('水边互动', 'Pond interactions')}>
+      <div className="a-pond-keyboard" role="group" aria-label={w('水边互动', 'Pond interactions')}>
           <button type="button" disabled={!ready || stage !== 'rest'} onClick={() => handle.current?.interact('bird')}>{w('与骨顶鸡打个招呼', 'Greet a coot')}</button>
           <button type="button" disabled={!ready || stage !== 'rest'} onClick={() => handle.current?.interact('water')}>{w('轻点水面', 'Touch the water')}</button>
           <button type="button" disabled={!ready || stage !== 'rest'} aria-pressed={running} onClick={() => handle.current?.interact('machine')}>{w('增氧机', 'Aerator')} · {running ? w('开', 'on') : w('关', 'off')}</button>
-        </div>
         <p className="a-pond-feedback" role="status" aria-live="polite" aria-atomic="true">{feedback === 'greet' ? w('看了一眼，慢慢游开。', 'A glance, then a gentle turn away.') : feedback === 'leave' ? w('从浮筒回到水里。', 'Back into the water from the pontoon.') : feedback === 'water' ? w('涟漪从这里散开。', 'Ripples spread from here.') : feedback === 'running' ? w('水轮重新转起来了。', 'The paddlewheels are turning again.') : feedback === 'stopped' ? w('水轮慢慢停下，水面也静下来。', 'The wheels slow down; the water settles.') : ''}</p>
       </div>
       <div className="a-overture-foot">

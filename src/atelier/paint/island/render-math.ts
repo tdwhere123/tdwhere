@@ -1,3 +1,10 @@
+import type { Camera, Vector3 } from 'three';
+
+// invariant: orthographic rays are parallel, including when the entry target translates.
+export function waterViewDirection(camera: Camera, out: Vector3): Vector3 {
+  return camera.getWorldDirection(out).negate();
+}
+
 export type RainTiming = { speed: number; phase: number };
 export const PAPER_SRGB=[250/255,249/255,244/255];
 export const toLinear=(x: number)=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4;

@@ -54,6 +54,27 @@ describe('weather', () => {
     const base = { season: 'spring', hour: 13, strength: 1, lean: 0 } as const
     expect(lightAt({ ...base, sky: 'rain' }).sun).toBeLessThan(lightAt({ ...base, sky: 'sun' }).sun)
   })
+  it('advances the caption and light with island time, not the starting wall hour', () => {
+    const start = weatherNow(clock, clock.start)
+    const later = weatherNow(clock, clock.start + 5 * 60_000)
+    expect(start.hour).toBe(15)
+    expect(later.hour).toBe(21)
+    expect(caption(start)[0]).toContain('日下午')
+    expect(caption(later)[0]).toContain('日傍晚')
+    expect(lightAt(later).sun).toBeLessThan(lightAt(start).sun)
+    expect(caption(later)).toEqual(['秋日傍晚，天很清。', 'Autumn evening, clear.'])
+  })
+  it('does not promise sunshine once clear dusk reaches night lighting', () => {
+    const clear = (hour: number) => ({ season: 'autumn', sky: 'sun', hour, strength: 0.5, lean: 0 }) as const
+    expect(caption(clear(18.5))).toEqual(['秋日傍晚，有太阳。', 'Autumn evening, sunny.'])
+    for (const hour of [20, 21, 21.49]) {
+      expect(lightAt(clear(hour)).sun).toBeLessThanOrEqual(0.15)
+      expect(caption(clear(hour))).toEqual(['秋日傍晚，天很清。', 'Autumn evening, clear.'])
+    }
+    expect(caption(clear(21.5))).toEqual(['秋夜，天很清。', 'Autumn night, clear.'])
+    expect(caption(clear(5))).toEqual(['秋日清晨，天很清。', 'Autumn early morning, clear.'])
+    expect(caption(clear(6.5))).toEqual(['秋日清晨，有太阳。', 'Autumn early morning, sunny.'])
+  })
   it('names the season, the hour and the weather', () => {
     expect(caption({ season: 'autumn', sky: 'rain', hour: 18, strength: 0.5, lean: 0 })).toEqual([
       '秋日傍晚，在下雨。',

@@ -211,6 +211,9 @@ export function lightAt(w: Weather): Light {
 export function caption(w: Weather): [string, string] {
   const h = w.hour
   const night = h < 5 || h >= 21.5
+  // Use the sky's light, not another hour cutoff: at sun <= .15 the
+  // renderer has fully transitioned to night lighting, even during dusk.
+  const sunshine = lightAt(w).sun > 0.15
   const season: Record<Season, [string, string]> = {
     spring: ['春', 'Spring'],
     summer: ['夏', 'Summer'],
@@ -230,7 +233,7 @@ export function caption(w: Weather): [string, string] {
             : ['日傍晚', 'evening']
   const what: Record<Sky, [string, string]> = {
     rain: ['在下雨', 'raining'],
-    sun: [night ? '天很清' : '有太阳', night ? 'clear' : 'sunny'],
+    sun: [sunshine ? '有太阳' : '天很清', sunshine ? 'sunny' : 'clear'],
     wind: ['起风了', 'windy'],
     mist: ['有雾', 'misty'],
     snow: ['在下雪', 'snowing'],

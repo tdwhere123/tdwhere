@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { coverFit, type Vec2 } from './presets';
 import type { Clock } from '../weather';
-import { rainSample } from './island/render-math';
+import { rainSample, waterViewDirection } from './island/render-math';
 import { WavePool, waveField, WAVE_GLSL, advanceRainWaves } from './island/waves';
 import { isOpenWater, randomSource, waterField, ELEVATION, WATER_SCALE } from './island/math';
 import { AERATOR, LAMP, PERCHES, aeratorAxis, aeratorWake, buildAerator, wheelSpots } from './island/aerator';
@@ -97,20 +97,20 @@ export function mountOverture(o: {
     scene.add(lights);
     const wavePool = new WavePool();
     const drops = Array.from({ length: 48 }, () => new THREE.Vector4(0, 0, 10, 0));
-    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakes }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
+    const waterMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { time: { value: 0 }, glint: { value: sky.profile.glint }, glintTint: { value: new THREE.Vector3(...sky.profile.glintTint) }, sun: { value: sunDirection }, viewDirection: { value: new THREE.Vector3() }, drops: { value: drops }, shallow: { value: palette.shallow }, deep: { value: palette.deep }, foamC: { value: palette.foam }, wind: { value: 0 }, wheels: { value: wheelSpots.map(([x, z]) => new THREE.Vector3(x, z, 1)) }, aer: { value: new THREE.Vector2(AERATOR.x, AERATOR.z) }, aerAxis: { value: new THREE.Vector2(...aeratorAxis) }, wake: { value: new THREE.Vector2(...aeratorWake) }, glitter: { value: new THREE.Vector2() }, glitterGain: { value: 1 }, wakes: { value: wakes }, night, lampAt, shore: { value: shore.map(l => new THREE.Vector4(l.x, l.z, l.warm, l.phase)) } }, vertexShader: `uniform float time;uniform vec4 drops[48];varying vec3 vWorld;varying vec3 vNormal;${WAVE_GLSL}void main(){vec4 w=modelMatrix*vec4(position,1.);vec3 wave=waveField(w.xz);w.y+=wave.x;vWorld=w.xyz;vNormal=normalize(vec3(-wave.y,1.,-wave.z));gl_Position=projectionMatrix*viewMatrix*w;}`, fragmentShader: `precision highp float;uniform float time;uniform float glint;uniform vec3 glintTint;uniform vec3 sun;uniform vec3 viewDirection;uniform vec4 drops[48];uniform vec3 shallow;uniform vec3 deep;uniform vec3 foamC;uniform float wind;uniform vec3 wheels[4];uniform vec2 aer;uniform vec2 aerAxis;uniform vec2 wake;uniform vec2 glitter;uniform float glitterGain;uniform vec4 wakes[${flock.length}];uniform float night;uniform vec3 lampAt;uniform vec4 shore[${shore.length}];varying vec3 vWorld;varying vec3 vNormal;${noiseGLSL}${WAVE_GLSL}
 void main(){vec2 p=vWorld.xz;vec2 u=p/vec2(1.2,.95);float a=atan(u.y,u.x),r=length(u);float bound=(2.9+.3*sin(2.*a+1.1)+.22*cos(3.*a-.4)+.12*sin(5.*a+.3)+.06*sin(7.*a+2.))*${WATER_SCALE.toFixed(3)};float rim=bound-r+(noise(p*7.)-.5)*.12;float edge=smoothstep(0.,.12,rim);if(edge<.004)discard;
 vec3 wave=waveField(p);vec2 rp=p*9.+vec2(time*.35,-time*.2);float e0=noise(rp),ex=noise(rp+vec2(.15,0.)),ez=noise(rp+vec2(0.,.15));vec3 n=normalize(vec3(-wave.y,1.,-wave.z)+vec3(e0-ex,0.,e0-ez)*(1.4+wind*1.6));
-vec3 view=normalize(cameraPosition-vWorld),halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
+vec3 view=viewDirection,halfV=normalize(sun+view);float nh=max(dot(n,halfV),0.),nl=max(dot(n,sun),0.);float visibility=smoothstep(0.,.18,nl);float rough=pow(nh,48.)*visibility,fine=pow(nh,180.)*visibility;
 float depth=smoothstep(.1,2.2,rim);
 vec3 col=mix(shallow,deep,clamp(depth*.8+(noise(p*1.1)-.5)*.16+(noise(p*3.7+vec2(time*.04,0.))-.5)*.2,0.,1.));col*=.9+.18*nl;
 float paws=smoothstep(.56,.82,noise(p*vec2(1.4,3.4)+vec2(time*.45,time*.1)))*wind;col=mix(col,deep,paws*.24);
 col=mix(col,deep,(1.-smoothstep(0.,.16,rim))*.32);
 float churn=0.;for(int i=0;i<4;i++){vec2 d=p-wheels[i].xy;float al=dot(d,wake),ac=dot(d,vec2(wake.y,-wake.x));churn+=exp(-ac*ac/.006)*smoothstep(-.16,-.04,al)*exp(-max(al,0.)*3.)*wheels[i].z;}churn=clamp(churn,0.,1.)*(.4+.6*noise(p*34.-wake*time*3.));
-const float S=${AERATOR.size.toFixed(2)};vec2 rel=p-aer;vec2 toCam=normalize(cameraPosition.xz-aer),side=vec2(toCam.y,-toCam.x);float along=dot(rel,toCam)/S,across=dot(rel,side)+wave.y*.8+(e0-.5)*.06,spread=dot(aerAxis,side)*S;
-float yel=0.;for(int i=0;i<4;i++)yel=max(yel,exp(-pow((across-dot(wheels[i].xy-aer,side))/(.07*S),2.)));
+const float S=${AERATOR.size.toFixed(2)};vec2 rel=p-aer;vec2 toCam=normalize(viewDirection.xz),side=vec2(toCam.y,-toCam.x);float along=dot(rel,toCam)/S,across=dot(rel,side)+wave.y*.8+(e0-.5)*.06,spread=dot(aerAxis,side)*S;
+float blade=0.;for(int i=0;i<4;i++)blade=max(blade,exp(-pow((across-dot(wheels[i].xy-aer,side))/(.07*S),2.)));
 float wht=max(exp(-pow((across-.3*spread)/(.08*S),2.)),exp(-pow((across+.3*spread)/(.08*S),2.))),nav=exp(-pow(across/(.09*S),2.));
 float reach=.55*abs(spread)+.12*S;float mirrored=smoothstep(reach,reach-.1,abs(across))*smoothstep(-.04,.04,along)*(1.-smoothstep(.12,.48,along));
-vec3 image=mix(deep*.7,vec3(.95,.76,.12),yel);image=mix(image,vec3(.86,.87,.85),wht*(1.-yel));image=mix(image,vec3(.16,.22,.34),nav);
+vec3 image=mix(deep*.7,vec3(.48,.52,.43),blade);image=mix(image,vec3(.78,.79,.72),wht*(1.-blade));image=mix(image,vec3(.16,.22,.34),nav);
 col=mix(col,image,mirrored*(.45+.35*noise(vec2(across*20.,along*9.-time*.7)))*(1.-churn*.6));
 col=mix(col,glintTint,rough*.3*glint);
 vec2 g=p-glitter;float zone=exp(-pow(dot(g,vec2(.94,.34))/1.7,2.)-pow(dot(g,vec2(-.34,.94))/1.1,2.));col=mix(col,mix(glintTint,shallow,.35),zone*.42*glitterGain);
@@ -355,6 +355,7 @@ gl_FragColor=vec4(col,1.);}` });
         camera.position.set(Math.sin(yaw) * 12 * Math.cos(ELEVATION), 12 * Math.sin(ELEVATION), Math.cos(yaw) * 12 * Math.cos(ELEVATION)).add(look);
         camera.lookAt(look);
         camera.updateMatrixWorld();
+        waterViewDirection(camera, waterMaterial.uniforms.viewDirection.value);
         waterMaterial.uniforms.time.value = elapsed;
         postMaterial.uniforms.time.value = elapsed;
         const { profile } = sky, falling = (r: RainDrop) => r.threshold < (r.kind ? profile.snow : profile.rain);
