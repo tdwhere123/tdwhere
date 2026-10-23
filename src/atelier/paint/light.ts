@@ -17,12 +17,16 @@ export function paintingLight(sky: ReturnType<typeof islandSky>): PaintLight {
 /** sRGB in/out: shared by the raw WebGL painting and Three's final handoff. */
 export const PAINT_LIGHT_GLSL = `
 vec3 lightPigment(vec3 color, vec3 tint, vec3 shade, float exposure, float sun) {
-  float l = dot(color, vec3(.299, .587, .114));
-  float shadow = 1. - smoothstep(.12, .65, l);
-  // The sky lives in the shadows; sunlight stays in the warm, broken highlights.
-  color = mix(color, color * .84 + shade * .16, shadow * .48);
-  color *= mix(vec3(1.), tint, .22 + smoothstep(.4, .9, l) * .28) * exposure;
-  color += tint * pow(max(l, 0.), 3.) * sun * .035;
+  vec3 luma = vec3(.299, .587, .114);
+  float l = dot(color, luma);
+  float shadow = 1. - smoothstep(.15, .55, l), high = smoothstep(.5, .9, l);
+  // Temperature, not exposure: the sky's hue goes into the shadows and the sun's into the lights,
+  // so the painting keeps the values the painter gave it.
+  color *= mix(vec3(1.), shade / max(dot(shade, luma), .05), shadow * .22);
+  color *= mix(vec3(1.), tint / max(dot(tint, luma), .05), high * .4);
+  // dusk lowers the middle tones first; the brightest strokes hold their light
+  color *= mix(exposure, 1., high * .55);
+  color += tint * pow(max(l, 0.), 3.) * sun * .04;
   return color;
 }
 `

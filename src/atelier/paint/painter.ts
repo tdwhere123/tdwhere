@@ -76,6 +76,8 @@ function stroke(
   color: Hsl,
   alpha: number,
   r: Rng,
+  /** Paint thickness: the same bristles, drawn in grey on a height layer. */
+  relief?: { ctx: CanvasRenderingContext2D; height: number },
 ) {
   const dx = Math.cos(angle) * length * 0.5,
     dy = Math.sin(angle) * length * 0.5
@@ -94,15 +96,26 @@ function stroke(
     const edge = 1 - t * t * 2.4
     const head = Math.max(0.2, edge * (0.8 + r() * 0.25)),
       tail = Math.max(0.15, edge * (0.6 + r() * 0.4))
-    ctx.beginPath()
-    ctx.moveTo(x - dx * head + nx * o, y - dy * head + ny * o)
-    ctx.quadraticCurveTo(
-      x + nx * (o + bend),
-      y + ny * (o + bend),
-      x + dx * tail + nx * o,
-      y + dy * tail + ny * o,
-    )
-    ctx.stroke()
+    const path = (c: CanvasRenderingContext2D) => {
+      c.beginPath()
+      c.moveTo(x - dx * head + nx * o, y - dy * head + ny * o)
+      c.quadraticCurveTo(
+        x + nx * (o + bend),
+        y + ny * (o + bend),
+        x + dx * tail + nx * o,
+        y + dy * tail + ny * o,
+      )
+      c.stroke()
+    }
+    path(ctx)
+    if (relief) {
+      // a ridge down the middle of the stroke, a groove between bristles
+      const h = relief.height * (0.72 + edge * 0.28) + (r() - 0.5) * 0.1
+      relief.ctx.lineCap = 'round'
+      relief.ctx.lineWidth = ctx.lineWidth
+      relief.ctx.strokeStyle = `hsla(0,0%,${Math.min(1, Math.max(0, h)) * 100}%,${Math.min(1, alpha * 1.15)})`
+      path(relief.ctx)
+    }
   }
 }
 
@@ -424,7 +437,7 @@ function pixels(image: CanvasImageSource, w: number, h: number) {
  * does), small strokes only where there is detail, a scatter of broken-color
  * dots, and thick dabs of light wherever the film caught a highlight.
  */
-function paintPhoto(image: HTMLImageElement, seed: number, width: number, height: number, airy = false) {
+function paintPhoto(image: HTMLImageElement, seed: number, width: number, height: number) {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -451,27 +464,19 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
   const color = (rgb: [number, number, number], amount: number) => {
     const c = hslOf(...rgb)
     // painters push color a little past what the film recorded
-    if (airy) {
-      // Colored shadows and pearl lights, not an exposure wash over the photograph.
-      const shadow = 1 - smooth(0.12, 0.58, c[2])
-      const blue = c[0] > 150 && c[0] < 290
-      const hue = blue ? c[0] + (208 - c[0]) * shadow * 0.35 : c[0]
-      return shift([hue, Math.min(0.78, c[1] * 1.12 + 0.045),
-        Math.min(0.96, c[2] + 0.045 + shadow * 0.075)], r, amount)
-    }
     return shift([c[0], Math.min(1, c[1] * 1.18 + 0.03), c[2]], r, amount)
   }
   const photoPasses = [
     { width: 54, length: 210, count: 520, alpha: 0.45, jitter: 0.6, source: coarse, detailed: false },
     { width: 22, length: 100, count: 2800, alpha: 0.7, jitter: 0.8, source: middle, detailed: false },
-    { width: airy ? 11 : 8, length: airy ? 48 : 36, count: airy ? 8000 : 11000, alpha: 0.88, jitter: 0.7, source: fine, detailed: true },
+    { width: 8, length: 36, count: 11000, alpha: 0.88, jitter: 0.7, source: fine, detailed: true },
   ]
   for (const pass of photoPasses)
     for (let i = 0; i < Math.round(pass.count * area); i++) {
       const x = r(),
         y = r()
       const f = flow(x, y)
-      if (pass.detailed && r() > (airy ? 0.1 : 0.2) + f.detail * 0.8) continue
+      if (pass.detailed && r() > 0.2 + f.detail * 0.8) continue
       // calm passages lie level, as water does; edges are followed
       const level = (r() - 0.5) * 0.22,
         follow = smooth(0.2, 0.6, f.detail)
@@ -503,11 +508,10 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
     const x = r(),
       y = r()
     const l = fine.lum(x, y)
-    const threshold = airy ? 0.64 : 0.74
-    if (l < threshold || r() > (l - threshold) * 4) continue
+    if (l < 0.74 || r() > (l - 0.74) * 4) continue
     const c = color(fine.rgb(x, y), 0.4)
     const lit: Hsl = [c[0] < 90 || c[0] > 300 ? 46 : c[0], c[1] * 0.6, Math.min(0.97, c[2] + 0.1)]
-    const size = (airy ? 5 + r() * 9 : 4 + r() * 6) * unit
+    const size = (4 + r() * 6) * unit
     stroke(ctx, x * width, y * height, (r() - 0.5) * 0.3, size * 2.6, size * 0.6, lit, 0.9, r)
     if (l > 0.92 && r() < 0.12) {
       stroke(ctx, x * width, y * height, 0, size * 3.6, size * 0.2, lit, 0.7, r)
@@ -517,11 +521,209 @@ function paintPhoto(image: HTMLImageElement, seed: number, width: number, height
   return canvas
 }
 
-/** Authoring-only: bake this once with scripts/bake-home.mjs, not on a visitor's main thread. */
-export function paintHome(frame: FilmFrame) {
+/** OKLab, so lightness and chroma move without dragging hue (HSL turns the film's near-blacks rust). */
+type Lab = [number, number, number]
+const linear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+const gamma = (c: number) => (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055)
+function labOf(red: number, green: number, blue: number): Lab {
+  const r = linear(red), g = linear(green), b = linear(blue)
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b),
+    m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b),
+    s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ]
+}
+function rgbOfLab([L, a, b]: Lab): [number, number, number] | null {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3,
+    m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3,
+    s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3
+  const rgb = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ]
+  if (rgb.some((c) => c < -0.002 || c > 1.002)) return null
+  return rgb.map((c) => gamma(Math.min(1, Math.max(0, c)))) as [number, number, number]
+}
+/** Lightness, chroma and hue (radians) as paint: out of gamut, it loses chroma, never hue. */
+function lch(L: number, C: number, h: number): Hsl {
+  for (let k = 0; k < 10; k++, C *= 0.8) {
+    const rgb = rgbOfLab([L, C * Math.cos(h), C * Math.sin(h)])
+    if (rgb) return hslOf(...rgb)
+  }
+  const v = gamma(Math.min(1, Math.max(0, L)) ** 3)
+  return [0, 0, v]
+}
+const turn = (from: number, to: number, t: number) =>
+  from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t
+const deg = Math.PI / 180
+
+/**
+ * The home painting's palette, after the Impressionists on water: no black,
+ * shadows laid as ultramarine and violet with teal beside them, light broken
+ * into cream, pale yellow, rose and sky instead of white.
+ */
+function waterColor(rgb: [number, number, number], r: Rng, amount: number): Hsl {
+  const [l0, a, b] = labOf(...rgb)
+  let C = Math.hypot(a, b),
+    h = Math.atan2(b, a)
+  const shadow = 1 - smooth(0.28, 0.62, l0)
+  // the film's near-blacks take ultramarine outright (turning through red would muddy them);
+  // blues lean a little toward violet in shade; warm colors keep their hue
+  const neutral = 1 - smooth(0.03, 0.08, C)
+  if (shadow * neutral > 0.5) h = 262 * deg
+  else if (Math.cos(h - 262 * deg) > 0.5) h = turn(h, 268 * deg, shadow * 0.4)
+  C = Math.max(C * (1 + (1 - shadow) * 0.15), (0.035 + 0.03 * shadow) * shadow)
+  // a film's curve: deep, colored shadows and a held shoulder, not a lifted, even middle
+  let L = 0.1 + (l0 + (l0 * l0 * (3 - 2 * l0) - l0) * 0.45) * 0.89
+  h += (r() - 0.5) * 0.32 * amount
+  L += (r() - 0.5) * 0.05 * amount
+  C *= 1 + (r() - 0.5) * 0.3 * amount
+  // broken color: now and then a stroke of the neighbouring hue, violet one way, teal the other
+  if (r() < 0.24 * amount * shadow) {
+    h += r() < 0.55 ? 0.55 : -0.62
+    C *= 1.25
+  }
+  return lch(Math.min(0.95, L), C, h)
+}
+
+/** Glitter in the colors light takes on water: [lightness, chroma, hue°], warm first. */
+const glints: [number, number, number][] = [
+  [0.97, 0.025, 92],
+  [0.94, 0.055, 98],
+  [0.91, 0.032, 45],
+  [0.92, 0.03, 230],
+]
+
+/**
+ * The home painting: the hero frame repainted at 2560 px, with a height layer
+ * of the same strokes so the live engine can rake light across real paint.
+ * Authoring-only: bake it with scripts/bake-home.mjs, never on a visitor's main thread.
+ */
+export function paintHome(frame: FilmFrame, width = 2560) {
   const image = decoded.get(frame.id)
   if (!image) throw new Error(`frame ${frame.id} is not loaded`)
-  return paintPhoto(image, 1931, 1600, Math.round(1600 * image.naturalHeight / image.naturalWidth), true)
+  const height = Math.round((width * image.naturalHeight) / image.naturalWidth)
+  const layer = () => {
+    const c = document.createElement('canvas')
+    c.width = width
+    c.height = height
+    return c
+  }
+  const canvas = layer(),
+    reliefCanvas = layer()
+  const ctx = canvas.getContext('2d')!,
+    depth = reliefCanvas.getContext('2d')!
+  const r = rng(1931)
+  const fine = pixels(image, width, height),
+    middle = pixels(image, Math.round(width / 4), Math.round(height / 4)),
+    coarse = pixels(image, Math.max(8, Math.round(width / 16)), Math.max(8, Math.round(height / 16)))
+  const area = (width * height) / (1600 * 1000),
+    unit = Math.min(width, height) / 1000
+  // the ground: the coarse picture in the painting's own colors, soft as a first wash
+  const wash = document.createElement('canvas')
+  wash.width = coarse.canvas.width
+  wash.height = coarse.canvas.height
+  const washCtx = wash.getContext('2d')!
+  for (let y = 0; y < wash.height; y++)
+    for (let x = 0; x < wash.width; x++) {
+      const c = waterColor(coarse.rgb((x + 0.5) / wash.width, (y + 0.5) / wash.height), r, 0.3)
+      washCtx.fillStyle = `hsl(${c[0]},${c[1] * 100}%,${c[2] * 100}%)`
+      washCtx.fillRect(x, y, 1, 1)
+    }
+  ctx.imageSmoothingQuality = 'high'
+  ctx.filter = `blur(${Math.round(6 * unit)}px)`
+  ctx.drawImage(wash, 0, 0, width, height)
+  ctx.filter = 'none'
+  depth.fillStyle = 'hsl(0,0%,12%)'
+  depth.fillRect(0, 0, width, height)
+  const dx = 1.5 / (width / 16),
+    dy = 1.5 / (height / 16)
+  const flow = (x: number, y: number) => {
+    const gx = coarse.lum(x + dx, y) - coarse.lum(x - dx, y),
+      gy = coarse.lum(x, y + dy) - coarse.lum(x, y - dy)
+    let angle = Math.atan2(gy, gx) + Math.PI / 2
+    if (angle > Math.PI / 2) angle -= Math.PI
+    return { angle, detail: Math.min(1, Math.hypot(gx, gy) * 9) }
+  }
+  const passes = [
+    { width: 54, length: 200, count: 520, alpha: 0.5, jitter: 0.6, source: coarse, detailed: false, thick: 0.3 },
+    { width: 22, length: 96, count: 3000, alpha: 0.78, jitter: 0.8, source: middle, detailed: false, thick: 0.45 },
+    { width: 9, length: 36, count: 12000, alpha: 0.9, jitter: 0.7, source: fine, detailed: true, thick: 0.62 },
+  ]
+  for (const pass of passes)
+    for (let i = 0; i < Math.round(pass.count * area); i++) {
+      const x = r(),
+        y = r()
+      const f = flow(x, y)
+      if (pass.detailed && r() > 0.2 + f.detail * 0.8) continue
+      // calm water lies level; the ripples, the machine and the birds are followed
+      const level = (r() - 0.5) * 0.22,
+        follow = smooth(0.2, 0.6, f.detail)
+      stroke(
+        ctx,
+        x * width,
+        y * height,
+        level + (f.angle + (r() - 0.5) * 0.25 - level) * follow,
+        pass.length * unit * (0.6 + r() * 0.8) * (1 - f.detail * 0.5) * (1.45 - follow * 0.45),
+        pass.width * unit * (0.7 + r() * 0.6),
+        waterColor(pass.source.rgb(x, y), r, pass.jitter),
+        pass.alpha,
+        r,
+        { ctx: depth, height: pass.thick },
+      )
+    }
+  // the darkest things, the birds and the machine's shade, drawn back in with a deep violet umber
+  for (let i = 0; i < Math.round(4500 * area); i++) {
+    const x = r(),
+      y = r()
+    const l = fine.lum(x, y),
+      f = flow(x, y)
+    if (l > 0.15 || f.detail < 0.22 || r() > f.detail * 1.3) continue
+    const c = lch(0.2 + l * 0.6 + (r() - 0.5) * 0.04, 0.045 + r() * 0.02, (300 + (r() - 0.5) * 40) * deg)
+    stroke(ctx, x * width, y * height, f.angle + (r() - 0.5) * 0.3, 20 * unit * (0.6 + r() * 0.6), 6 * unit * (0.7 + r() * 0.5), c, 0.76, r, { ctx: depth, height: 0.7 })
+  }
+  for (let i = 0; i < Math.round(5000 * area); i++) {
+    const x = r(),
+      y = r()
+    const c = waterColor(fine.rgb(x, y), r, 1.4)
+    const size = (1 + r() * 1.4) * unit,
+      alpha = 0.25 + r() * 0.25
+    ctx.fillStyle = `hsla(${c[0]},${c[1] * 100}%,${c[2] * 100}%,${alpha})`
+    ctx.beginPath()
+    ctx.arc(x * width, y * height, size, 0, Math.PI * 2)
+    ctx.fill()
+    depth.fillStyle = `hsla(0,0%,50%,${alpha})`
+    depth.beginPath()
+    depth.arc(x * width, y * height, size, 0, Math.PI * 2)
+    depth.fill()
+  }
+  // the light on the water: thick level dashes in two neighbouring tints, a few crossed into stars
+  for (let i = 0; i < Math.round(30000 * area); i++) {
+    const x = r(),
+      y = r()
+    const l = fine.lum(x, y)
+    if (l < 0.73 || r() > (l - 0.73) * 4) continue
+    const tint = () => {
+      const [L, C, h] = glints[l > 0.9 && r() < 0.7 ? Math.floor(r() * 2) : Math.floor(r() * glints.length)]
+      return lch(L + (r() - 0.5) * 0.03, C * (0.8 + r() * 0.4), (h + (r() - 0.5) * 14) * deg)
+    }
+    const size = (4.5 + r() * 6.5) * unit,
+      px = x * width,
+      py = y * height
+    stroke(ctx, px, py, (r() - 0.5) * 0.3, size * 2.6, size * 0.6, tint(), 0.92, r, { ctx: depth, height: 0.86 })
+    const side = r() < 0.5 ? -1 : 1
+    stroke(ctx, px + side * size * 1.7, py + (r() - 0.5) * size * 0.8, (r() - 0.5) * 0.3, size * 1.8, size * 0.45, tint(), 0.82, r, { ctx: depth, height: 0.78 })
+    if (l > 0.92 && r() < 0.14) {
+      const star = tint()
+      stroke(ctx, px, py, 0, size * 3.6, size * 0.2, star, 0.75, r, { ctx: depth, height: 0.92 })
+      stroke(ctx, px, py, Math.PI / 2, size * 3.6, size * 0.2, star, 0.75, r, { ctx: depth, height: 0.92 })
+    }
+  }
+  return { color: canvas, relief: reliefCanvas }
 }
 
 const frames = new Map<string, HTMLCanvasElement>()

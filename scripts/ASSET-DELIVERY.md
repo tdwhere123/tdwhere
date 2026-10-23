@@ -12,7 +12,7 @@ The three external font stylesheets in `index.html` use non-matching `media="pri
 
 ## Home painting and initialization
 
-The hero/backdrop definitions live in `src/atelier/grounds.ts`, so importing the shell does **not** pull in the roll catalog or its thumbnail URL table. `src/assets/ground/home-painted.webp` is an authored, checked-in painting of `home.jpg`, made with `paintHome()` in `paint/painter.ts`. Both the home still/WebGL surface and the overture use this decoded source, not separate paintings generated on the visitor's main thread. Regenerate it after changing the photo or its airy painting recipe:
+The hero/backdrop definitions live in `src/atelier/grounds.ts`, so importing the shell does **not** pull in the roll catalog or its thumbnail URL table. `src/assets/ground/home-painted.webp` (1600 px) and `home-painted-2560.webp` are one authored, checked-in painting of `home.jpg`, made with `paintHome()` in `paint/painter.ts`; `home-relief.webp` (1280 px, grey) is the thickness of the same strokes. `homePainting()` in `grounds.ts` picks the 2560 px file only when the screen has the pixels for it. Both the home still/WebGL surface and the overture use this decoded source, not separate paintings generated on the visitor's main thread. Regenerate all three after changing the photo or the painting recipe:
 
 ```sh
 npm run dev

@@ -114,6 +114,9 @@ uniform float uImpasto;
 uniform float uDab;
 uniform vec2 uLight;
 uniform float uSky;
+uniform float uPrepared;
+uniform sampler2D uRelief;
+uniform float uHasRelief;
 uniform vec3 uLightTint;
 uniform vec3 uSkyShade;
 uniform vec2 uDay;
@@ -171,84 +174,122 @@ void main() {
   }
   vec2 uv = (pv - f.xy) * uScale + uOffset;
   vec2 p = vec2(vUv.x * uAspect, vUv.y);
-  gMix = uMix;
-  // relief comes from the smooth blend: dab-by-dab layers would leave ridges at every dab edge
-  float relief = lum(img(uv, 0.0));
+  vec3 col;
+  float bristle, spec;
+  if (uPrepared > 0.5) {
+    // An authored painting: its strokes are shown as painted, and the paint they left is lit.
+    col = img(uv, 0.0);
+    float push = length(f.xy);
+    // Where the pointer stirs the wet field, the paint is dragged along with it, as on the
+    // photographic path: strokes smeared the way they were pushed, lit by the warped surface.
+    float stirred = clamp(push * 40.0 + f.z * 1.5, 0.0, 1.0);
+    if (push > 1e-4) {
+      vec2 pd = toImage(normalize(f.xy * vec2(uAspect, 1.0)) * uLen * 1.4);
+      vec3 smear = vec3(0.0);
+      for (int i = -2; i <= 2; i++) smear += img(uv + pd * (float(i) / 2.0), 0.0) * (1.0 - abs(float(i)) * 0.25);
+      col = mix(col, smear / 4.0, clamp(push * 18.0, 0.0, 0.85));
+    }
+    vec2 tx = 1.0 / vec2(textureSize(uRelief, 0));
+    float hc = texture(uRelief, uv).r;
+    vec2 dH = vec2(
+      texture(uRelief, uv + vec2(tx.x, 0.0)).r - texture(uRelief, uv - vec2(tx.x, 0.0)).r,
+      texture(uRelief, uv + vec2(0.0, tx.y)).r - texture(uRelief, uv - vec2(0.0, tx.y)).r
+    ) * uHasRelief * uImpasto * 2.2;
+    // the stirred surface: the displaced picture's own relief, and the field's wave fronts
+    float warped = lum(img(uv, 1.0)) * 0.75 * stirred + push * 6.0 + pile * hc * 0.4;
+    dH += vec2(dFdx(warped), dFdy(warped)) * uImpasto * 4.0 * (uRes.y / 800.0);
+    vec3 N = normalize(vec3(-dH, 1.0));
+    vec3 L = normalize(vec3(uLight, 0.9));
+    float wet = clamp(push * 14.0 + f.z * 0.35 + pile * 0.8, 0.0, 1.0);
+    bristle = hc;
+    // thick paint shines; the thin wash between strokes does not
+    spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 24.0) * (0.3 + smoothstep(0.35, 0.9, hc) * 0.7);
+    col *= 0.84 + dot(N, L) * 0.22;
+    col += spec * (0.05 + wet * 0.2);
+    // Film, under the paint: the lens wide open at the edges, red-orange halation around the
+    // brightest light, and a toe and shoulder. Mip levels stand in for blur, one tap each.
+    vec2 rim = abs(vUv - vec2(0.56, 0.5)) * vec2(1.6, 2.0);
+    float soft = smoothstep(0.55, 1.25, length(rim));
+    col = mix(col, img(uv, 2.6), soft * 0.6);
+    vec3 bloom = img(uv, 5.0);
+    // halation rings the light: strongest just outside a bright stroke, not on top of it
+    float glow = smoothstep(0.55, 0.95, lum(bloom)) * (1.0 - smoothstep(0.6, 0.95, lum(col)) * 0.6);
+    col += (vec3(1.0, 0.42, 0.2) * 0.08 + bloom * 0.03) * glow;
+    col = mix(col, col * col * (3.0 - 2.0 * col), 0.32);
+  } else {
+    gMix = uMix;
+    // relief comes from the smooth blend: dab-by-dab layers would leave ridges at every dab edge
+    float relief = lum(img(uv, 0.0));
 
-  vec2 ex = toImage(vec2(uLen * 1.4, 0.0)), ey = toImage(vec2(0.0, uLen * 1.4));
-  vec2 g = vec2(
-    lum(img(uv + ex, 3.0)) - lum(img(uv - ex, 3.0)),
-    lum(img(uv + ey, 3.0)) - lum(img(uv - ey, 3.0))
-  );
-  float edge = clamp(length(g) * 7.0, 0.0, 1.0);
-  vec2 tangent = normalize(vec2(-g.y, g.x) + 1e-6);
-  float a = uAngle + (vnoise(p * 2.6 + uTime * 0.025) - 0.5) * 0.9;
-  vec2 fixedDir = vec2(cos(a), sin(a));
-  if (dot(tangent, fixedDir) < 0.0) tangent = -tangent;
-  vec2 dir = normalize(mix(fixedDir, tangent, edge * (1.0 - uBias)));
-  float push = length(f.xy);
-  if (push > 1e-4) {
-    vec2 pushDir = normalize(f.xy * vec2(uAspect, 1.0));
-    if (dot(pushDir, dir) < 0.0) pushDir = -pushDir;
-    dir = normalize(mix(dir, pushDir, clamp(push * 30.0, 0.0, 0.85)));
+    vec2 ex = toImage(vec2(uLen * 1.4, 0.0)), ey = toImage(vec2(0.0, uLen * 1.4));
+    vec2 g = vec2(
+      lum(img(uv + ex, 3.0)) - lum(img(uv - ex, 3.0)),
+      lum(img(uv + ey, 3.0)) - lum(img(uv - ey, 3.0))
+    );
+    float edge = clamp(length(g) * 7.0, 0.0, 1.0);
+    vec2 tangent = normalize(vec2(-g.y, g.x) + 1e-6);
+    float a = uAngle + (vnoise(p * 2.6 + uTime * 0.025) - 0.5) * 0.9;
+    vec2 fixedDir = vec2(cos(a), sin(a));
+    if (dot(tangent, fixedDir) < 0.0) tangent = -tangent;
+    vec2 dir = normalize(mix(fixedDir, tangent, edge * (1.0 - uBias)));
+    float push = length(f.xy);
+    if (push > 1e-4) {
+      vec2 pushDir = normalize(f.xy * vec2(uAspect, 1.0));
+      if (dot(pushDir, dir) < 0.0) pushDir = -pushDir;
+      dir = normalize(mix(dir, pushDir, clamp(push * 30.0, 0.0, 0.85)));
+    }
+    vec2 perp = vec2(-dir.y, dir.x);
+
+    vec2 sp = vec2(dot(p, dir), dot(p, perp)) * vec2(26.0, 62.0) / uDab;
+    float row = floor(sp.y);
+    sp.x += hash(vec2(row, 3.1)) * 7.0;
+    vec2 cell = floor(sp);
+    vec2 local = fract(sp);
+    float h1 = hash(cell), h2 = hash(cell + 17.3), h3 = hash(cell + 5.1);
+
+    // The next layer arrives stroke by stroke, in drifting patches. Its strokes
+    // get their own grid on a slow direction field: the dab grid above follows
+    // the image's edges and would scatter the arrival into per-pixel noise.
+    float ma = uAngle + (vnoise(p * 1.1 + 7.0) - 0.5) * 0.7;
+    vec2 md = vec2(cos(ma), sin(ma));
+    vec2 msp = vec2(dot(p, md), dot(p, vec2(-md.y, md.x))) * vec2(15.0, 42.0);
+    msp.x += hash(vec2(floor(msp.y), 1.7)) * 5.0;
+    float due = hash(floor(msp)) * 0.45 + vnoise(p * 1.8 + 3.7) * 0.55
+      + (vnoise(vec2(msp.x * 0.8, msp.y * 6.0)) - 0.5) * 0.08
+      + smoothstep(0.55, 1.0, abs(fract(msp.x) - 0.5) * 2.0) * 0.12
+      + smoothstep(0.7, 1.0, abs(fract(msp.y) - 0.5) * 2.0) * 0.06;
+    // every stroke must have arrived by the end of the turn, and none before it
+    due = clamp(due * 0.85 + 0.05, 0.06, 0.94);
+    gMix = smoothstep(due - 0.04, due + 0.04, uMix * 1.2 - 0.1);
+    float fresh = gMix * (1.0 - gMix) * 4.0;
+
+    vec2 stroke = toImage(dir * uLen * (0.55 + h1 * 0.9));
+    col = vec3(0.0);
+    float wsum = 0.0;
+    for (int i = -2; i <= 2; i++) {
+      float t = float(i) / 2.0;
+      float w = 1.0 - abs(t) * 0.5;
+      col += img(uv + stroke * t, 0.0) * w;
+      wsum += w;
+    }
+    col /= wsum;
+    vec3 sharp = img(uv, 0.0);
+    col = mix(col, sharp, clamp(0.6 - push * 12.0, 0.0, 0.6));
+
+    float dabEdge = smoothstep(0.0, 0.3, local.y) * smoothstep(1.0, 0.7, local.y);
+    col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.012;
+
+    bristle = vnoise(vec2(sp.x * 0.6, sp.y * 7.0) + h1 * 10.0);
+    float height = relief * 0.75 + bristle * 0.2 + dabEdge * 0.03 + pile * bristle * 0.4;
+    vec2 dH = vec2(dFdx(height), dFdy(height));
+    vec3 N = normalize(vec3(-dH * uImpasto * 4.0 * (uRes.y / 800.0), 1.0));
+    vec3 L = normalize(vec3(uLight, 0.9));
+    float wet = clamp(push * 14.0 + f.z * 0.35 + fresh * 0.3 + pile * 0.8, 0.0, 1.0);
+    spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0);
+    col *= 0.86 + dot(N, L) * 0.2;
+    col += spec * (0.04 + wet * 0.2);
   }
-  vec2 perp = vec2(-dir.y, dir.x);
-
-  vec2 sp = vec2(dot(p, dir), dot(p, perp)) * vec2(26.0, 62.0) / uDab;
-  float row = floor(sp.y);
-  sp.x += hash(vec2(row, 3.1)) * 7.0;
-  vec2 cell = floor(sp);
-  vec2 local = fract(sp);
-  float h1 = hash(cell), h2 = hash(cell + 17.3), h3 = hash(cell + 5.1);
-
-  // The next layer arrives stroke by stroke, in drifting patches. Its strokes
-  // get their own grid on a slow direction field: the dab grid above follows
-  // the image's edges and would scatter the arrival into per-pixel noise.
-  float ma = uAngle + (vnoise(p * 1.1 + 7.0) - 0.5) * 0.7;
-  vec2 md = vec2(cos(ma), sin(ma));
-  vec2 msp = vec2(dot(p, md), dot(p, vec2(-md.y, md.x))) * vec2(15.0, 42.0);
-  msp.x += hash(vec2(floor(msp.y), 1.7)) * 5.0;
-  float due = hash(floor(msp)) * 0.45 + vnoise(p * 1.8 + 3.7) * 0.55
-    + (vnoise(vec2(msp.x * 0.8, msp.y * 6.0)) - 0.5) * 0.08
-    + smoothstep(0.55, 1.0, abs(fract(msp.x) - 0.5) * 2.0) * 0.12
-    + smoothstep(0.7, 1.0, abs(fract(msp.y) - 0.5) * 2.0) * 0.06;
-  // every stroke must have arrived by the end of the turn, and none before it
-  due = clamp(due * 0.85 + 0.05, 0.06, 0.94);
-  gMix = smoothstep(due - 0.04, due + 0.04, uMix * 1.2 - 0.1);
-  float fresh = gMix * (1.0 - gMix) * 4.0;
-
-  vec2 stroke = toImage(dir * uLen * (0.55 + h1 * 0.9));
-  vec3 col = vec3(0.0);
-  float wsum = 0.0;
-  for (int i = -2; i <= 2; i++) {
-    float t = float(i) / 2.0;
-    float w = 1.0 - abs(t) * 0.5;
-    col += img(uv + stroke * t, 0.0) * w;
-    wsum += w;
-  }
-  col /= wsum;
-  vec3 sharp = img(uv, 0.0);
-  col = mix(col, sharp, clamp(0.6 - push * 12.0, 0.0, 0.6));
-
-  float dabEdge = smoothstep(0.0, 0.3, local.y) * smoothstep(1.0, 0.7, local.y);
-  col += vec3(h2 - 0.5, (h3 - 0.5) * 0.5, 0.5 - h2) * 0.012;
-
-  float bristle = vnoise(vec2(sp.x * 0.6, sp.y * 7.0) + h1 * 10.0);
-  float height = relief * mix(0.75, 0.25, uSky) + bristle * mix(0.2, 0.38, uSky)
-    + dabEdge * mix(0.03, 0.16, uSky) + pile * bristle * 0.4;
-  vec2 dH = vec2(dFdx(height), dFdy(height));
-  vec3 N = normalize(vec3(-dH * uImpasto * 4.0 * (uRes.y / 800.0), 1.0));
-  vec3 L = normalize(vec3(uLight, 0.9));
-  float wet = clamp(push * 14.0 + f.z * 0.35 + fresh * 0.3 + pile * 0.8, 0.0, 1.0);
-  float spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 20.0);
-  col *= 0.86 + dot(N, L) * 0.2;
-  col += spec * (0.04 + wet * 0.2);
-  if (uSky > 0.5) {
-    col = lightPigment(col, uLightTint, uSkyShade, uDay.x, uDay.y);
-    // A few warm, level dabs catch the light already present in the photograph.
-    float glint = smoothstep(.58, .9, relief) * smoothstep(.65, .92, h2) * dabEdge;
-    col += uLightTint * glint * (.025 + uDay.y * .055);
-  }
+  if (uSky > 0.5) col = lightPigment(col, uLightTint, uSkyShade, uDay.x, uDay.y);
 
   float scrape = f.w;
   for (int i = 0; i < 4; i++) {
@@ -282,5 +323,11 @@ void main() {
   col *= uGlaze;
   vec2 weave = gl_FragCoord.xy * 0.9;
   col += sin(weave.x) * sin(weave.y) * 0.012 + (hash(gl_FragCoord.xy) - 0.5) * 0.02;
+  if (uPrepared > 0.5) {
+    // grain clumps, and shows most in the middle tones, as on negative film
+    float l = lum(col);
+    float grain = (hash(floor(gl_FragCoord.xy / 1.6)) - 0.5) + (vnoise(gl_FragCoord.xy * 0.45) - 0.5) * 0.7;
+    col += grain * 0.07 * (0.25 + l * (1.0 - l) * 3.0);
+  }
   outColor = vec4(clamp(col, 0.0, 1.0) * cover, cover);
 }`

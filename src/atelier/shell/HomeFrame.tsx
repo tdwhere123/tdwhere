@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Art } from '../components/Primitives'
-import { heroFrame } from '../grounds'
-import homePainting from '@/assets/ground/home-painted.webp'
+import { heroFrame, homePainting } from '../grounds'
 import { paint } from '../paint/bus'
 import { paintingLight } from '../paint/light'
 import { islandSky } from '../paint/island/state'
@@ -14,13 +13,15 @@ import { sessionClock } from '../weather'
  */
 export default function HomeFrame({ parting, covering }: { parting: boolean; covering: boolean }) {
   const frame = useRef<HTMLDivElement>(null)
+  const [painting] = useState(homePainting)
   useEffect(() => {
     const clock = sessionClock()
     const tick = () => {
       if (document.hidden) return
       const value = paintingLight(islandSky(clock, Date.now()))
       paint('home', { type: 'light', value })
-      frame.current?.style.setProperty('--a-home-exposure', String(value.exposure))
+      // the still has no shader: only part of the dusk, as the live paint keeps its lights
+      frame.current?.style.setProperty('--a-home-exposure', String(0.45 + value.exposure * 0.55))
     }
     tick()
     const timer = setInterval(tick, 1000)
@@ -29,7 +30,7 @@ export default function HomeFrame({ parting, covering }: { parting: boolean; cov
   }, [])
   return (
     <div ref={frame} className="a-frame" data-covering={covering ? '' : undefined} data-parting={parting ? '' : undefined} aria-hidden="true">
-      <Art frame={heroFrame} prepared={homePainting} eager channel="home" className="a-frame-art" />
+      <Art frame={heroFrame} prepared={painting.src} relief={painting.relief} eager channel="home" className="a-frame-art" />
       <div className="a-frame-haze" />
       <div className="a-frame-veil" />
     </div>

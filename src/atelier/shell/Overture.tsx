@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useWords } from '../hooks'
-import { heroFrame } from '../grounds'
-import homePainting from '@/assets/ground/home-painted.webp'
+import { heroFrame, homePainting } from '../grounds'
 import { caption, lightAt, sessionClock, weatherNow } from '../weather'
 import type { OvertureHandle, PondFeedback } from '../paint/overture'
 import { onReplay } from './overtureCue'
@@ -101,7 +100,7 @@ export default function Overture() {
         if (cancelled || !canvas.current) return
         // Neither model fetch waits for the photograph/painting to decode.
         const [painting, models] = await Promise.all([
-          loadPainting(homePainting).catch(() => null), loadIslandModels(),
+          loadPainting(homePainting().src).catch(() => null), loadIslandModels(),
         ])
         if (cancelled || !canvas.current || !painting) {
           disposeModelResources(models.coot, models.aerator)

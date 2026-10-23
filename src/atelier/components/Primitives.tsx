@@ -43,12 +43,15 @@ export function Art({
   intensity = 'full',
   still = false,
   prepared,
+  relief,
 }: {
   name?: ArtName
   /** Paints this film frame instead of `name`, cropped at its focus. */
   frame?: FilmFrame
   /** An authored, prepainted image: immediate still and the live engine's source. */
   prepared?: string
+  /** Grey paint thickness for `prepared`, lit by the live engine. */
+  relief?: string
   /** Always the still image, for paintings that are only glimpsed. */
   still?: boolean
   className?: string
@@ -81,9 +84,12 @@ export function Art({
       setMode('failed')
     }
     const start = async () => {
-      let source: PaintImage | undefined
+      let source: PaintImage | undefined, thickness: PaintImage | undefined
       let painter: typeof import('../paint/painter') | undefined
-      if (prepared) source = await loadPainting(prepared).catch(() => undefined)
+      if (prepared) [source, thickness] = await Promise.all([
+        loadPainting(prepared).catch(() => undefined),
+        relief ? loadPainting(relief).catch(() => undefined) : undefined,
+      ])
       if (cancelled) return
       if (!source) {
         painter = await import('../paint/painter')
@@ -114,6 +120,8 @@ export function Art({
           preset: presetFor(frame ? 'film' : name, intensity),
           surface,
           channel,
+          prepainted: !!source,
+          relief: source ? thickness : undefined,
           onReady: () => { if (!cancelled) setMode('live') },
           onLost: () => { void fallBack().catch(fail) },
         })
@@ -151,7 +159,7 @@ export function Art({
       handle?.destroy()
       setMode('pending')
     }
-  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still, prepared])
+  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still, prepared, relief])
   const focus = frame ? { objectPosition: frame.focus } : undefined
   const layered = mode !== 'live' && stills.length > 1
   useEffect(() => {

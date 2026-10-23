@@ -29,6 +29,10 @@ export type PaintOptions = {
   onLost: () => void
   /** Called only after the first actual draw, never merely after context creation. */
   onReady?: () => void
+  /** The layer is already a painting: show its strokes as painted instead of brushing it again. */
+  prepainted?: boolean
+  /** Grey paint thickness for a prepainted layer, lit by the raking light. */
+  relief?: PaintImage
 }
 
 type Target = { tex: WebGLTexture; fbo: WebGLFramebuffer }
@@ -117,6 +121,18 @@ export function mountPaint(o: PaintOptions) {
     loaded++
   }
   upload(source)
+  let reliefTex: WebGLTexture | null = null
+  if (o.relief) {
+    reliefTex = gl.createTexture()!
+    gl.bindTexture(gl.TEXTURE_2D, reliefTex)
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, o.relief)
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  }
 
   let targets: [Target, Target] | null = null,
     fieldSize: Vec2 = [0, 0]
@@ -179,7 +195,8 @@ export function mountPaint(o: PaintOptions) {
   let glazeTarget: Rgb = [...preset.glaze]
   let light: Vec2 = [...preset.lightFrom],
     nudge: Vec2 = [0, 0]
-  const drift = preset.drift > 0 && !coarse
+  // drift moves the brushing of a photograph; a finished painting has nothing to move
+  const drift = preset.drift > 0 && !coarse && !o.prepainted
   const retain = Math.max(...preset.decay)
 
   function toUv(x: number, y: number): Vec2 {
@@ -190,10 +207,13 @@ export function mountPaint(o: PaintOptions) {
   function resize() {
     const r = canvas.getBoundingClientRect()
     if (r.width < 2 || r.height < 2) return
-    const dpr = Math.min(devicePixelRatio || 1, 1.5) * (coarse ? 0.6 : 0.85)
+    // A prepainted layer costs a few taps a pixel and is drawn only on change: keep its strokes sharp.
+    const dpr = o.prepainted
+      ? Math.min(devicePixelRatio || 1, 2) * (coarse ? 0.75 : 1)
+      : Math.min(devicePixelRatio || 1, 1.5) * (coarse ? 0.6 : 0.85)
     let w = r.width * dpr,
       h = r.height * dpr
-    const cap = 2_200_000
+    const cap = o.prepainted ? 3_400_000 : 2_200_000
     if (w * h > cap) {
       const k = Math.sqrt(cap / (w * h))
       w *= k
@@ -276,6 +296,11 @@ export function mountPaint(o: PaintOptions) {
     gl!.uniform1f(u('uImpasto'), preset.impasto)
     gl!.uniform1f(u('uDab'), preset.dabScale)
     gl!.uniform2f(u('uLight'), light[0] + nudge[0], light[1] + nudge[1])
+    gl!.uniform1f(u('uPrepared'), o.prepainted ? 1 : 0)
+    gl!.activeTexture(gl!.TEXTURE3)
+    gl!.bindTexture(gl!.TEXTURE_2D, reliefTex ?? layerTex[0])
+    gl!.uniform1i(u('uRelief'), 3)
+    gl!.uniform1f(u('uHasRelief'), reliefTex ? 1 : 0)
     gl!.uniform1f(u('uSky'), illumination ? 1 : 0)
     if (illumination) {
       gl!.uniform3fv(u('uLightTint'), illumination.tint)
@@ -525,6 +550,7 @@ export function mountPaint(o: PaintOptions) {
         gl!.deleteFramebuffer(t.fbo)
       })
       layerTex.forEach((t) => gl!.deleteTexture(t))
+      if (reliefTex) gl!.deleteTexture(reliefTex)
       gl!.deleteBuffer(buffer)
       gl!.deleteVertexArray(vao)
       gl!.deleteProgram(field.program)

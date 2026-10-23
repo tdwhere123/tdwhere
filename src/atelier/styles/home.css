@@ -15,6 +15,10 @@
   border-bottom-width: 0;
   backdrop-filter: none;
 }
+/* the bar lies over the brightest water: a soft shadow keeps it legible without a band */
+.a-shell[data-page='home'] .a-nav {
+  text-shadow: 0 1px 10px rgba(16, 24, 46, 0.85), 0 0 2px rgba(16, 24, 46, 0.6);
+}
 /* the frame carries the name, so the bar does not repeat it */
 .a-shell[data-page='home'] .a-brand,
 .a-shell[data-page='home'] .a-nav-note {
@@ -23,10 +27,12 @@
 .a-shell[data-page='home'] .a-footer {
   display: none;
 }
-/* the painting sits behind the page (shell/HomeFrame.tsx); the page takes the pointer only where it must */
+/* the painting sits behind the page (shell/HomeFrame.tsx); the page takes the pointer only where it must,
+   so a hand moving over the water stirs the paint */
 .a-shell[data-page='home'] main {
   position: relative;
   z-index: 1;
+  pointer-events: none;
 }
 .a-home {
   position: relative;
@@ -44,7 +50,7 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #527d91;
+  background: #3b4c74;
 }
 /* leaving: over everything, the page that arrived waits underneath the paint */
 .a-frame[data-covering] {
@@ -98,24 +104,41 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 68% 62% at 76% 24%, rgba(255, 245, 214, 0.09), transparent 72%);
+  background: radial-gradient(ellipse 60% 55% at 74% 30%, rgba(255, 240, 206, 0.08), transparent 70%);
 }
 .a-frame-veil {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* the corners fall away as on a canvas lit from the window; gradients only, no backdrop blur */
   background:
-    linear-gradient(180deg, rgba(18, 38, 52, 0.2), transparent 16%),
-    linear-gradient(0deg, rgba(12, 31, 44, 0.62), rgba(20, 43, 56, 0.14) 34%, transparent 52%);
+    radial-gradient(ellipse 90% 85% at 58% 42%, transparent 45%, rgba(10, 14, 30, 0.58) 100%),
+    radial-gradient(ellipse 42% 20% at 84% 0%, rgba(19, 28, 52, 0.4), transparent),
+    linear-gradient(180deg, rgba(10, 16, 32, 0.46), transparent 18%),
+    linear-gradient(0deg, rgba(9, 15, 30, 0.72), rgba(16, 24, 46, 0.18) 34%, transparent 54%);
 }
 /* grain, so the paint still reads as something that was once on film */
 .a-frame-veil::after {
   content: '';
   position: absolute;
-  inset: 0;
-  opacity: 0.05;
+  inset: -50%;
+  opacity: 0.14;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* a few jumps a second, on the compositor only: the grain lives, the page does not repaint */
+  animation: a-grain 1.2s steps(4) infinite;
+}
+@keyframes a-grain {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-3%, 2%); }
+  50% { transform: translate(2%, -4%); }
+  75% { transform: translate(-4%, -1%); }
+  100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a-frame-veil::after {
+    animation: none;
+  }
 }
 .a-home .a-signature {
   position: absolute;
