@@ -34,7 +34,7 @@ export default function Alaya() {
             />
           ))}
         </div>
-        <Caption number="01">AGENT MEMORY / RESEARCH IN PROGRESS</Caption>
+        <Caption>{w('Agent 记忆 · 研究中', 'Agent memory · in progress')}</Caption>
         <h1>
           Alaya
           <em>{w('让过去，回应此刻。', 'The past, answering the present.')}</em>
@@ -80,7 +80,7 @@ export default function Alaya() {
       </section>
       <section id="recall" className="a-recall-chapter">
         <div className="a-chapter-heading">
-          <Caption>THE RECALL STUDY</Caption>
+          <Caption>{w('召回实验', 'The recall study')}</Caption>
           <h2>
             {w('让一个问题，', 'Watch a question')}
             <br />

@@ -1,6 +1,14 @@
-/* A single essay. */
+/* A single note: one burnt sheet on the char. Turning to the next burns it (shell/BurnLayer.tsx). */
 .a-essay {
-  padding-bottom: 90px;
+  padding: 40px 4vw 110px;
+}
+.a-essay-sheet {
+  max-width: 1240px;
+  margin: 0 auto;
+  border: 40px solid transparent;
+  border-image: var(--a-burnt) 96 fill / 84px / 0 round;
+  color: #2a211b;
+  padding: 30px 2vw 60px;
 }
 .a-reading-progress {
   transform: none;
@@ -8,33 +16,35 @@
   transform-origin: left;
 }
 .a-essay-header {
-  padding: 64px 9% 60px;
-  border-bottom: 1px solid var(--a-line);
+  padding: 40px 6% 48px;
+  border-bottom: 1px solid rgba(42, 33, 27, 0.14);
 }
-.a-essay-header > .a-caption {
-  color: var(--a-pigment);
-  margin-bottom: 26px;
+.a-essay-meta {
+  font: 11px/1.6 var(--a-mono);
+  letter-spacing: 0.04em;
+  color: #93572d;
+  margin-bottom: 20px !important;
 }
 .a-essay-header h1 {
-  font: 600 clamp(28px, 4vw, 58px) / 1.45 var(--a-cn);
-  letter-spacing: -0.04em;
+  font: 700 clamp(28px, 3.8vw, 54px) / 1.45 var(--a-serif);
+  letter-spacing: 0.01em;
   max-width: 960px;
 }
 .a-essay-deck {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.95;
-  color: #4a5a5e;
+  color: #5a4c40;
   max-width: 720px;
-  margin-top: 24px !important;
+  margin-top: 22px !important;
 }
 .a-essay-byline {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 28px;
   align-items: center;
-  margin-top: 30px;
-  font-size: 12px;
-  color: var(--a-muted);
+  margin-top: 28px;
+  font: 11px/1.6 var(--a-mono);
+  color: #7b6a58;
 }
 .a-essay-byline a {
   display: inline-flex;
@@ -44,7 +54,7 @@
   padding-bottom: 2px;
 }
 .a-essay-byline a:hover {
-  color: var(--a-pigment);
+  color: #b2551f;
 }
 .a-figure {
   display: block;
@@ -60,18 +70,54 @@
   text-align: center;
   font-size: 12px;
   line-height: 1.7;
-  color: var(--a-muted);
+  color: #7b6a58;
 }
 .a-essay-end {
-  display: flex;
+  max-width: 1240px;
+  margin: 70px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+}
+.a-turn {
+  display: grid;
+  gap: 12px;
+  padding: 30px 0;
+  border-top: 1px solid rgba(239, 228, 208, 0.2);
+  color: #efe4d0;
+  transition: color var(--a-t-quick);
+}
+.a-turn.is-next {
+  text-align: right;
+  justify-items: end;
+}
+.a-turn small {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 70px 8% 0;
-  border-top: 1px solid var(--a-line);
-  padding-top: 40px;
+  gap: 8px;
+  font: 11px/1 var(--a-mono);
+  letter-spacing: 0.06em;
+  color: rgba(239, 228, 208, 0.55);
 }
-.a-essay-end .a-handwritten {
-  font-size: clamp(36px, 5vw, 64px);
-  color: #a08460;
+.a-turn span {
+  font: 700 clamp(18px, 2vw, 28px) / 1.5 var(--a-serif);
+  max-width: 22em;
 }
-
+.a-turn:hover,
+.a-turn:focus-visible {
+  color: #ffcf9a;
+}
+@media (max-width: 850px) {
+  .a-essay {
+    padding-inline: 0;
+  }
+  .a-essay-sheet {
+    border-width: 22px;
+    border-image-width: 48px;
+    padding-inline: 0;
+  }
+  .a-essay-end {
+    grid-template-columns: 1fr;
+    padding: 0 6%;
+  }
+}

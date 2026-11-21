@@ -1,7 +1,7 @@
 /* The new site is a continuous, responsive canvas. Legacy files are intentionally untouched. */
 /*
- * Long Cang centres its full-width punctuation, leaving a gap after each
- * clause. Borrow WenKai's punctuation (same CDN as index.html) for headings;
+ * The brush face centres its full-width punctuation, leaving a gap after each
+ * clause. Borrow WenKai's punctuation (same CDN as index.html) for titles;
  * glyphs missing from these slices fall through to the next family.
  */
 @font-face {
@@ -17,29 +17,39 @@
   unicode-range: U+FF1F;
 }
 :root {
+  /* the sea: paper, indigo ink, cobalt; the only warm colors are the light, and the fire in the notes */
   --a-paper: #f3eee3;
   --a-paper-light: #fbf7ef;
-  --a-ink: #192f39;
-  --a-muted: #65716f;
-  --a-pigment: #2f6274;
-  --a-gold: #bca16c;
-  --a-line: rgba(39, 54, 56, 0.2);
-  --a-night: #132733;
+  --a-ink: #162641;
+  --a-muted: #5f6a7c;
+  --a-pigment: #2f5a8f;
+  --a-gold: #c9ab70;
+  --a-line: rgba(22, 38, 65, 0.16);
+  --a-night: #0f1c33;
+  --a-deep: #0a1428;
+  --a-foam: #f1ece0;
   --a-ochre: #c89a4f;
   --a-sienna: #a4623c;
-  --a-ultramarine: #6f8199;
+  --a-ultramarine: #44609a;
   --a-olive: #6f7f4f;
+  --a-ember: #e2672b;
+  --a-char: #15110f;
   /*
-   * A painter's notebook, all by hand. Headings are written quickly with a
-   * brush pen (Caveat, Long Cang); running text is a slower, legible hand
-   * (Kalam, LXGW WenKai) so articles stay readable.
+   * Three hands, one for each level. Titles are written with a brush (Zhi Mang Xing; Latin in
+   * Homemade Apple); everything read is in LXGW WenKai, a calm hand that holds up over long
+   * articles, set in weight and size rather than in other faces; notes are the edge print on film.
    */
-  --a-serif: 'Caveat', 'Hand Punct', 'Long Cang', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
-  --a-cn: 'Hand Punct', 'Long Cang', 'Caveat', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
-  --a-text: 'Kalam', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
-  /* the edge print on film stock: frame numbers, roll marks */
-  --a-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  --a-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --a-brush: 'Homemade Apple', 'Hand Punct', 'Zhi Mang Xing', 'LXGW WenKai', 'Kaiti SC', 'STKaiti', cursive;
+  --a-sign: 'Homemade Apple', cursive;
+  --a-serif: 'LXGW WenKai', 'Kaiti SC', 'STKaiti', serif;
+  --a-cn: 'LXGW WenKai', 'Kaiti SC', 'STKaiti', serif;
+  --a-text: 'LXGW WenKai', 'Kaiti SC', 'STKaiti', serif;
+  --a-mono: 'DM Mono', 'LXGW WenKai', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* one curve and three lengths for everything that moves (motion.ts mirrors them) */
+  --a-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --a-t-quick: 0.45s;
+  --a-t-base: 0.95s;
+  --a-t-slow: 1.5s;
 }
 html {
   scroll-padding-top: 90px;
@@ -121,12 +131,55 @@ select {
 .a-shell p {
   margin: 0;
 }
-.a-shell h1,
+.a-shell h1 {
+  font-family: var(--a-brush);
+  font-weight: 400;
+  letter-spacing: 0;
+}
 .a-shell h2,
 .a-shell h3 {
   font-family: var(--a-serif);
-  font-weight: 500;
-  letter-spacing: -0.04em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+/* headings that rise line by line wait, hidden, until motion.ts has split them */
+.a-motion [data-rise]:not([data-risen]),
+.a-motion [data-fade]:not([data-risen]) {
+  visibility: hidden;
+}
+.a-line {
+  padding-bottom: 0.08em;
+}
+/* a text link's words roll up and the same words roll in beneath them */
+.a-flip {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.a-flip > span {
+  display: inline-block;
+  transition: transform var(--a-t-quick) var(--a-ease);
+}
+.a-flip::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  white-space: nowrap;
+  transition: transform var(--a-t-quick) var(--a-ease);
+}
+a:hover .a-flip > span,
+a:focus-visible .a-flip > span,
+a:hover .a-flip::after,
+a:focus-visible .a-flip::after {
+  transform: translateY(-100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .a-flip > span,
+  .a-flip::after {
+    transition: none;
+  }
 }
 .a-shell em {
   font-weight: 400;
@@ -146,32 +199,28 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--a-cn);
-  gap: 10px;
-}
-.a-loading span {
-  font-size: 36px;
+  font: 12px/1 var(--a-mono);
+  letter-spacing: 0.08em;
+  opacity: 0.6;
 }
 .a-caption {
   display: flex;
   align-items: center;
-  gap: 22px;
-  font-family: var(--a-text);
+  gap: 14px;
+  font-family: var(--a-mono);
   font-size: 11px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.06em;
   line-height: 1.6;
   font-weight: 400;
+  opacity: 0.75;
 }
 .a-caption > span {
-  font-family: var(--a-serif);
-  font-size: 19px;
-  letter-spacing: 0;
   padding-right: 14px;
   border-right: 1px solid currentColor;
 }
 .a-micro {
-  font: 10px/1.8 var(--a-text);
-  letter-spacing: 0.09em;
+  font: 10px/1.8 var(--a-mono);
+  letter-spacing: 0.06em;
 }
 .a-art {
   display: block;
@@ -227,13 +276,9 @@ select {
   padding: 9px 0;
   font-size: 12px !important;
 }
+/* retired: the hand-lettered asides read as decoration */
 .a-handwritten {
-  font-family: 'Caveat', var(--a-serif);
-  font-weight: 400;
-  font-size: 36px;
-  line-height: 1.05;
-  transform: rotate(-8deg);
-  color: var(--a-pigment);
+  display: none;
 }
 .a-reveal {
   opacity: 1;
@@ -289,21 +334,17 @@ select {
   backdrop-filter: blur(12px);
 }
 .a-brand {
-  font-family: var(--a-serif);
-  font-style: italic;
-  font-size: 35px;
-  font-weight: 600;
-  letter-spacing: -0.045em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
   line-height: 1;
 }
-.a-brand > span {
-  color: var(--a-pigment);
+.a-brand strong {
+  font: 400 26px/1 var(--a-brush);
 }
-.a-nav-note {
-  font-size: 10px;
-  color: var(--a-muted);
-  margin-left: 25px;
-  letter-spacing: 0.025em;
+.a-brand span {
+  font: 400 13px/1 var(--a-sign);
+  opacity: 0.7;
 }
 .a-nav nav {
   display: flex;
@@ -312,19 +353,25 @@ select {
   margin-left: auto;
 }
 .a-nav nav > a {
-  font-size: 12px;
+  font-size: 14px;
   position: relative;
   white-space: nowrap;
 }
-.a-nav nav > a.active::after {
+.a-nav nav > a::before {
   content: '';
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
   position: absolute;
-  bottom: -9px;
-  left: calc(50% - 2px);
-  background: var(--a-pigment);
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--a-t-quick) var(--a-ease);
+}
+.a-nav nav > a.active::before {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 .a-language {
   display: flex;
@@ -365,70 +412,71 @@ select {
   transform: none;
 }
 .a-footer {
-  padding: 85px 6vw 20px;
-  background: #e9e2d4;
+  padding: 120px 6vw 28px;
+  background: var(--a-paper);
   color: var(--a-ink);
   position: relative;
   border-top: 1px solid var(--a-line);
 }
 .a-footer-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 60px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 40px 60px;
+  align-items: end;
+  padding-bottom: 90px;
 }
-.a-footer-top > p {
-  font-family: var(--a-cn);
-  font-size: clamp(24px, 3.7vw, 46px);
-  line-height: 1.5;
-  letter-spacing: -0.055em;
+.a-footer-top h2 {
+  font: 400 clamp(40px, 6vw, 88px)/1.05 var(--a-brush);
 }
-.a-footer-top > p em {
-  color: var(--a-pigment);
-  font-style: normal;
-}
-.a-footer-top > div {
+.a-footer-mail {
   display: grid;
   grid-template-columns: auto 35px;
   align-items: center;
   gap: 8px 10px;
 }
-.a-footer-top a {
-  font-size: 14px;
+.a-footer-mail a {
+  font-size: clamp(16px, 1.6vw, 22px);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 6px;
 }
-.a-footer-top button {
+.a-footer-mail button {
   background: none;
   border: 0;
   padding: 8px;
+  color: inherit;
 }
-.a-footer-top small {
+.a-footer-mail small {
   grid-column: 1/-1;
-  font-size: 11px;
+  font: 11px/1.6 var(--a-mono);
   color: var(--a-muted);
-}
-.a-footer-signature {
-  font-family: var(--a-serif);
-  font-size: 25vw;
-  letter-spacing: -0.09em;
-  line-height: 0.95;
-  opacity: 0.11;
-  text-align: center;
-  margin-top: 45px;
-  font-style: italic;
-  padding-right: 5vw;
 }
 .a-colophon {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font: 11px/1.6 var(--a-mono);
+  letter-spacing: 0.04em;
   border-top: 1px solid var(--a-line);
-  padding-top: 20px;
+  padding-top: 22px;
   gap: 20px;
+}
+.a-shell[data-tone='night'] .a-footer {
+  background: var(--a-night);
+  color: var(--a-foam);
+  border-top-color: rgba(241, 236, 224, 0.12);
+}
+.a-shell[data-tone='night'] .a-footer-mail small {
+  color: rgba(241, 236, 224, 0.55);
+}
+.a-shell[data-tone='night'] .a-colophon,
+.a-shell[data-tone='night'] .a-colophon button {
+  border-color: rgba(241, 236, 224, 0.14);
+}
+.a-shell[data-page='notes'] .a-footer {
+  background: var(--a-char);
 }
 .a-colophon button {
   background: none;
@@ -445,14 +493,12 @@ select {
   margin: 50px 5vw 0;
 }
 .a-next > a {
-  font-family: var(--a-serif);
-  font-size: clamp(52px, 11vw, 160px);
+  font-family: var(--a-brush);
+  font-size: clamp(48px, 9vw, 130px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   line-height: 1.4;
-  font-style: italic;
-  letter-spacing: -0.055em;
 }
 .a-next > a svg {
   width: 7vw;
@@ -461,4 +507,18 @@ select {
 .a-next > p:last-child {
   font-size: 13px;
   opacity: 0.7;
+}
+/* the fire that turns one note into the next (shell/BurnLayer.tsx) */
+.a-burn {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 95;
+  pointer-events: none;
+  visibility: hidden;
+}
+.a-burn[data-on='true'] {
+  visibility: visible;
+  pointer-events: auto;
 }

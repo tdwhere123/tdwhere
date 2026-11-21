@@ -1,16 +1,18 @@
-import type { islandSky } from './island/state'
+import { lightAt, sunFrom } from '../daylight'
 import type { Rgb, Vec2 } from './presets'
 
-/** The same sky, expressed as light on pigment rather than a second weather clock. */
+/** The hour's light, expressed as light on pigment. */
 export type PaintLight = { direction: Vec2; tint: Rgb; shade: Rgb; exposure: number; sun: number }
 
-export function paintingLight(sky: ReturnType<typeof islandSky>): PaintLight {
+export function paintingLight(hour: number): PaintLight {
+  const light = lightAt(hour),
+    [x, y] = sunFrom(hour)
   return {
-    direction: [sky.sun[0] * 1.8, 0.45 + sky.sun[1] * 0.6],
-    tint: [...sky.light.light],
-    shade: [...sky.light.water],
-    exposure: 0.74 + sky.light.sun * 0.32,
-    sun: sky.light.sun,
+    direction: [x * 1.8, 0.45 + y * 0.6],
+    tint: [...light.light],
+    shade: [...light.water],
+    exposure: 0.74 + light.sun * 0.32,
+    sun: light.sun,
   }
 }
 

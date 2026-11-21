@@ -8,6 +8,7 @@ import {
   modeIndex,
   parseObjectPosition,
   scrollProgress,
+  TIDE_MS,
   type PaintPreset,
   type Rgb,
   type Vec2,
@@ -33,6 +34,8 @@ export type PaintOptions = {
   prepainted?: boolean
   /** Grey paint thickness for a prepainted layer, lit by the raking light. */
   relief?: PaintImage
+  /** The water below this line (0 is the image's top) moves and its light winks. */
+  flow?: number
 }
 
 type Target = { tex: WebGLTexture; fbo: WebGLFramebuffer }
@@ -41,9 +44,6 @@ type Mark = { x: number; y: number; r: number; strength: number; on: boolean }
 type Drag = { from: Vec2; to: Vec2; t: number }
 
 const DRAG_MS = 420
-/** The knife crosses in KNIFE_MS; the cut then opens past the edges in OPEN_MS. */
-const KNIFE_MS = 560,
-  OPEN_MS = 950
 
 const MAX_PULSES = 8
 const MAX_MARKS = 4
@@ -190,13 +190,23 @@ export function mountPaint(o: PaintOptions) {
   let scene = 0,
     sceneTarget = 0,
     idle = 0,
-    part: { y: number; at: number } | null = null
+    part: { at: number } | null = null,
+    reveal = 1,
+    revealTarget = 1,
+    depth = 0,
+    depthTarget = 0,
+    smear = 0,
+    lastScroll = scrollY,
+    lastScrollAt = performance.now()
+  let paper: Rgb = [0.953, 0.933, 0.89]
   const glaze: Rgb = [...preset.glaze]
   let glazeTarget: Rgb = [...preset.glaze]
   let light: Vec2 = [...preset.lightFrom],
     nudge: Vec2 = [0, 0]
   // drift moves the brushing of a photograph; a finished painting has nothing to move
   const drift = preset.drift > 0 && !coarse && !o.prepainted
+  // living water: the clock runs for as long as the painting is in view
+  const flowing = o.flow !== undefined
   const retain = Math.max(...preset.decay)
 
   function toUv(x: number, y: number): Vec2 {
@@ -301,6 +311,12 @@ export function mountPaint(o: PaintOptions) {
     gl!.bindTexture(gl!.TEXTURE_2D, reliefTex ?? layerTex[0])
     gl!.uniform1i(u('uRelief'), 3)
     gl!.uniform1f(u('uHasRelief'), reliefTex ? 1 : 0)
+    gl!.uniform1f(u('uFlow'), flowing ? 1 : 0)
+    gl!.uniform1f(u('uHorizon'), 1 - (o.flow ?? 0))
+    gl!.uniform1f(u('uReveal'), reveal)
+    gl!.uniform3fv(u('uPaper'), paper)
+    gl!.uniform1f(u('uDepth'), depth)
+    gl!.uniform1f(u('uSmear'), smear)
     gl!.uniform1f(u('uSky'), illumination ? 1 : 0)
     if (illumination) {
       gl!.uniform3fv(u('uLightTint'), illumination.tint)
@@ -314,13 +330,10 @@ export function mountPaint(o: PaintOptions) {
     gl!.uniform3fv(u('uGround'), preset.ground)
     gl!.uniform1i(u('uMode'), modeIndex[preset.mode])
     if (part) {
-      const since = performance.now() - part.at
-      // the blade eases in and out of its stroke; the cut then opens slow, fast, slow
-      const k = Math.min(1, since / KNIFE_MS),
-        open = Math.min(1, Math.max(0, (since - KNIFE_MS * 0.85) / OPEN_MS))
-      const knife = -0.06 + (1 - (1 - k) ** 3) * 1.18,
-        wide = open < 0.5 ? 4 * open ** 3 : 1 - (-2 * open + 2) ** 3 / 2
-      gl!.uniform3f(u('uPart'), knife, part.y, wide * 0.64)
+      // the water gathers, runs fast across the middle, and slows as it reaches the top
+      const k = Math.min(1, (performance.now() - part.at) / TIDE_MS)
+      const ease = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2
+      gl!.uniform3f(u('uPart'), -0.16 + ease * 1.34, 0, 1)
     } else gl!.uniform3f(u('uPart'), 0, 0, -1)
     const list = [...marks.values()].slice(0, MAX_MARKS)
     if (list.length)
@@ -367,7 +380,22 @@ export function mountPaint(o: PaintOptions) {
       if (s.t > 1) sweeps.splice(i, 1)
       moving = true
     }
-    if (part && performance.now() - part.at < KNIFE_MS + OPEN_MS + 100) moving = true
+    if (part && performance.now() - part.at < TIDE_MS + 100) moving = true
+    const dr = revealTarget - reveal
+    if (Math.abs(dr) > 0.0005) {
+      // the brush keeps its own pace: progress is followed, never jumped to
+      reveal += Math.sign(dr) * Math.min(Math.abs(dr), (dt / 1000) * 0.9) * (0.35 + Math.min(1, Math.abs(dr) * 3))
+      moving = true
+    } else reveal = revealTarget
+    const dd = depthTarget - depth
+    if (Math.abs(dd) > 0.001) {
+      depth += dd * (1 - Math.exp(-dt / 160))
+      moving = true
+    } else depth = depthTarget
+    if (Math.abs(smear) > 0.0005) {
+      smear *= Math.exp(-dt / 170)
+      moving = true
+    } else smear = 0
     const target = illumination?.direction ?? mixVec2(preset.lightFrom, preset.lightTo, progress)
     light = mixVec2(light, target, 1 - Math.exp(-dt / 400))
     if (Math.hypot(light[0] - target[0], light[1] - target[1]) > 0.003) moving = true
@@ -397,13 +425,14 @@ export function mountPaint(o: PaintOptions) {
     }
     const busy = settling || input || animating
     if (drift) time += (dt / 1000) * preset.drift
-    if (busy || dirty || (drift && now - lastPaint > 33)) {
+    else if (flowing) time += dt / 1000
+    if (busy || dirty || ((drift || flowing) && now - lastPaint > 33)) {
       paintFrame()
       if (!presented) { presented = true; o.onReady?.() }
       lastPaint = now
       dirty = false
     }
-    if (busy || drift) raf = requestAnimationFrame(frame)
+    if (busy || drift || flowing) raf = requestAnimationFrame(frame)
   }
 
   function wake() {
@@ -481,8 +510,15 @@ export function mountPaint(o: PaintOptions) {
       while (loaded < o.layers && sceneTarget > loaded - 0.98 && !destroyed && !gl!.isContextLost())
         loadNext()
     } else if (signal.type === 'part') {
-      part = signal.y === null ? null : { y: toUv(0, signal.y)[1], at: performance.now() }
+      part = signal.y === null ? null : { at: performance.now() }
       dirty = true
+    } else if (signal.type === 'reveal') {
+      revealTarget = Math.max(0, Math.min(1, signal.value))
+      if (signal.paper) paper = [...signal.paper]
+      if (signal.at !== undefined) reveal = signal.at
+      dirty = true
+    } else if (signal.type === 'depth') {
+      depthTarget = Math.max(0, Math.min(1, signal.value))
     } else if (signal.type === 'glaze') {
       glazeTarget = [...(signal.color ?? preset.glaze)]
     } else {
@@ -507,7 +543,17 @@ export function mountPaint(o: PaintOptions) {
     o.onLost()
   }
   const onVisibility = () => wake()
-  const onScroll = () => wake()
+  const onScroll = () => {
+    const now = performance.now(),
+      dy = scrollY - lastScroll,
+      dt = Math.max(8, now - lastScrollAt)
+    lastScroll = scrollY
+    lastScrollAt = now
+    // a fast flick drags the wet paint after it; a slow scroll barely does
+    const v = dy / dt
+    if (Math.abs(v) > 0.6) smear = Math.max(-1, Math.min(1, smear * 0.6 + (v / 8) * 0.4 + Math.sign(v) * 0.05))
+    wake()
+  }
 
   const ro = new ResizeObserver(resize)
   ro.observe(canvas)

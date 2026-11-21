@@ -139,7 +139,7 @@ export default function MemoryScene() {
       data-stage={seq.step}
     >
       <div className="a-memory-header">
-        <Caption number="01">
+        <Caption>
           {w('联想召回 / 机制习作', 'Associative recall / a mechanism study')}
         </Caption>
         <span className="a-micro">

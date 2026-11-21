@@ -1,6 +1,7 @@
 import { evidence } from '../model'
 import type { FilmFrame } from '../film'
 import type { ArtName } from './presets'
+import { HORIZON } from '../grounds'
 
 type Hsl = [number, number, number]
 type Rng = () => number
@@ -557,38 +558,7 @@ function lch(L: number, C: number, h: number): Hsl {
   const v = gamma(Math.min(1, Math.max(0, L)) ** 3)
   return [0, 0, v]
 }
-const turn = (from: number, to: number, t: number) =>
-  from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t
 const deg = Math.PI / 180
-
-/**
- * The home painting's palette, after the Impressionists on water: no black,
- * shadows laid as ultramarine and violet with teal beside them, light broken
- * into cream, pale yellow, rose and sky instead of white.
- */
-function waterColor(rgb: [number, number, number], r: Rng, amount: number): Hsl {
-  const [l0, a, b] = labOf(...rgb)
-  let C = Math.hypot(a, b),
-    h = Math.atan2(b, a)
-  const shadow = 1 - smooth(0.28, 0.62, l0)
-  // the film's near-blacks take ultramarine outright (turning through red would muddy them);
-  // blues lean a little toward violet in shade; warm colors keep their hue
-  const neutral = 1 - smooth(0.03, 0.08, C)
-  if (shadow * neutral > 0.5) h = 262 * deg
-  else if (Math.cos(h - 262 * deg) > 0.5) h = turn(h, 268 * deg, shadow * 0.4)
-  C = Math.max(C * (1 + (1 - shadow) * 0.15), (0.035 + 0.03 * shadow) * shadow)
-  // a film's curve: deep, colored shadows and a held shoulder, not a lifted, even middle
-  let L = 0.1 + (l0 + (l0 * l0 * (3 - 2 * l0) - l0) * 0.45) * 0.89
-  h += (r() - 0.5) * 0.32 * amount
-  L += (r() - 0.5) * 0.05 * amount
-  C *= 1 + (r() - 0.5) * 0.3 * amount
-  // broken color: now and then a stroke of the neighbouring hue, violet one way, teal the other
-  if (r() < 0.24 * amount * shadow) {
-    h += r() < 0.55 ? 0.55 : -0.62
-    C *= 1.25
-  }
-  return lch(Math.min(0.95, L), C, h)
-}
 
 /** Glitter in the colors light takes on water: [lightness, chroma, hue°], warm first. */
 const glints: [number, number, number][] = [
@@ -597,6 +567,61 @@ const glints: [number, number, number][] = [
   [0.91, 0.032, 45],
   [0.92, 0.03, 230],
 ]
+
+
+/**
+ * The sea as the Impressionists laid it: Zhoushan's grey-green, silted water turned to cobalt and
+ * ultramarine with viridian beside it, a little ochre kept in the face of the breaking wave, the
+ * headland in deep teal and violet, and a pale sky broken into cream, rose and sky blue.
+ */
+function seaColor(rgb: [number, number, number], y: number, r: Rng, amount: number): Hsl {
+  const [l0, a, b] = labOf(...rgb)
+  let C = Math.hypot(a, b),
+    h = Math.atan2(b, a)
+  if (y < HORIZON && l0 > 0.7) {
+    // the sky: never white, always a tint of the light
+    const pick = r()
+    h = (pick < 0.55 ? 86 : pick < 0.8 ? 24 : 228) * deg + (r() - 0.5) * 0.25 * amount
+    return lch(Math.min(0.95, 0.88 + l0 * 0.06 + (r() - 0.5) * 0.03 * amount), 0.018 + r() * 0.02, h)
+  }
+  // the film saw an overcast, silted sea: stretch its values so the troughs go deep
+  const v = Math.min(1, Math.max(0, (l0 - 0.4) * 2.1 + 0.42))
+  const foam = smooth(0.62, 0.78, l0)
+  const warm = smooth(0.04, 0.075, C) * smooth(0.55, 0.9, Math.cos(h - 80 * deg))
+  let L: number
+  if (y < HORIZON + 0.01 && l0 < 0.5) {
+    // the headland: its green sinks into teal, its shade into ultramarine and violet
+    h = (r() < 0.6 ? 200 : 266) * deg
+    C = 0.05 + r() * 0.025
+    L = 0.3 + v * 0.22
+  } else if (y < HORIZON + 0.05) {
+    // the far water takes the sky
+    h = (r() < 0.7 ? 236 : 300) * deg
+    C = 0.045 + r() * 0.02
+    L = 0.62 + v * 0.16
+  } else if (warm > 0.5) {
+    // the rock and the lit face of the wave: ochre broken with viridian, as Monet laid a sunlit swell
+    const green = r() < 0.4
+    h = ((green ? 165 : 84) + (r() - 0.5) * 20) * deg
+    C = green ? 0.06 : 0.05 + C * 0.25
+    L = 0.4 + v * 0.3
+  } else {
+    // troughs in ultramarine, the body of the sea in cobalt, its lit slopes cerulean and viridian
+    h = (v < 0.35 ? 266 : v < 0.7 ? 250 : r() < 0.65 ? 228 : 188) * deg
+    C = (0.075 + (1 - v) * 0.04) * (1 - foam * 0.78)
+    L = 0.27 + v * 0.42 + foam * (0.94 - 0.27 - v * 0.42)
+    if (foam > 0.5) h = (r() < 0.65 ? 88 : r() < 0.5 ? 30 : 220) * deg
+  }
+  h += (r() - 0.5) * 0.3 * amount
+  L += (r() - 0.5) * 0.05 * amount
+  C *= 1 + (r() - 0.5) * 0.3 * amount
+  // broken color: viridian one way, violet the other
+  if (foam < 0.5 && r() < 0.24 * amount) {
+    h += r() < 0.5 ? -0.5 : 0.45
+    C *= 1.2
+  }
+  return lch(Math.min(0.96, L), C, h)
+}
 
 /**
  * The home painting: the hero frame repainted at 2560 px, with a height layer
@@ -630,7 +655,7 @@ export function paintHome(frame: FilmFrame, width = 2560) {
   const washCtx = wash.getContext('2d')!
   for (let y = 0; y < wash.height; y++)
     for (let x = 0; x < wash.width; x++) {
-      const c = waterColor(coarse.rgb((x + 0.5) / wash.width, (y + 0.5) / wash.height), r, 0.3)
+      const c = seaColor(coarse.rgb((x + 0.5) / wash.width, (y + 0.5) / wash.height), (y + 0.5) / wash.height, r, 0.3)
       washCtx.fillStyle = `hsl(${c[0]},${c[1] * 100}%,${c[2] * 100}%)`
       washCtx.fillRect(x, y, 1, 1)
     }
@@ -660,7 +685,7 @@ export function paintHome(frame: FilmFrame, width = 2560) {
         y = r()
       const f = flow(x, y)
       if (pass.detailed && r() > 0.2 + f.detail * 0.8) continue
-      // calm water lies level; the ripples, the machine and the birds are followed
+      // calm water lies level; the breaking wave, the rock and the headland are followed
       const level = (r() - 0.5) * 0.22,
         follow = smooth(0.2, 0.6, f.detail)
       stroke(
@@ -670,13 +695,13 @@ export function paintHome(frame: FilmFrame, width = 2560) {
         level + (f.angle + (r() - 0.5) * 0.25 - level) * follow,
         pass.length * unit * (0.6 + r() * 0.8) * (1 - f.detail * 0.5) * (1.45 - follow * 0.45),
         pass.width * unit * (0.7 + r() * 0.6),
-        waterColor(pass.source.rgb(x, y), r, pass.jitter),
+        seaColor(pass.source.rgb(x, y), y, r, pass.jitter),
         pass.alpha,
         r,
         { ctx: depth, height: pass.thick },
       )
     }
-  // the darkest things, the birds and the machine's shade, drawn back in with a deep violet umber
+  // the darkest things, the rock's pits and the wave's shade, drawn back in with a deep violet umber
   for (let i = 0; i < Math.round(4500 * area); i++) {
     const x = r(),
       y = r()
@@ -689,7 +714,7 @@ export function paintHome(frame: FilmFrame, width = 2560) {
   for (let i = 0; i < Math.round(5000 * area); i++) {
     const x = r(),
       y = r()
-    const c = waterColor(fine.rgb(x, y), r, 1.4)
+    const c = seaColor(fine.rgb(x, y), y, r, 1.4)
     const size = (1 + r() * 1.4) * unit,
       alpha = 0.25 + r() * 0.25
     ctx.fillStyle = `hsla(${c[0]},${c[1] * 100}%,${c[2] * 100}%,${alpha})`
@@ -706,7 +731,8 @@ export function paintHome(frame: FilmFrame, width = 2560) {
     const x = r(),
       y = r()
     const l = fine.lum(x, y)
-    if (l < 0.73 || r() > (l - 0.73) * 4) continue
+    // the foam, in the sky's light: never above the horizon
+    if (y < HORIZON || l < 0.66 || r() > (l - 0.66) * 4.5) continue
     const tint = () => {
       const [L, C, h] = glints[l > 0.9 && r() < 0.7 ? Math.floor(r() * 2) : Math.floor(r() * glints.length)]
       return lch(L + (r() - 0.5) * 0.03, C * (0.8 + r() * 0.4), (h + (r() - 0.5) * 14) * deg)

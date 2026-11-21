@@ -795,21 +795,22 @@ body:has(> .a-desk[data-open]) .a-wet {
     padding: 60px 7% 60px;
   }
   .a-about-intro,
-  .a-about-hand {
+  .a-about-lead,
+  .a-about-hero h1,
+  .a-about-plate {
     grid-column: 1;
     grid-row: auto;
   }
-  .a-about-hand {
-    justify-self: start;
-    margin-top: 30px;
-    font-size: 34px;
+  .a-about-plate {
+    height: 46vh;
+    margin-bottom: 40px;
   }
   .a-about-questions {
     grid-template-columns: minmax(0, 1fr);
     gap: 40px;
     padding: 70px 7%;
   }
-  .a-about-questions > .a-caption {
+  .a-about-questions > .a-about-label {
     margin-bottom: 0;
   }
   .a-about-method {
@@ -817,30 +818,12 @@ body:has(> .a-desk[data-open]) .a-wet {
     gap: 30px;
     padding: 70px 7% 90px;
   }
-  .a-notes-hero {
-    min-height: 0;
-    padding: 60px 7% 50px;
-  }
-  .a-notes-hero > p:not(.a-caption),
-  .a-notes-hand {
-    position: static;
-    display: block;
-    margin-top: 34px;
-  }
-  .a-notes-hand {
-    margin-top: 18px;
-    font-size: 32px;
-  }
   .a-archive {
-    padding: 20px 7% 80px;
+    padding: 20px 6% 80px;
   }
   .a-archive-entry {
-    grid-template-columns: 44px minmax(0, 1fr) 20px;
-    gap: 16px;
-    padding: 28px 0;
-  }
-  .a-entry-index {
-    font-size: 32px;
+    min-height: 0;
+    padding: 12px 8px 10px;
   }
   .a-search input {
     width: 100%;

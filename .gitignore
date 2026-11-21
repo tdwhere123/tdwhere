@@ -17,6 +17,7 @@ pnpm-debug.log*
 # Editor / OS
 .DS_Store
 Thumbs.db
+*Zone.Identifier*
 .vscode/*
 !.vscode/extensions.json
 .idea/

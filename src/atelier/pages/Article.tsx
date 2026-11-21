@@ -5,12 +5,12 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
-import { ArrowLeft, ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { getPost, posts } from '@/content/posts'
 import { getPostBody } from '@/content/postBodies'
 import { resolveContentUrl } from '@/content/resolveContentUrl'
 import { useWords } from '../hooks'
-import { Caption } from '../components/Primitives'
+import BurnLink from '../components/BurnLink'
 import NotFound from './NotFound'
 function headings(body: string) {
   let fence = '',
@@ -79,15 +79,16 @@ export default function Article() {
   return (
     <article className="a-essay">
       <div className="a-reading-progress" ref={progress} aria-hidden="true" />
+      <div className="a-essay-sheet">
       <header className="a-essay-header">
         <Link to="/blog" className="a-back">
           <ArrowLeft size={14} />
           {w('回到手记', 'Back to notes')}
         </Link>
-        <Caption>
-          {post.date.replaceAll('-', '.')} / {post.tags.join(' · ')}
-        </Caption>
-        <h1 lang="zh">{post.title}</h1>
+        <p className="a-essay-meta">
+          {post.date.replaceAll('-', '.')} · {post.tags.join(' · ')}
+        </p>
+        <h1 lang="zh" key={post.slug}>{post.title}</h1>
         <p className="a-essay-deck" lang="zh">
           {post.summary}
         </p>
@@ -105,7 +106,7 @@ export default function Article() {
         <aside className="a-toc">
           {toc.length > 0 && (
             <>
-              <Caption>{w('沿着这篇文章', 'IN THIS NOTE')}</Caption>
+              <p className="a-toc-label">{w('目录', 'Contents')}</p>
               <nav aria-label={w('文章目录', 'Table of contents')}>
                 {toc.map((h) => (
                   <a key={h.id} href={`#${h.id}`} data-level={h.level}>
@@ -117,18 +118,17 @@ export default function Article() {
           )}
           {(newer || older) && (
             <div className="a-essay-turns">
-              <Caption>{w('接着读', 'CONTINUE')}</Caption>
               {newer && (
-                <Link to={`/blog/${newer.slug}`}>
-                  <small>{w('较新', 'NEWER')}</small>
+                <BurnLink to={`/blog/${newer.slug}`}>
+                  <small>{w('上一篇', 'Previous')}</small>
                   {newer.title}
-                </Link>
+                </BurnLink>
               )}
               {older && (
-                <Link to={`/blog/${older.slug}`}>
-                  <small>{w('较早', 'EARLIER')}</small>
+                <BurnLink to={`/blog/${older.slug}`}>
+                  <small>{w('下一篇', 'Next')}</small>
                   {older.title}
-                </Link>
+                </BurnLink>
               )}
             </div>
           )}
@@ -185,13 +185,27 @@ export default function Article() {
           </ReactMarkdown>
         </div>
       </div>
-      <footer className="a-essay-end">
-        <span className="a-handwritten">to be continued.</span>
-        <Link to="/blog" className="a-link">
-          {w('继续翻阅', 'Keep reading')}
-          <ArrowUpRight size={16} />
-        </Link>
-      </footer>
+      </div>
+      <nav className="a-essay-end" aria-label={w('上一篇和下一篇', 'Previous and next')}>
+        {newer ? (
+          <BurnLink to={`/blog/${newer.slug}`} className="a-turn is-previous">
+            <small>
+              <ArrowLeft size={13} aria-hidden="true" />
+              {w('上一篇', 'Previous')}
+            </small>
+            <span lang="zh">{newer.title}</span>
+          </BurnLink>
+        ) : <span />}
+        {older ? (
+          <BurnLink to={`/blog/${older.slug}`} className="a-turn is-next">
+            <small>
+              {w('下一篇', 'Next')}
+              <ArrowRight size={13} aria-hidden="true" />
+            </small>
+            <span lang="zh">{older.title}</span>
+          </BurnLink>
+        ) : <span />}
+      </nav>
     </article>
   )
 }

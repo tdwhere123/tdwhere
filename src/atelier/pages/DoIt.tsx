@@ -94,7 +94,7 @@ export default function DoIt() {
     <div className="a-doit">
       <header className="a-doit-hero">
         <Art name="construction" eager intensity="quiet" />
-        <Caption number="02">{w('Agent 插件 · 0.18.1', 'Agent plugin · 0.18.1')}</Caption>
+        <Caption>{w('Agent 插件 · 0.18.1', 'Agent plugin · 0.18.1')}</Caption>
         <h1>do-it</h1>
         <p className="a-doit-lead">
           {w('给编程 Agent 的', 'Professional judgment')}
@@ -117,7 +117,7 @@ export default function DoIt() {
 
       <section className="a-doit-duel" id="duel">
         <div className="a-doit-head">
-          <Caption number="01">{w('同一个请求，两个终端', 'One request, two terminals')}</Caption>
+          <Caption>{w('同一个请求，两个终端', 'One request, two terminals')}</Caption>
           <h2>{w('“完成”两个字，背后要有东西。', '“Done” should have something behind it.')}</h2>
           <p>
             {w(
@@ -133,7 +133,7 @@ export default function DoIt() {
 
       <section className="a-doit-moments">
         <div className="a-doit-head">
-          <Caption number="02">{w('它在哪里出声', 'Where it speaks')}</Caption>
+          <Caption>{w('它在哪里出声', 'Where it speaks')}</Caption>
           <h2>{w('一次会话里，四个时刻。', 'Four moments in a session.')}</h2>
           <p>
             {w(
@@ -147,7 +147,7 @@ export default function DoIt() {
 
       <section className="a-doit-skills">
         <div className="a-doit-head">
-          <Caption number="03">{w('技能之间的因果', 'How the skills connect')}</Caption>
+          <Caption>{w('技能之间的因果', 'How the skills connect')}</Caption>
           <h2>{w('四个问题，一个接一个。', 'Four questions, each on the last.')}</h2>
           <p>
             {w(
@@ -161,7 +161,7 @@ export default function DoIt() {
 
       <section className="a-doit-proof">
         <div className="a-doit-head">
-          <Caption number="04">{w('怎么知道它有用', 'How it is checked')}</Caption>
+          <Caption>{w('怎么知道它有用', 'How it is checked')}</Caption>
           <h2>{w('四个面，不算总分。', 'Four faces, no total.')}</h2>
           <p>
             {w(
@@ -192,7 +192,7 @@ export default function DoIt() {
 
       <section className="a-doit-install">
         <div className="a-doit-head">
-          <Caption number="05">{w('装上它', 'Install')}</Caption>
+          <Caption>{w('装上它', 'Install')}</Caption>
           <h2>{w('五个宿主，各用各的方式。', 'Five hosts, each its own way.')}</h2>
           <p>
             {w(

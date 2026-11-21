@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight, Search, X } from 'lucide-react'
 import { posts } from '@/content/posts'
 import { useWords } from '../hooks'
-import { Art, Caption } from '../components/Primitives'
+
 export default function Blog() {
   const w = useWords(),
     [search, setSearch] = useState(''),
@@ -19,27 +19,13 @@ export default function Blog() {
   return (
     <div className="a-blog">
       <header className="a-notes-hero">
-        <Art name="manuscript" eager intensity="quiet" />
-        <Caption>ESSAYS / FICTION / UNFINISHED QUESTIONS</Caption>
-        <h1>
-          Field
-          <br />
-          <em>notes.</em>
-        </h1>
-        <p>
+        <h1 data-rise>{w('手记', 'Notes')}</h1>
+        <p data-fade="0.2">
           {w(
-            '有些是思考，有些是反思，也有小说。',
-            'Some thoughts. Some second thoughts. Some fiction.',
-          )}
-          <br />
-          {w(
-            '都是问题经过这里的痕迹。',
-            'All are traces of questions passing through.',
+            '关于 AI、记忆和学习方法的文章，也有几篇小说。翻到下一篇时，这一页会被烧掉。',
+            'Essays on AI, memory and how I learn, and a few stories. Turning to the next one burns the page.',
           )}
         </p>
-        <span className="a-notes-hand" aria-hidden="true">
-          not a final answer.
-        </span>
       </header>
       <section className="a-archive">
         <div className="a-archive-controls">
@@ -49,7 +35,7 @@ export default function Blog() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={w('在手记里寻找……', 'Look through the notes…')}
+              placeholder={w('搜索手记', 'Search notes')}
               aria-label={w('搜索文章', 'Search notes')}
             />
             {search && (
@@ -78,19 +64,16 @@ export default function Blog() {
           </div>
         </div>
         <p className="a-archive-count" aria-live="polite">
-          {String(visible.length).padStart(2, '0')} {w('篇手记', 'notes')} ·{' '}
+          {w(`${visible.length} 篇`, `${visible.length} notes`)} ·{' '}
           {w('文章保留原始中文', 'Essays remain in their original Chinese')}
         </p>
         <div>
-          {visible.map((p, i) => (
+          {visible.map((p) => (
             <Link
               className="a-archive-entry"
               key={p.slug}
               to={`/blog/${p.slug}`}
             >
-              <span className="a-entry-index">
-                {String(i + 1).padStart(2, '0')}
-              </span>
               <div>
                 <time dateTime={p.date}>{p.date.replaceAll('-', '.')}</time>
                 <h2 lang="zh">{p.title}</h2>
@@ -103,7 +86,7 @@ export default function Blog() {
         </div>
         {visible.length === 0 && (
           <div className="a-empty-state">
-            <p>{w('这里暂时没有这条线索。', 'No matching trace here yet.')}</p>
+            <p>{w('没有找到符合的手记。', 'No notes match.')}</p>
             <button
               className="a-link"
               onClick={() => {
@@ -111,7 +94,7 @@ export default function Blog() {
                 setTag('all')
               }}
             >
-              {w('回到全部手记', 'Return to all notes')}
+              {w('显示全部手记', 'Show all notes')}
             </button>
           </div>
         )}

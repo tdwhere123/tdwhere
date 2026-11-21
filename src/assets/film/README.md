@@ -74,9 +74,8 @@ src/assets/film/
 
 ## 首页那张画
 
-首页和开场动画用的是 `src/assets/ground/home.jpg`（`src/atelier/film.ts` 的 `heroFrame`）。
-胶片页背后那张用的是 `src/assets/ground/film.jpg`（`filmBackdrop`）。
-这两张不在架子上，换图就换这两个文件。
+首页和开场动画用的是 `src/assets/ground/home.jpg`（朱家尖那卷的第 43 张裁掉左边，`src/atelier/grounds.ts` 的 `heroFrame`）。
+胶片页背后也是这幅海，沉到深处、调暗。它不在架子上；换图要换这个文件，再用 `scripts/bake-home.mjs` 重画一次。
 
 ## 加完之后
 

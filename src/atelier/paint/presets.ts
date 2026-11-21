@@ -1,3 +1,6 @@
+/** The tide runs up a departing painting in this long (the shell waits as long before letting go). */
+export const TIDE_MS = 1250
+
 export type Rgb = [number, number, number]
 export type Vec2 = [number, number]
 export type ArtName = 'landscape' | 'pigment' | 'construction' | 'manuscript'

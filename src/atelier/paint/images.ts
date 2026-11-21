@@ -1,4 +1,4 @@
-/** Decoded, authored painting assets shared by the still, WebGL and overture. */
+/** Decoded, authored painting assets shared by the still, WebGL and opening. */
 export type PaintImage = HTMLCanvasElement | HTMLImageElement
 const images = new Map<string, Promise<HTMLImageElement>>()
 

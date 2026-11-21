@@ -14,8 +14,12 @@ export type PaintSignal =
   | { type: 'light'; value: PaintLight }
   /** Position in a layered series painting: 0 is the first layer, 1.5 halfway into the third. */
   | { type: 'scene'; at: number }
-  /** A palette knife drawn across at height y; null restores the whole painting on a return home. */
+  /** The tide runs up and takes the paint; null restores the whole painting on a return home. */
   | { type: 'part'; y: number | null }
+  /** How much of the painting is laid on the paper (the opening); `at` sets it outright. */
+  | { type: 'reveal'; value: number; at?: number; paper?: Rgb }
+  /** How far under the surface the view has sunk, 0..1. */
+  | { type: 'depth'; value: number }
   | {
       type: 'mark'
       id: string
@@ -26,7 +30,7 @@ export type PaintSignal =
     }
 
 type Listener = (signal: PaintSignal) => void
-type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' | 'suspend' | 'light' }>
+type Held = Extract<PaintSignal, { type: 'glaze' | 'scene' | 'suspend' | 'light' | 'reveal' | 'depth' }>
 const channels = new Map<string, Set<Listener>>()
 /** Last persistent state per channel, including for engines mounted after an overlay leaves. */
 const held = new Map<string, Map<Held['type'], Held>>()
@@ -44,7 +48,7 @@ export function onPaint(channel: string, listener: Listener) {
 
 /** Transient gestures are ignored without an engine; persistent appearance and suspension are kept. */
 export function paint(channel: string, signal: PaintSignal) {
-  if (signal.type === 'glaze' || signal.type === 'scene' || signal.type === 'suspend' || signal.type === 'light') {
+  if (signal.type === 'glaze' || signal.type === 'scene' || signal.type === 'suspend' || signal.type === 'light' || signal.type === 'reveal' || signal.type === 'depth') {
     let kept = held.get(channel)
     if (!kept) held.set(channel, (kept = new Map()))
     kept.set(signal.type, signal)

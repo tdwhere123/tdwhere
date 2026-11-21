@@ -12,22 +12,12 @@ export default function Playground() {
     <div className="a-playground">
       <header className="a-elsewhere-hero">
         <Art name="construction" eager intensity="quiet" />
-        <Caption>EARLIER EXPERIMENTS / OPEN ENDS</Caption>
-        <h1>
-          Else<em>where.</em>
-        </h1>
-        <p>
-          {w('不是每条路都走到了终点。', 'Not every path reached its end.')}
-          <br />
-          {w('有些问题，正是从这里开始。', 'Some questions began right here.')}
-        </p>
-        <span className="a-handwritten" aria-hidden="true">
-          unfinished, not forgotten.
-        </span>
+        <h1 data-rise>{w('其他尝试', 'Other experiments')}</h1>
+        <p data-fade="0.2">{w('一些没有继续做下去的尝试。', 'A few things I tried and did not carry further.')}</p>
       </header>
       <section id="veggie" className="a-experiment is-veggie">
         <div className="a-experiment-copy">
-          <Caption number="01">VEGETARIAN-CARD</Caption>
+          <Caption>Vegetarian-card</Caption>
           <h2>{w('从一张素食卡片开始。', 'It began with a recipe card.')}</h2>
           <p>
             {w(

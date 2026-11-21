@@ -320,11 +320,7 @@
   .a-footer-top {
     display: block;
   }
-  .a-footer-top > p {
-    font-size: 27px;
-    line-height: 1.6;
-  }
-  .a-footer-top > div {
+  .a-footer-mail {
     margin-top: 35px;
     width: fit-content;
     gap: 6px 9px;

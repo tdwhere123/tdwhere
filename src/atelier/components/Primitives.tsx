@@ -44,6 +44,7 @@ export function Art({
   still = false,
   prepared,
   relief,
+  flow,
 }: {
   name?: ArtName
   /** Paints this film frame instead of `name`, cropped at its focus. */
@@ -52,6 +53,8 @@ export function Art({
   prepared?: string
   /** Grey paint thickness for `prepared`, lit by the live engine. */
   relief?: string
+  /** Living water below this line of the picture (0 is its top). */
+  flow?: number
   /** Always the still image, for paintings that are only glimpsed. */
   still?: boolean
   className?: string
@@ -122,6 +125,7 @@ export function Art({
           channel,
           prepainted: !!source,
           relief: source ? thickness : undefined,
+          flow,
           onReady: () => { if (!cancelled) setMode('live') },
           onLost: () => { void fallBack().catch(fail) },
         })
@@ -159,7 +163,7 @@ export function Art({
       handle?.destroy()
       setMode('pending')
     }
-  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still, prepared, relief])
+  }, [key, name, frame, portrait, quiet, intensity, channel, eager, still, prepared, relief, flow])
   const focus = frame ? { objectPosition: frame.focus } : undefined
   const layered = mode !== 'live' && stills.length > 1
   useEffect(() => {

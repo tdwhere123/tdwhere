@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { jumpTo } from '../motion'
 export default function LocationEffects() {
   const { pathname, hash } = useLocation()
   useEffect(() => {
@@ -23,10 +24,10 @@ export default function LocationEffects() {
         observer.observe(document.body, { childList: true, subtree: true })
         timer = setTimeout(() => observer?.disconnect(), 4000)
       }
-    } else window.scrollTo({ top: 0, behavior: 'auto' })
+    } else jumpTo(0)
     if (pathname.startsWith('/film/')) document.title = 'Film · 阿黄'
     else if (!pathname.startsWith('/blog/'))
-      document.title = `${({ '/': 'tdwhere', '/projects': 'Projects', '/film': 'Film', '/alaya': 'Alaya', '/do-it': 'do-it', '/sentinel': 'SENTINEL', '/about': 'About', '/blog': 'Field notes', '/playground': 'Elsewhere' } as Record<string, string>)[pathname] || '404'} · 阿黄`
+      document.title = `${({ '/': 'tdwhere', '/projects': 'Projects', '/film': 'Film', '/alaya': 'Alaya', '/do-it': 'do-it', '/sentinel': 'SENTINEL', '/about': 'About', '/blog': 'Notes', '/playground': 'Elsewhere' } as Record<string, string>)[pathname] || '404'} · 阿黄`
     return () => {
       if (timer) clearTimeout(timer)
       observer?.disconnect()

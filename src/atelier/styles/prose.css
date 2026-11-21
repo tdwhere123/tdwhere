@@ -1,6 +1,7 @@
 /* About. */
 /* Essay index. Typography carries the composition. */
 /* Readable original essays, independently of decorative layout. */
+/* how far you have read: a line smouldering along the top, its tip still alight */
 .a-reading-progress {
   position: fixed;
   top: 76px;
@@ -9,14 +10,23 @@
   width: 100%;
   transform: scaleX(var(--reading, 0));
   transform-origin: left;
-  background: var(--a-pigment);
+  background: linear-gradient(90deg, rgba(90, 30, 8, 0.4), #b2441a 70%, #ff9a3c 97%, #ffe2a8);
+  box-shadow: 0 0 10px rgba(255, 120, 40, 0.55), 0 0 2px rgba(255, 200, 120, 0.8);
   z-index: 61;
 }
 .a-back {
-  font-size: 11px;
-  display: inline-block;
-  margin-bottom: 45px;
-  color: var(--a-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 11px/1 var(--a-mono);
+  letter-spacing: 0.05em;
+  margin-bottom: 40px;
+  color: #7b6a58;
+}
+.a-toc-label {
+  font: 11px/1 var(--a-mono);
+  letter-spacing: 0.06em;
+  color: #93572d;
 }
 .a-reading-layout {
   display: grid;
@@ -44,7 +54,7 @@
 .a-toc summary {
   font-size: 12px;
   cursor: pointer;
-  color: var(--a-pigment);
+  color: #93572d;
 }
 .a-toc nav {
   display: flex;
@@ -53,16 +63,16 @@
   margin-top: 20px;
 }
 .a-toc nav > a {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
-  color: var(--a-muted);
+  color: #6f5f50;
 }
 .a-toc nav > a[data-level='3'] {
   padding-left: 12px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .a-toc nav > a:hover {
-  color: var(--a-pigment);
+  color: #b2551f;
 }
 .a-essay-turns {
   display: flex;
@@ -77,24 +87,24 @@
 }
 .a-essay-turns a {
   display: block;
-  color: var(--a-ink);
-  font-size: 13px;
+  color: #2a211b;
+  font-size: 14px;
   line-height: 1.55;
 }
 .a-essay-turns a:hover {
-  color: var(--a-pigment);
+  color: #b2551f;
 }
 .a-essay-turns small {
   display: block;
   margin-bottom: 4px;
-  color: var(--a-muted);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  color: #93572d;
+  font: 10px/1.4 var(--a-mono);
+  letter-spacing: 0.06em;
 }
 .a-prose {
   min-width: 0;
-  font: 400 17px/2.08 var(--a-text);
-  color: #27383d;
+  font: 400 18px/2.05 var(--a-text);
+  color: #2e241d;
   overflow-wrap: anywhere;
 }
 .a-prose > p {
@@ -166,7 +176,7 @@
 .a-prose a {
   text-decoration: underline;
   text-underline-offset: 4px;
-  color: var(--a-pigment);
+  color: #a4481b;
 }
 .a-prose strong {
   font-weight: 700;
@@ -250,15 +260,14 @@
   z-index: -1;
 }
 .a-not-found h1 {
-  font-size: clamp(180px, 30vw, 430px);
+  font-size: clamp(160px, 26vw, 380px);
   line-height: 1.05;
-  letter-spacing: -0.06em;
 }
 .a-not-found h1 em {
   color: var(--a-pigment);
 }
 .a-not-found > p:not(.a-caption) {
-  font-size: 14px;
+  font-size: 17px;
   margin: 15px 0;
 }
 .a-not-found .a-link {

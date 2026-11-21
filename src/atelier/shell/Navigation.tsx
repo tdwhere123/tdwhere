@@ -41,12 +41,10 @@ export default function Navigation() {
       >
         {w('跳到正文', 'Skip to content')}
       </a>
-      <Link className="a-brand" to="/">
-        tdwhere<span>.</span>
+      <Link className="a-brand" to="/" aria-label={w('阿黄 tdwhere，回到首页', '阿黄 tdwhere, home')}>
+        <strong>阿黄</strong>
+        <span>tdwhere</span>
       </Link>
-      <span className="a-nav-note">
-        阿黄
-      </span>
       <button
         className="a-menu-trigger"
         ref={button}
@@ -74,11 +72,15 @@ export default function Navigation() {
             to={to}
             onClick={() => setOpen(false)}
           >
-            {label}
+            <span className="a-flip" data-text={label}>
+              <span>{label}</span>
+            </span>
           </NavLink>
         ))}
         <a href={t.meta.githubUrl} target="_blank" rel="noreferrer">
-          GitHub ↗
+          <span className="a-flip" data-text="GitHub">
+            <span>GitHub</span>
+          </span>
         </a>
         <div className="a-language" role="group" aria-label="Language / 语言">
           <button aria-pressed={lang === 'zh'} onClick={() => setLang('zh')}>

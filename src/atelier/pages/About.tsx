@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useWords } from '../hooks'
-import { Art, Caption, LinkLine, NextProject } from '../components/Primitives'
+import { Art, LinkLine, NextProject } from '../components/Primitives'
 export default function About() {
   const w = useWords(),
     [focus, setFocus] = useState(0)
@@ -30,52 +30,44 @@ export default function About() {
   return (
     <div className="a-about">
       <header className="a-about-hero">
-        <Art name="landscape" eager intensity="quiet" />
-        <Caption>ABOUT / THE PERSON BEHIND THE QUESTIONS</Caption>
-        <h1>
-          {w('我是阿黄。', 'I am 阿黄.')}
-          <em>{w('把问题，做成东西。', 'I make things out of questions.')}</em>
-        </h1>
-        <span className="a-about-hand" aria-hidden="true">
-          still asking.
-          <br />
-          still making.
-        </span>
-        <div className="a-about-intro">
+        <div className="a-about-plate">
+          <Art name="landscape" eager />
+        </div>
+        <h1 data-rise>{w('我是阿黄', 'I’m 阿黄')}</h1>
+        <p className="a-about-lead" data-fade="0.3">{w('一个独立探索者。', 'An independent explorer.')}</p>
+        <div className="a-about-intro" data-fade="0.45">
           <p>
             {w(
-              '我研究 Agent 的记忆与工作方式，也做工具、写手记。Alaya 和 do-it 是这些问题在不同地方留下的形状。',
-              'I study how agents remember and work, build tools, and write notes. Alaya and do-it are different forms those questions have taken.',
+              '我在探索 AI agent 如何长期可靠地工作：它记住什么、怎么判断，以及做完的事能不能被检查。Alaya 和 do-it 是这些问题做成的东西。',
+              'I explore how AI agents can work reliably over long stretches: what they remember, how they judge, and whether finished work can be checked. Alaya and do-it are what those questions turned into.',
             )}
           </p>
           <p>
             {w(
-              '对我来说，研究与实现不是两条独立的路。一个想法需要被做出来，才能看清它的边界；做出来的东西，也会带来下一个问题。',
-              'Research and implementation are not separate paths for me. Building an idea exposes its limits; what gets built brings the next question.',
+              '对我来说，研究和实现是同一件事。一个想法要做出来，才看得清它的边界；做出来的东西，又会带来下一个问题。工作之外，我拍胶片，写手记。',
+              'For me, research and building are the same work. An idea has to be built before its limits show, and what gets built brings the next question. Outside of that, I shoot film and write notes.',
             )}
           </p>
         </div>
       </header>
       <section className="a-about-questions">
-        <Caption>{w('我反复回到的地方', 'QUESTIONS I RETURN TO')}</Caption>
-        <article>
-          <span>01</span>
-          <h2>{w('过去如何影响现在？', 'How does the past shape now?')}</h2>
+        <p className="a-about-label">{w('我在想的两个问题', 'Two questions I keep working on')}</p>
+        <article data-fade>
+          <h2>{w('过去如何影响现在？', 'How does the past shape the present?')}</h2>
           <p>
             {w(
-              '什么值得记住，如何表达，又如何在新的问题里被找到。',
-              'What deserves to remain, how it is represented, and how it returns in a new question.',
+              '什么值得记住，怎样记下来，又怎样在新的问题里被找回。',
+              'What deserves to be kept, how to write it down, and how it is found again in a new question.',
             )}
           </p>
           <LinkLine to="/alaya">Alaya</LinkLine>
         </article>
-        <article>
-          <span>02</span>
-          <h2>{w('怎样才算真的做完？', 'What counts as finished?')}</h2>
+        <article data-fade="0.1">
+          <h2>{w('怎样才算真的做完？', 'What counts as actually finished?')}</h2>
           <p>
             {w(
-              '意图、改动和验证之间，需要一条可以检查的路径。',
-              'Intention, changes and verification need a checkable connection.',
+              '意图、改动和验证之间，需要一条可以检查的路。',
+              'Between the intention, the change and the check, there has to be a path someone can follow.',
             )}
           </p>
           <LinkLine to="/do-it">do-it</LinkLine>
@@ -83,12 +75,8 @@ export default function About() {
       </section>
       <section className="a-about-method">
         <div>
-          <Caption>WORKING NOTES</Caption>
-          <h2>
-            {w('方法会变，', 'Methods change.')}
-            <br />
-            <em>{w('问题继续。', 'The questions continue.')}</em>
-          </h2>
+          <p className="a-about-label">{w('我怎么工作', 'How I work')}</p>
+          <h2 data-rise>{w('三件我在意的事', 'Three things I hold to')}</h2>
         </div>
         <div>
           <div
@@ -110,12 +98,9 @@ export default function About() {
         </div>
       </section>
       <NextProject
-        name="Field notes"
+        name={w('手记', 'Notes')}
         to="/blog"
-        note={w(
-          '一些把问题写下来的尝试。',
-          'Some attempts to put the questions into words.',
-        )}
+        note={w('关于 AI、记忆和学习方法的文章，也有几篇小说。', 'Essays on AI, memory and how I learn, and a few stories.')}
       />
     </div>
   )

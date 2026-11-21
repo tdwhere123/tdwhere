@@ -1,18 +1,5 @@
 import { PAINT_LIGHT_GLSL } from './light'
-
-/** Value noise shared by the paint and overture shaders. */
-export const noise = `float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
-float vnoise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float a = hash(i), b = hash(i + vec2(1.0, 0.0));
-  float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}`
+import { noise } from './noise'
 
 export const vertexSource = `#version 300 es
 in vec2 aPos;
@@ -126,8 +113,18 @@ uniform vec3 uGround;
 uniform int uMode;
 uniform vec4 uMarks[4];
 uniform int uMarkCount;
-// palette knife: x reached so far and the line's y (canvas uv), and how far it has opened; z < 0 is off
+// the tide: x is how far up the canvas it has run (canvas uv); z < 0 is off
 uniform vec3 uPart;
+// living water below the image's horizon (image uv, y up); uFlow 0 keeps the paint still
+uniform float uFlow;
+uniform float uHorizon;
+// 0..1: how much of the painting has been laid on the paper, stroke by stroke
+uniform float uReveal;
+uniform vec3 uPaper;
+// 0..1: how far under the surface the view has sunk
+uniform float uDepth;
+// scroll velocity, dragging the wet paint along with the page
+uniform float uSmear;
 in vec2 vUv;
 out vec4 outColor;
 
@@ -147,32 +144,48 @@ vec2 toImage(vec2 d) { return vec2(d.x / uAspect, d.y) * uScale; }
 
 void main() {
   vec4 f = texture(uField, vUv);
-  // Where the knife has passed, the paint in its path is gone (the canvas
-  // shows through) and what it pushed aside is piled along a ragged edge.
+  // The tide runs up the canvas and takes the paint with it: behind its front
+  // the page shows through under a lace of foam; ahead of it the wet paint is
+  // pushed up and catches the light along the edge of the water.
   vec2 pv = vUv;
   float pile = 0.0, lip = 0.0, drag = 0.5, cover = 1.0;
   if (uPart.z >= 0.0) {
-    float passed = smoothstep(0.0, 0.05, uPart.x - vUv.x);
-    // drawn by hand: a slight slope, and an edge torn unevenly
-    float line = uPart.y + (vUv.x - 0.5) * 0.05;
-    float rag = ((vnoise(vec2(vUv.x * 46.0, 3.0)) - 0.5) * 0.008
-      + (vnoise(vec2(vUv.x * 7.0, 8.0)) - 0.5) * 0.02) * passed * (0.6 + uPart.z * 1.5);
-    float gap = (0.0025 + uPart.z) * passed + rag;
-    float d = vUv.y - line;
-    float beyond = abs(d) - gap;
-    if (passed > 0.0 && beyond < 0.0) {
-      outColor = vec4(0.0);
+    float t = uPart.x;
+    float edge = t + (vnoise(vec2(vUv.x * 4.0, t * 2.5)) - 0.5) * 0.09
+      + (vnoise(vec2(vUv.x * 17.0, t * 5.0 + 3.0)) - 0.5) * 0.03
+      + sin(vUv.x * 7.0 + t * 6.0) * 0.012;
+    float d = vUv.y - edge;
+    if (d < 0.0) {
+      float lace = vnoise(vUv * vec2(38.0, 64.0) + vec2(0.0, t * 6.0));
+      float trail = exp(d / 0.06);
+      float foam = smoothstep(0.5, 0.78, lace) * trail * 0.9 + smoothstep(-0.014, 0.0, d) * 0.92;
+      foam = clamp(foam, 0.0, 1.0);
+      outColor = vec4(vec3(0.97, 0.95, 0.9) * foam, foam);
       return;
     }
-    cover = mix(1.0, smoothstep(0.0, 0.003, beyond), passed);
-    pile = exp(-beyond / 0.022) * passed;
-    lip = exp(-beyond / 0.004) * passed;
-    // the knife drags paint along with it, in streaks, and shoves it off the cut
-    drag = vnoise(vec2(vUv.x * 2.5, vUv.y * 240.0));
-    pv.x -= pile * 0.035 * (0.3 + drag);
-    pv.y -= sign(d) * min(gap, 0.06) * pile;
+    pile = exp(-d / 0.035);
+    lip = exp(-d / 0.006);
+    drag = vnoise(vec2(vUv.x * 60.0, vUv.y * 4.0));
+    pv.y -= pile * 0.028 * (0.5 + drag);
+  }
+  if (abs(uSmear) > 0.0005) {
+    // the paint drags in bristle streaks, more in some than others
+    float streak = 0.55 + 0.45 * vnoise(vec2(vUv.x * 90.0, 1.0)) * vnoise(vec2(vUv.x * 13.0, 4.0));
+    pv.y -= uSmear * streak * 0.05;
   }
   vec2 uv = (pv - f.xy) * uScale + uOffset;
+  // below the horizon the water moves: small chop running toward the viewer, compressed with distance
+  float sea = 0.0, near = 0.0;
+  if (uFlow > 0.5) {
+    sea = smoothstep(uHorizon + 0.005, uHorizon - 0.03, uv.y);
+    near = clamp((uHorizon - uv.y) / max(uHorizon, 0.1), 0.0, 1.0);
+    vec2 q = vec2(uv.x * 3.2, uv.y * 10.0 / (0.22 + near));
+    float w1 = vnoise(q + vec2(uTime * 0.12, uTime * 0.42)) - 0.5;
+    float w2 = vnoise(q * 2.3 + vec2(-uTime * 0.2, uTime * 0.7)) - 0.5;
+    float swell = sin(uv.y * 34.0 / (0.3 + near) - uTime * 1.1 + vnoise(vec2(uv.x * 2.0, 0.0)) * 3.0);
+    float under = 1.0 + uDepth * 3.0;
+    uv += vec2(w1 * 0.0035, (w1 + w2 * 0.6) * 0.005 + swell * 0.0016) * sea * (0.35 + near) * under;
+  }
   vec2 p = vec2(vUv.x * uAspect, vUv.y);
   vec3 col;
   float bristle, spec;
@@ -206,6 +219,13 @@ void main() {
     spec = pow(max(dot(reflect(-L, N), vec3(0.0, 0.0, 1.0)), 0.0), 24.0) * (0.3 + smoothstep(0.35, 0.9, hc) * 0.7);
     col *= 0.84 + dot(N, L) * 0.22;
     col += spec * (0.05 + wet * 0.2);
+    if (uFlow > 0.5) {
+      // the light on the water winks: a few of the brightest strokes flare and go
+      float l = lum(col);
+      float wink = pow(vnoise(gl_FragCoord.xy * 0.07 + vec2(uTime * 1.6, -uTime * 0.9)), 7.0)
+        * smoothstep(0.62, 0.9, l) * sea;
+      col += vec3(1.0, 0.97, 0.88) * wink * 1.6;
+    }
     // Film, under the paint: the lens wide open at the edges, red-orange halation around the
     // brightest light, and a toe and shoulder. Mip levels stand in for blur, one tap each.
     vec2 rim = abs(vUv - vec2(0.56, 0.5)) * vec2(1.6, 2.0);
@@ -215,6 +235,7 @@ void main() {
     // halation rings the light: strongest just outside a bright stroke, not on top of it
     float glow = smoothstep(0.55, 0.95, lum(bloom)) * (1.0 - smoothstep(0.6, 0.95, lum(col)) * 0.6);
     col += (vec3(1.0, 0.42, 0.2) * 0.08 + bloom * 0.03) * glow;
+    col = clamp(col, 0.0, 1.0);
     col = mix(col, col * col * (3.0 - 2.0 * col), 0.32);
   } else {
     gMix = uMix;
@@ -317,10 +338,33 @@ void main() {
     col += (smoothstep(0.3, 0.45, s) - smoothstep(0.45, 0.7, s)) * 0.05;
   }
 
-  // knife streaks in the shoved paint, and a wet lip catching light along the cut
-  col *= 1.0 - pile * (0.5 - drag) * 0.22;
-  col += lip * (0.16 + spec * 0.5);
+  // the pushed paint darkens as it wets, and a lip of water catches the light
+  col *= 1.0 - pile * (0.5 - drag) * 0.2;
+  col += lip * (0.18 + spec * 0.5);
   col *= uGlaze;
+  if (uDepth > 0.001) {
+    // sinking: the surface softens, the light goes ultramarine, and shafts of it reach down
+    vec3 soft = img(uv, 2.5 + uDepth * 2.5);
+    col = mix(col, soft, uDepth * 0.55);
+    col = mix(col, vec3(0.035, 0.07, 0.19) + col * vec3(0.22, 0.32, 0.55), smoothstep(0.0, 1.0, uDepth) * 0.85);
+    float shaft = pow(vnoise(vec2(vUv.x * 7.0 + vUv.y * 2.2, uTime * 0.08)), 3.0)
+      * smoothstep(0.1, 1.0, vUv.y) * (1.0 - uDepth * 0.4);
+    col += vec3(0.32, 0.5, 0.72) * shaft * uDepth * 0.28;
+  }
+  if (uReveal < 0.999) {
+    // the painting arrives on the paper stroke by stroke: the sky and the headland first,
+    // then the sea from far to near, the light on it last
+    vec2 rd = vec2(1.0, 0.04);
+    vec2 rp = vec2(dot(p, rd), dot(p, vec2(-rd.y, rd.x))) * vec2(9.0, 30.0);
+    rp.x += hash(vec2(floor(rp.y), 2.3)) * 5.0;
+    float due = (1.0 - vUv.y) * 0.5 + hash(floor(rp)) * 0.3 + vnoise(p * 2.0) * 0.2
+      + smoothstep(0.7, 0.92, lum(col)) * 0.12;
+    due = clamp(due * 0.8 + 0.04, 0.03, 0.97);
+    float laid = smoothstep(due - 0.035, due + 0.035, uReveal * 1.08 - 0.04);
+    float fresh = laid * (1.0 - laid) * 4.0;
+    col += fresh * 0.08;
+    col = mix(uPaper, col, laid);
+  }
   vec2 weave = gl_FragCoord.xy * 0.9;
   col += sin(weave.x) * sin(weave.y) * 0.012 + (hash(gl_FragCoord.xy) - 0.5) * 0.02;
   if (uPrepared > 0.5) {

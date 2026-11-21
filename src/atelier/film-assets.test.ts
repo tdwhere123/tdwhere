@@ -35,7 +35,8 @@ describe('font stylesheet delivery', () => {
     const stylesheets = (source: string) => (source.match(/<link\b[^>]*>/g) ?? [])
       .filter((tag) => tag.includes('rel="stylesheet"') && /href="https:\/\//.test(tag))
     const links = stylesheets(active)
-    expect(links).toHaveLength(3)
+    // Google faces, and WenKai light, regular and bold
+    expect(links).toHaveLength(4)
     for (const link of links) {
       expect(link).toContain('media="print"')
       expect(link).toContain('onload="this.media=\'all\';this.onload=null"')

@@ -4,10 +4,11 @@ import { useWords } from '../hooks'
 import { Art } from '../components/Primitives'
 import { Canister } from '../components/Canister'
 import { filmImage, rolls } from '../film'
-import { filmBackdrop } from '../grounds'
+import { heroFrame, homePainting } from '../grounds'
 
 /** The dim painting the collection is laid out over. */
-const backdrop = filmBackdrop
+/** The sea from the home page, seen from deep under it. */
+const backdrop = heroFrame
 
 /**
  * The collection: every roll as its canister, newest first. Choosing one
@@ -32,10 +33,10 @@ export default function Film() {
   return (
     <div className="a-film">
       <div className="a-film-backdrop" aria-hidden="true">
-        <Art frame={backdrop} still />
+        <Art frame={backdrop} prepared={homePainting().src} still />
       </div>
       <header className="a-film-head">
-        <h1>{w('胶片', 'Film')}</h1>
+        <h1 data-rise>{w('胶片', 'Film')}</h1>
         <p>
           {w(
             '我用胶片拍下的东西，一卷一卷放进来。选一卷，把胶片拉出来；点开任何一格看原片，也可以看它被画成油画的样子。',
